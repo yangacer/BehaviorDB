@@ -14,8 +14,8 @@ struct BehaviorDB
 	AddrType 
 	put(char const* data, SizeType size);
 	
-	//AddrType 
-	//append(AddrType address, char const* data, SizeType size);
+	AddrType 
+	append(AddrType address, char const* data, SizeType size);
 	
 	SizeType 
 	get(char **output, AddrType address);
@@ -54,14 +54,25 @@ struct Pool
 	AddrType 
 	put(char const* data, SizeType size);
 	
-	//AddrType 
-	//append(AddrType address, char const* data, SizeType size);
+	AddrType 
+	append(AddrType address, char const* data, SizeType size, 
+		AddrType next_pool_idx, Pool* next_pool);
 	
 	SizeType 
 	get(char **output, AddrType address);
-	
+
 	// TODO: error report mechanism
+protected:
+	
+	SizeType
+	sizeOf(AddrType address);
+
+	AddrType
+	migrate(std::fstream &src_file, SizeType orig_size, 
+		char const *data, SizeType size); 
+
 private:
+	
 	SizeType chunk_size_;
 	std::fstream file_;
 	IDPool<AddrType> idPool_;
@@ -76,7 +87,7 @@ using std::setw;
 using std::hex;
 using std::setfill;
 using std::endl;
-
+using std::ios;
 
 BehaviorDB::BehaviorDB()
 : pools_(new Pool[16]), accLog_(new std::ofstream)
@@ -105,28 +116,24 @@ BehaviorDB::~BehaviorDB()
 AddrType
 BehaviorDB::put(char const* data, SizeType size)
 {
-	// Preserve 8 bytes for size value
-	size+=8;
 
 	// Determin which pool to put
 	AddrType pIdx(0);
-	SizeType i(1), 
-		bound(size>>10);
+	SizeType bound(size+8); // +8 for size value
 	
-	if(bound<<10 < size)
-		++bound;
-	
-	if(bound > 1<<15) // exceed capacity
-		return 0;
-
-	while(bound > (i<<=1))
+	while(bound > (1<<pIdx)<<10)
 		++pIdx;
-	
+
+	if(bound > (1<<15)<<10){ // exceed capacity
+		return 0;
+	}
+
 	pIdx = pIdx<<28 | pools_[pIdx].put(data, size);
 	
 	// write access log
-	*accLog_<<"[put   ] data_size(KB): "<<
-		setfill(' ')<<setw(12)<<bound<<
+	accLog_->unsetf(ios::hex);
+	*accLog_<<"[put   ] data_size(B): "<<
+		setfill(' ')<<setw(8)<<size<<
 		" address: "<<
 		hex<<setw(8)<<setfill('0')<<pIdx<<
 		endl;
@@ -134,13 +141,43 @@ BehaviorDB::put(char const* data, SizeType size)
 	return pIdx;
 }
 
-/*
+
 AddrType
 BehaviorDB::append(AddrType address, char const* data, SizeType size)
 {
+	// check address roughly
+	if(address>>28 > 15){
+		return 0;
+	}
+
+	AddrType pIdx = address >> 28;
+	AddrType rt, next_pIdx(0);
 	
+	// Estimate next pool ----------------
+	// ! No preservation space for size value since
+	// it had been counted as part of existed data
+	SizeType bound(size+((1<<pIdx)<<10));
+
+	while(bound >  (1<<next_pIdx)<<10 )
+		++next_pIdx;
+	
+	if(bound > (1<<15)<<10){ // exceed capacity
+		return 0;
+	}
+
+	rt = pools_[pIdx].append(address, data, size, next_pIdx, &pools_[next_pIdx]);
+
+	// write access log
+	accLog_->unsetf(ios::hex);
+	*accLog_<<"[append] data_size(B): "<<
+		setfill(' ')<<setw(8)<<size<<
+		" address: "<<
+		hex<<setw(8)<<setfill('0')<<rt<<
+		endl;
+
+	return rt;
+
 }
-*/
 
 SizeType
 BehaviorDB::get(char **output, AddrType address)
@@ -150,7 +187,15 @@ BehaviorDB::get(char **output, AddrType address)
 		return 0;
 	}
 
-	return pools_[address>>28].get(output, address);
+	SizeType rt = pools_[address>>28].get(output, address);
+	// write access log
+	accLog_->unsetf(ios::hex);
+	*accLog_<<"[get   ] data_size(B): "<<
+		setfill(' ')<<setw(12)<<rt<<
+		" address: "<<
+		hex<<setw(8)<<setfill('0')<<address<<
+		endl;
+	return rt;
 }
 
 
@@ -210,10 +255,30 @@ SizeType
 Pool::chunk_size() const
 { return chunk_size_; }
 
+SizeType
+Pool::sizeOf(AddrType address)
+{
+
+	AddrType off = (address & 0x0fffffff);
+	char size_val_ar[9] = {0};
+	char *size_val(size_val_ar);
+
+	file_.seekg(off * chunk_size_, ios::beg);
+	file_.read(size_val, 8);
+	
+	if(file_.bad())
+		return 0;
+
+	while('0' == *size_val)
+		++size_val;
+	
+	return (strtoul(size_val, 0, 10));
+}
+
 AddrType
 Pool::put(char const* data, SizeType size)
 {
-	using namespace std;
+	// TODO: Partial buffering for big chunk
 
 	if(!idPool_.avail()){
 		return 0; // temp used
@@ -225,21 +290,69 @@ Pool::put(char const* data, SizeType size)
 	file_.clear();
 	file_.seekp(off * chunk_size_, ios::beg);
 	
-	wrtLog_<<"off(KB): "<<setw(8)<<setfill('0')<<off<<
-		" tellp(B): "<<setw(12)<<file_.tellp()<<endl;
-
+	
 	// write 8 bytes size value ahead
-	file_<<setw(8)<<setfill('0')<<size;
-	file_.write(data, size);
+	file_<<setw(8)<<setfill('0')<<(size);
+	file_.write(data, (size));
 	
 	if(!file_){
 		return 0;	
 	}
+	
+	// write log
+	wrtLog_<<"[put    ] off(KB): "<<setw(8)<<setfill('0')<<off<<
+		" tellp(B): "<<setw(12)<<file_.tellp()<<
+		" write(B): "<<setw(8)<<size<<endl;
 
 	
 	return off;
 }
 
+AddrType 
+Pool::append(AddrType address, char const* data, SizeType size, 
+	AddrType next_pool_idx, Pool* next_pool)
+{
+	using std::stringstream;
+	
+	// TODO: check wheather the address has record
+	// Following code assume size value > 0
+
+	SizeType used_size = sizeOf(address);
+	
+	if(used_size + size > chunk_size_){ // needto migration
+		if(0 == next_pool){ // no pool for migration
+			return 0;	
+		}
+		AddrType rt = next_pool_idx<<28 | next_pool->migrate(file_, used_size, data, size);
+		// if no error happen in migration
+		idPool_.Release(address&0x0fffffff);
+		return rt;
+	}
+	
+	// update new size
+	stringstream cvt;
+	cvt<<setw(8)<<setfill('0')<<(used_size + size);
+	
+	file_.clear();
+	file_.seekp(-8, ios::cur);
+	file_.write(cvt.str().c_str(), 8);
+
+	// append data
+	file_.seekp(used_size, ios::cur);
+	file_.write(data, size);
+
+	if(!file_){ // write failed
+		return 0;
+	}
+
+	// write log
+	wrtLog_<<"[append ] off(KB): "<<setw(8)<<setfill('0')<<(address & 0x0fffffff)<<
+		" tellp(B): "<<setw(12)<<file_.tellp()<<
+		" write(B): "<<setw(8)<<(used_size + size)<<endl;
+
+
+	return address;		
+}
 
 SizeType 
 Pool::get(char **output, AddrType address)
@@ -254,19 +367,16 @@ Pool::get(char **output, AddrType address)
 	// TODO: check wheather the address has record
 	// Following code assume size value > 0
 	
-	char size_val_ar[9] = {0};
-	char *size_val(size_val_ar);
+	SizeType size(sizeOf(address));
+	
+	if(size == 0){ // sizeOf failure
+		return 0;	
+	}
 
-	AddrType off = (address & 0x0fffffff) * chunk_size_;
-	
-	file_.seekg(off, ios::beg);
-	file_.read(size_val, 8);
-	
-	while('0' == *size_val)
-		++size_val;
-	
-	SizeType size(strtoul(size_val, 0, 10));
 	*output = new char[size];
+
+	// assume sizeOf will seek to the data begin.
+	// is that dangerous?
 	file_.read(*output, size);
 
 	if(!file_.gcount()){ // read failure
@@ -275,10 +385,73 @@ Pool::get(char **output, AddrType address)
 		return 0;
 	}
 	
+	// write log
+	wrtLog_<<"[get    ] off(KB): "<<setw(8)<<setfill('0')<<(address&0xfffffff)<<
+		" tellp(B): "<<setw(12)<<file_.tellp()<<
+		" read(B): "<<setw(8)<<size<<endl;
+	
+	
 	return size;
 
 }
 
+AddrType
+Pool::migrate(std::fstream &src_file, SizeType orig_size, 
+	char const *data, SizeType size)
+{
+	// !! For eliminating seek operations
+	// assume the pptr() of src_file is located 
+	// in head of original data
+	
+	SizeType new_size = orig_size + size;
+
+	if(!idPool_.avail()){
+		return 0; // temp used
+	}
+	
+	AddrType off = idPool_.Acquire();
+	
+	// clear() is required when previous read reach the file end
+	file_.clear();
+	file_.seekp(off * chunk_size_, ios::beg);
+	
+	
+	// write 8 bytes size value ahead
+	file_<<setw(8)<<setfill('0')<<new_size;
+	
+	SizeType toRead(orig_size);
+	char buf[4096];
+	while(toRead){
+		if(toRead > 4096)
+			src_file.read(buf, 4096);
+		else
+			src_file.read(buf, toRead);
+
+		if(!src_file.gcount()){ // read failure
+			return 0;
+		}
+		
+		toRead -= src_file.gcount();
+		file_.write(buf, src_file.gcount());
+		if(!file_){ // write failure
+			return 0;
+		}
+	}
+
+	file_.write(data, size);
+	
+	if(!file_){ // write failure
+		return 0;
+	}
+	
+	// write log
+	wrtLog_<<"[migrate] off(KB): "<<setw(8)<<setfill('0')<<off<<
+		" tellp(B): "<<setw(12)<<file_.tellp()<<
+		" migrate(B): "<<setw(8)<<orig_size<<
+		" append(B): "<<size<<endl;
+
+	return off;
+}
 
 // test main
 #include <iostream>
@@ -288,8 +461,13 @@ int main(int argc, char **argv)
 	using namespace std;
 
 	BehaviorDB bdb;
-	bdb.put(argv[1], atoi(argv[2]));
-	bdb.put(argv[1], atoi(argv[2]));
-	bdb.put(argv[1], atoi(argv[2]));
+	AddrType addr1, addr2;
+
+	char two_kb[2048] = "2k_data_tailed_by_null";
+	char ten_kb[10240] = "10k_data_tailed_by_null";
+	
+	addr1 = bdb.put(two_kb, 2048);
+	addr2 = bdb.append(addr1, ten_kb, 10240);
+
 	return 0;	
 }
