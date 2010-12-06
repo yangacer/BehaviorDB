@@ -25,7 +25,6 @@ private:
 	BehaviorDB& operator = (BehaviorDB const &cp);
 
 	Pool* pools_;
-
 };
 
 // header ends
@@ -46,7 +45,7 @@ struct Pool
 	~Pool();
 
 	void 
-	chunk_size(SizeType size);
+	create_chunk_file(SizeType size);
 	
 	SizeType 
 	chunk_size() const;
@@ -65,6 +64,7 @@ private:
 	SizeType chunk_size_;
 	std::fstream file_;
 	IDPool<AddrType> idPool_;
+	std::ofstream wrtLog_;
 	
 };
 
@@ -74,7 +74,7 @@ BehaviorDB::BehaviorDB()
 : pools_(new Pool[16])
 {
 	for(SizeType i=0;i<16;++i){
-		pools_[i].chunk_size((1<<i)<<10);	
+		pools_[i].create_chunk_file((1<<i)<<10);	
 	}	
 }
 
@@ -132,11 +132,12 @@ Pool::Pool()
 
 Pool::~Pool()
 {
+	wrtLog_.close();
 	file_.close();
 }
 
 void
-Pool::chunk_size(SizeType chunk_size)
+Pool::create_chunk_file(SizeType chunk_size)
 { 
 	using namespace std;
 
@@ -146,7 +147,9 @@ Pool::chunk_size(SizeType chunk_size)
 		file_.close();
 	
 	stringstream cvt;
-	cvt<<"pool/"
+	
+	// create chunk file
+	cvt<<"pools/"
 		<<setw(4)<<setfill('0')<<hex
 		<< (chunk_size_>>10)
 		<< ".pool";
@@ -161,6 +164,15 @@ Pool::chunk_size(SizeType chunk_size)
 		assert(file_.is_open() == true);
 	}
 	
+	cvt<<".log";
+	
+	// init write log
+	wrtLog_.open(name, ios_base::out | ios_base::ate);
+	if(!wrtLog_.is_open()){
+		wrtLog_.open(name, ios_base::out | ios_base::trunc);
+		assert(wrtLog_.is_open() == true);
+	}
+
 	return;
 }
 
@@ -182,7 +194,7 @@ Pool::put(char const* data, SizeType size)
 	file_.clear();
 	file_.seekp(off, ios_base::beg);
 	
-	cout<<" off: "<<off<<" tellp: "<<file_.tellp()<<endl;
+	wrtLog_<<" off: "<<off<<" tellp: "<<file_.tellp()<<endl;
 
 	// write 8 bytes size value ahead
 	file_<<setw(8)<<setfill('0')<<size;
