@@ -19,6 +19,10 @@ struct BehaviorDB
 	
 	SizeType 
 	get(char **output, AddrType address);
+
+	AddrType
+	del(AddrType address);
+
 private:
 	// copy, assignment
 	BehaviorDB(BehaviorDB const &cp);
@@ -60,6 +64,9 @@ struct Pool
 	
 	SizeType 
 	get(char **output, AddrType address);
+
+	AddrType
+	del(AddrType address);
 
 	// TODO: error report mechanism
 protected:
@@ -131,26 +138,12 @@ AddrType
 BehaviorDB::put(char const* data, SizeType size)
 {
 
-	/*
-	// Determin which pool to put
-	AddrType pIdx(0);
-	SizeType bound(size+8); // +8 for size value
-	
-	while(bound > (1<<pIdx)<<10)
-		++pIdx;
-	*/
-
 	AddrType pIdx = estimate_pool_index(size+8);
+	
 	if(pIdx > 15){ // exceed capacity
 		return 0;
 	}
-
-	/*
-	if(bound > (1<<15)<<10){ // exceed capacity
-		return 0;
-	}
-	*/
-
+	
 	pIdx = pIdx<<28 | pools_[pIdx].put(data, size);
 	
 	// write access log
@@ -185,17 +178,6 @@ BehaviorDB::append(AddrType address, char const* data, SizeType size)
 		return 0;
 	}
 
-	/*
-	SizeType bound(size+((1<<pIdx)<<10));
-
-	while(bound >  (1<<next_pIdx)<<10 )
-		++next_pIdx;
-	
-	if(bound > (1<<15)<<10){ // exceed capacity
-		return 0;
-	}
-	*/
-
 	rt = pools_[pIdx].append(address, data, size, next_pIdx, &pools_[next_pIdx]);
 
 	// write access log
@@ -219,6 +201,7 @@ BehaviorDB::get(char **output, AddrType address)
 	}
 
 	SizeType rt = pools_[address>>28].get(output, address);
+	
 	// write access log
 	accLog_->unsetf(ios::hex);
 	*accLog_<<"[get   ] data_size(B): "<<
@@ -227,6 +210,26 @@ BehaviorDB::get(char **output, AddrType address)
 		hex<<setw(8)<<setfill('0')<<address<<
 		endl;
 	return rt;
+}
+
+AddrType
+BehaviorDB::del(AddrType address)
+{
+	// check address roughly
+	if(address>>28 > 15){
+		return 0;
+	}
+
+	AddrType rt = pools_[address>>28].del(address);
+
+	// write access log
+	accLog_->unsetf(ios::hex);
+	*accLog_<<"[del   ] data_size(B): "<<
+		setfill(' ')<<setw(12)<<"unknown"<<
+		" address: "<<
+		hex<<setw(8)<<setfill('0')<<address<<
+		endl;
+
 }
 
 
@@ -279,6 +282,18 @@ Pool::create_chunk_file(SizeType chunk_size)
 		}
 		wrtLog_<<unitbuf;
 	}
+
+	cvt.clear();
+	cvt.str("");
+	cvt<<"transcations/"
+		<<setw(4)<<setfill('0')<<hex
+		<< (chunk_size_>>10)
+		<<".trs";
+
+	idPool_.replay_transcation(cvt.str().c_str());
+
+	idPool_.init_transcation(cvt.str().c_str());
+
 	return;
 }
 
@@ -424,6 +439,18 @@ Pool::get(char **output, AddrType address)
 	
 	return size;
 
+}
+
+AddrType
+Pool::del(AddrType address)
+{
+	idPool_.Release(address&0x0fffffff);
+
+	// write log
+	wrtLog_<<"[del    ] off(KB): "<<setw(8)<<setfill('0')<<(address&0xfffffff)<<
+		" tellp(B): "<<setw(12)<<file_.tellp()<<endl;
+
+	return address;
 }
 
 AddrType

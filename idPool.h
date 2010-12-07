@@ -4,6 +4,8 @@
 #include <deque>
 #include <stdexcept>
 #include <limits>
+#include <cstdlib>
+#include <cstdio>
 
 template<typename IDType>
 class IDPool
@@ -17,12 +19,16 @@ public:
 	{}
 	
 	IDPool(IDType begin_val, 
-	IDType end_val = std::numeric_limits<IDType>::max() )
+		IDType end_val = std::numeric_limits<IDType>::max() )
 	: 
 	beg_(begin_val), 
 	cur_(begin_val), 
 	end_(end_val)
 	{}
+
+
+	~IDPool()
+	{ if(file_) fclose(file_); }
 	
 	bool
 	isAcquired(IDType const& id) const
@@ -42,8 +48,10 @@ public:
 		if(!q_.empty()){
 			IDType tmp(q_.back());
 			q_.pop_back();
+			fprintf(file_, "+%u\n", tmp);
 			return tmp;
 		}
+		fprintf(file_, "+%u\n", cur_);
 		return cur_++;
 	}
 	
@@ -53,12 +61,14 @@ public:
 		if(!q_.empty()){
 			IDType tmp(q_.back());
 			q_.pop_back();
+			fprintf(file_, "+%u\n", tmp);
 			return tmp;
 		}
 
 		if(cur_+ 1 == end_)
 			throw std::overflow_error("IDPool: ID overflowed");
 
+		fprintf(file_, "+%u\n", cur_);
 		return cur_++;
 	
 	}
@@ -68,6 +78,7 @@ public:
 	{
 		if(id < beg_ && id >= cur_)
 			return;
+		fprintf(file_, "-%u\n", id);
 		if(cur_ == id + 1){
 			--cur_;
 			return;
@@ -81,6 +92,7 @@ public:
 	{
 		if(id < beg_ || id >= cur_)
 			throw std::out_of_range("IDPool: Range error");
+		fprintf(file_, "-%u\n", id);
 		if(cur_ == id + 1){
 			--cur_;
 			return;
@@ -95,14 +107,56 @@ public:
 	avail() const
 	{ return (cur_ + 1 != end_ || q_.empty()); }
 
+
+	void replay_transcation(char const* transcation_file)
+	{
+		FILE *tfile = fopen(transcation_file, "r+");
+		
+		if(0 == tfile)
+			return;
+
+		char line[21] = {0};		
+		IDType id;
+		while(fgets(line, 20, tfile)){
+			line[strlen(line)-1] = 0;
+			id = strtoul(&line[1], 0, 10);
+			if('+' == line[0]){
+				cur_ = id+1;
+			}else if('-' == line[0]){
+				Release(id);
+			}
+		}
+
+		fclose(tfile);
+	}
+	
+	void init_transcation(char const* transcation_file) throw(std::runtime_error)
+	{
+		file_ = fopen(transcation_file, "a");
+		if(0 == file_){
+			fprintf(stderr, "Fail to open %s\n", transcation_file);
+			throw std::runtime_error("Fail to open transcation file");
+		}
+
+		if(0 != setvbuf(file_, (char*)0, _IONBF, 0)){
+			fprintf(stderr, "Fail to set zero buffer on %s\n", transcation_file);
+			throw std::runtime_error("Fail to set zero buffer on transcation_file");
+		}
+
+	}
+
 private:
+
 	IDPool(IDPool const &cp);
 	IDPool& operator=(IDPool const &cp);
 
 	IDType const beg_, end_;
 	IDType cur_;
 	std::deque<IDType> q_;
+	FILE* file_;
+
 };
+
 
 #endif
 
