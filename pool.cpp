@@ -78,6 +78,13 @@ protected:
 	migrate(std::fstream &src_file, SizeType orig_size, 
 		char const *data, SizeType size); 
 
+	void
+	write_log(char const *operation, 
+		AddrType const* address,
+		AddrType tell,
+		SizeType size = 0,
+		char const *desc = 0);
+
 private:
 	
 	SizeType chunk_size_;
@@ -312,8 +319,10 @@ Pool::sizeOf(AddrType address)
 	file_.seekg(off * chunk_size_, ios::beg);
 	file_.read(size_val, 8);
 	
-	if(file_.bad())
+	if(file_.bad() || file_.fail()){
+		write_log("sizeOf", &off, file_.tellg(), 0, "Read size failure");
 		return 0;
+	}
 
 	while('0' == *size_val)
 		++size_val;
@@ -321,12 +330,34 @@ Pool::sizeOf(AddrType address)
 	return (strtoul(size_val, 0, 10));
 }
 
+void
+Pool::write_log(char const *operation, 
+		AddrType const* address,
+		AddrType tell,
+		SizeType size,
+		char const *desc)
+{
+	wrtLog_<<"["<<setw(10)<<setfill(' ')<<operation<<"]";
+	
+	if(address)
+		wrtLog_<<" address: "<<setw(8)<<setfill('0')<<(*address&0x0fffffff);
+	
+	wrtLog_<<" tell(B): "<<setw(10)<<tell;
+
+	if(size)
+		wrtLog_<<" size(B): "<<setw(8)<<size;
+
+	wrtLog_<<" "<<desc<<endl;
+}
+
+
 AddrType
 Pool::put(char const* data, SizeType size)
 {
 	// TODO: Partial buffering for big chunk
 
 	if(!idPool_.avail()){
+		write_log("putErr", 0, file_.tellp(), size, "IDPool overflowed");
 		return 0; // temp used
 	}
 	
@@ -342,14 +373,14 @@ Pool::put(char const* data, SizeType size)
 	file_.write(data, (size));
 	
 	if(!file_){
-		return 0;	
+		idPool_.Release(off);
+		write_log("putErr", &off, file_.tellp(), size, "Write data failure");
+		// TODO error report mech
+		return 0;
 	}
 	
 	// write log
-	wrtLog_<<"[put    ] off(KB): "<<setw(8)<<setfill('0')<<off<<
-		" tellp(B): "<<setw(12)<<file_.tellp()<<
-		" write(B): "<<setw(8)<<size<<endl;
-
+	write_log("put", &off, file_.tellp(), size);
 	
 	return off;
 }
@@ -365,12 +396,18 @@ Pool::append(AddrType address, char const* data, SizeType size,
 
 	SizeType used_size = sizeOf(address);
 	
+	if(used_size == 0){ // TODO: use errono check when it is available
+		return 0;
+	}
+
 	if(used_size + size > chunk_size_){ // needto migration
 		if(0 == next_pool){ // no pool for migration
+			write_log("appErr", &address, file_.tellg(), used_size + size, "Exceed supported chunk size");
 			return 0;	
 		}
+
 		AddrType rt = next_pool_idx<<28 | next_pool->migrate(file_, used_size, data, size);
-		// if no error happen in migration
+		// TODO: if no error happen in migration
 		idPool_.Release(address&0x0fffffff);
 		return rt;
 	}
@@ -388,14 +425,12 @@ Pool::append(AddrType address, char const* data, SizeType size,
 	file_.write(data, size);
 
 	if(!file_){ // write failed
+		write_log("appErr", &address, file_.tellp(), size, "Write data failure");
 		return 0;
 	}
 
 	// write log
-	wrtLog_<<"[append ] off(KB): "<<setw(8)<<setfill('0')<<(address & 0x0fffffff)<<
-		" tellp(B): "<<setw(12)<<file_.tellp()<<
-		" write(B): "<<setw(8)<<(used_size + size)<<endl;
-
+	write_log("append", &address, file_.tellp(), used_size + size);
 
 	return address;		
 }
@@ -415,7 +450,7 @@ Pool::get(char **output, AddrType address)
 	
 	SizeType size(sizeOf(address));
 	
-	if(size == 0){ // sizeOf failure
+	if(size == 0){ // TODO: sizeOf failure
 		return 0;	
 	}
 
@@ -428,14 +463,12 @@ Pool::get(char **output, AddrType address)
 	if(!file_.gcount()){ // read failure
 		delete [] *output;
 		*output = 0;
+		write_log("getErr", &address, file_.tellg(), size, "Read data failure");
 		return 0;
 	}
 	
 	// write log
-	wrtLog_<<"[get    ] off(KB): "<<setw(8)<<setfill('0')<<(address&0xfffffff)<<
-		" tellp(B): "<<setw(12)<<file_.tellp()<<
-		" read(B): "<<setw(8)<<size<<endl;
-	
+	write_log("get", &address, file_.tellg(), size);
 	
 	return size;
 
@@ -447,8 +480,7 @@ Pool::del(AddrType address)
 	idPool_.Release(address&0x0fffffff);
 
 	// write log
-	wrtLog_<<"[del    ] off(KB): "<<setw(8)<<setfill('0')<<(address&0xfffffff)<<
-		" tellp(B): "<<setw(12)<<file_.tellp()<<endl;
+	write_log("del", &address, file_.tellg());
 
 	return address;
 }
@@ -464,6 +496,7 @@ Pool::migrate(std::fstream &src_file, SizeType orig_size,
 	SizeType new_size = orig_size + size;
 
 	if(!idPool_.avail()){
+		write_log("migErr", 0, file_.tellp(), size, "IDPool overflowed");
 		return 0; // temp used
 	}
 	
@@ -486,12 +519,15 @@ Pool::migrate(std::fstream &src_file, SizeType orig_size,
 			src_file.read(buf, toRead);
 
 		if(!src_file.gcount()){ // read failure
+			write_log("migErr", &off, src_file.tellg(), orig_size, "Read original data failure");
 			return 0;
 		}
 		
 		toRead -= src_file.gcount();
 		file_.write(buf, src_file.gcount());
+
 		if(!file_){ // write failure
+			write_log("migErr", &off, file_.tellp(), orig_size, "Write original data failure");
 			return 0;
 		}
 	}
@@ -499,15 +535,13 @@ Pool::migrate(std::fstream &src_file, SizeType orig_size,
 	file_.write(data, size);
 	
 	if(!file_){ // write failure
+		write_log("migErr", &off, file_.tellp(), size, "Append new data failure");
 		return 0;
 	}
 	
 	// write log
-	wrtLog_<<"[migrate] off(KB): "<<setw(8)<<setfill('0')<<off<<
-		" tellp(B): "<<setw(12)<<file_.tellp()<<
-		" migrate(B): "<<setw(8)<<orig_size<<
-		" append(B): "<<size<<endl;
-
+	write_log("migrate", &off, file_.tellp(), new_size);
+	
 	return off;
 }
 
