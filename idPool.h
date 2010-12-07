@@ -121,9 +121,15 @@ public:
 			line[strlen(line)-1] = 0;
 			id = strtoul(&line[1], 0, 10);
 			if('+' == line[0]){
-				cur_ = id+1;
+				if(!q_.empty())
+					q_.pop_back();
+				else
+					cur_ = id+1;
 			}else if('-' == line[0]){
-				Release(id);
+				if(id == cur_ -1)
+					cur_--;
+				else
+					q_.push_back(id);
 			}
 		}
 
