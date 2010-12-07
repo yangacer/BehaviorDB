@@ -80,6 +80,20 @@ private:
 	
 };
 
+// ---------------- Misc Functions --------------
+
+inline AddrType 
+estimate_pool_index(SizeType size)
+{
+	// Determin which pool to put
+	AddrType pIdx(0);
+	SizeType bound(size); // +8 for size value
+	
+	while(bound > (1<<pIdx)<<10)
+		++pIdx;
+	
+	return pIdx;
+}
 
 // ------------- BehaviorDB impl -----------------
 
@@ -117,16 +131,25 @@ AddrType
 BehaviorDB::put(char const* data, SizeType size)
 {
 
+	/*
 	// Determin which pool to put
 	AddrType pIdx(0);
 	SizeType bound(size+8); // +8 for size value
 	
 	while(bound > (1<<pIdx)<<10)
 		++pIdx;
+	*/
 
+	AddrType pIdx = estimate_pool_index(size+8);
+	if(pIdx > 15){ // exceed capacity
+		return 0;
+	}
+
+	/*
 	if(bound > (1<<15)<<10){ // exceed capacity
 		return 0;
 	}
+	*/
 
 	pIdx = pIdx<<28 | pools_[pIdx].put(data, size);
 	
@@ -156,6 +179,13 @@ BehaviorDB::append(AddrType address, char const* data, SizeType size)
 	// Estimate next pool ----------------
 	// ! No preservation space for size value since
 	// it had been counted as part of existed data
+	next_pIdx = estimate_pool_index(size+((1<<pIdx)<<10));
+
+	if(pIdx > 15){ //exceed capacity
+		return 0;
+	}
+
+	/*
 	SizeType bound(size+((1<<pIdx)<<10));
 
 	while(bound >  (1<<next_pIdx)<<10 )
@@ -164,6 +194,7 @@ BehaviorDB::append(AddrType address, char const* data, SizeType size)
 	if(bound > (1<<15)<<10){ // exceed capacity
 		return 0;
 	}
+	*/
 
 	rt = pools_[pIdx].append(address, data, size, next_pIdx, &pools_[next_pIdx]);
 
