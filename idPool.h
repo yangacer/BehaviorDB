@@ -6,6 +6,7 @@
 #include <limits>
 #include <cstdlib>
 #include <cstdio>
+#include <cerrno>
 
 template<typename IDType>
 class IDPool
@@ -140,12 +141,12 @@ public:
 	{
 		file_ = fopen(transcation_file, "a");
 		if(0 == file_){
-			fprintf(stderr, "Fail to open %s\n", transcation_file);
+			fprintf(stderr, "Fail to open %s;system(%s)\n", transcation_file, strerror(errno));
 			throw std::runtime_error("Fail to open transcation file");
 		}
 
 		if(0 != setvbuf(file_, (char*)0, _IONBF, 0)){
-			fprintf(stderr, "Fail to set zero buffer on %s\n", transcation_file);
+			fprintf(stderr, "Fail to set zero buffer on %s;system(%s)\n", transcation_file, strerror(errno));
 			throw std::runtime_error("Fail to set zero buffer on transcation_file");
 		}
 

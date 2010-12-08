@@ -1,4 +1,12 @@
 #include <iosfwd>
+#include <cerrno>
+
+enum ERRORNUMBER
+{
+	ADDRESS_OVERFLOW = 1,
+	SYSTEM_ERROR = 2,
+	DATA_TOO_BIG = 3,
+};
 
 typedef unsigned int AddrType;
 typedef unsigned int SizeType;
@@ -23,13 +31,14 @@ struct BehaviorDB
 	AddrType
 	del(AddrType address);
 
+	int error_num;
 private:
 	// copy, assignment
 	BehaviorDB(BehaviorDB const &cp);
 	BehaviorDB& operator = (BehaviorDB const &cp);
 
 	Pool* pools_;
-	std::ofstream *accLog_;
+	std::ofstream *accLog_, *errLog_;
 };
 
 // header ends
@@ -44,36 +53,90 @@ private:
 
 #include <iostream>
 
+/// Pool - A Chunk Manager
 struct Pool
 {
 	Pool();
 	~Pool();
 
+	/** Create chunk file
+	 *  @param size Chunk size of this pool.
+	 *  @errno none.
+	 *  @remark Any failure happend in this method causes
+	 *  system termination.
+	 */
 	void 
 	create_chunk_file(SizeType size);
 	
+	/** Get chunk size
+	 *  @return Chunk size of this pool.
+	 *  @errno None.
+	 */
 	SizeType 
 	chunk_size() const;
 
+	/** Put data to some chunk
+	 *  @param data Data to be put into this pool.
+	 *  @param size Size of the data.
+	 *  @return Address for accesing data just put.
+	 *  @errno SYSTEM_ERROR, ADDRESS_OVERFLOW.
+	 */
 	AddrType 
 	put(char const* data, SizeType size);
 	
+	/** Append data to a chunk
+	 *  @param address Indicate which chunk to be appended.
+	 *  @param data Data to be appended.
+	 *  @param size Size of the data.
+	 *  @param next_pool_idx Next pool index estimated by BehaviorDB.
+	 *  @param next_pool Pointer to next pool refered by next_pool_idx.
+	 *  @return Address for accessing the chunk that stores concatenated data.
+	 *  @errno SYSTEM_ERROR, ADDRESS_OVERFLOW, DATA_TOO_BIG.
+	 */
 	AddrType 
 	append(AddrType address, char const* data, SizeType size, 
 		AddrType next_pool_idx, Pool* next_pool);
 	
+	/** Get chunk
+	 *  @param output Output buffer for placing retrieved data.
+	 *  @param address Indicate which chunk to be retrieved.
+	 *  @return Size of the output buffer.
+	 *  @errno SYSTEM_ERROR.
+	 */
 	SizeType 
 	get(char **output, AddrType address);
-
+	
+	/** Delete chunk
+	 *  @param address Address of chunk to be deleted.
+	 *  @return Address of chunk just deleted.
+	 *  @errno None;
+	 */
 	AddrType
 	del(AddrType address);
 
-	// TODO: error report mechanism
+	/** Error number.
+	 *  Not zero when any applicaton or system error happened.
+	 */
+	int error_num;
+
 protected:
 	
+	/** Get size of data stored in a chunk
+	 *  @param address Indicate which chunk.
+	 *  @return Size of data.
+	 *  @errno SYSTEM_ERROR
+	 */
 	SizeType
 	sizeOf(AddrType address);
-
+	
+	/** Move data from one chunk to another pool
+	 *  @param src_file File stream of another pool which had seeked to source data.
+	 *  @param orig_size Size of original data.
+	 *  @param data Data to be appended to the original data.
+	 *  @param size Size of appended data.
+	 *  @return Address of the chunk that stores concatenated data.
+	 *  @errno SYSTEM_ERROR, ADDRESS_OVERFLOW
+	 */
 	AddrType
 	migrate(std::fstream &src_file, SizeType orig_size, 
 		char const *data, SizeType size); 
@@ -109,7 +172,26 @@ estimate_pool_index(SizeType size)
 	return pIdx;
 }
 
+struct error_num_to_str
+{
+	char const *operator()(int error_num)
+	{
+		return buf[error_num];
+	}
+private:
+	static char buf[4][40];
+};
+
+char error_num_to_str::buf[4][40] = {
+	"UNKNOWN",
+	"Address Overflow",
+	"System Error",
+	"Data too big"
+};
+
 // ------------- BehaviorDB impl -----------------
+
+error_num_to_str ETOS;
 
 using std::setw;
 using std::hex;
@@ -118,7 +200,7 @@ using std::endl;
 using std::ios;
 
 BehaviorDB::BehaviorDB()
-: pools_(new Pool[16]), accLog_(new std::ofstream)
+: error_num(0), pools_(new Pool[16]), accLog_(new std::ofstream), errLog_(new std::ofstream)
 {
 	using std::ios;
 
@@ -130,12 +212,26 @@ BehaviorDB::BehaviorDB()
 	accLog_->open("access.log", ios::out | ios::app);
 	if(!accLog_->is_open()){
 		accLog_->open("access.log", ios::out | ios::trunc);
-		assert(true == accLog_->is_open());
+		if(!accLog_->is_open()){
+			fprintf(stderr, "Open access.log failed; system msg - ");
+			fprintf(stderr, strerror(errno));
+		}
+	}
+	
+	// open error log
+	errLog_->open("error.log", ios::out | ios::app);
+	if(!errLog_->is_open()){
+		errLog_->open("error.log", ios::out | ios::trunc);
+		if(!errLog_->is_open()){
+			fprintf(stderr, "Open error.log failed; system msg - ");
+			fprintf(stderr, strerror(errno));
+		}
 	}
 }
 
 BehaviorDB::~BehaviorDB()
 {
+	errLog_->close();
 	accLog_->close();
 	delete accLog_;
 	delete [] pools_;
@@ -148,11 +244,24 @@ BehaviorDB::put(char const* data, SizeType size)
 	AddrType pIdx = estimate_pool_index(size+8);
 	
 	if(pIdx > 15){ // exceed capacity
-		return 0;
+		error_num = DATA_TOO_BIG;
+		*errLog_<<"[error]"<<ETOS(error_num)<<size<<endl;
+		return -1;
 	}
 	
+	AddrType rt = pools_[pIdx].put(data, size);
+	
+	error_num = pools_[pIdx].error_num;
+
+	if(rt == -1 && 0 != error_num){
+		*errLog_<<"[error]"<<ETOS(error_num)<<endl;
+		return -1;
+	}
+
 	pIdx = pIdx<<28 | pools_[pIdx].put(data, size);
 	
+	// TODO error check
+
 	// write access log
 	accLog_->unsetf(ios::hex);
 	*accLog_<<"[put   ] data_size(B): "<<
@@ -170,7 +279,9 @@ BehaviorDB::append(AddrType address, char const* data, SizeType size)
 {
 	// check address roughly
 	if(address>>28 > 15){
-		return 0;
+		error_num = ADDRESS_OVERFLOW;
+		*errLog_<<"[error]"<<ETOS(error_num)<<": "<<address<<endl;
+		return -1;
 	}
 
 	AddrType pIdx = address >> 28;
@@ -181,11 +292,20 @@ BehaviorDB::append(AddrType address, char const* data, SizeType size)
 	// it had been counted as part of existed data
 	next_pIdx = estimate_pool_index(size+((1<<pIdx)<<10));
 
-	if(pIdx > 15){ //exceed capacity
-		return 0;
+	if(next_pIdx > 15)
+		next_pIdx = estimate_pool_index(size);
+
+	if(next_pIdx > 15){
+		error_num = DATA_TOO_BIG;
+		*errLog_<<"[error]"<<ETOS(error_num)<<": "<<size<<endl;
+		return -1;
 	}
 
 	rt = pools_[pIdx].append(address, data, size, next_pIdx, &pools_[next_pIdx]);
+	
+	if(rt == -1 && pools_[pIdx].error_num != 0){
+		// TODO error check
+	}
 
 	// write access log
 	accLog_->unsetf(ios::hex);
@@ -209,6 +329,8 @@ BehaviorDB::get(char **output, AddrType address)
 
 	SizeType rt = pools_[address>>28].get(output, address);
 	
+	// TODO error check
+
 	// write access log
 	accLog_->unsetf(ios::hex);
 	*accLog_<<"[get   ] data_size(B): "<<
@@ -229,6 +351,8 @@ BehaviorDB::del(AddrType address)
 
 	AddrType rt = pools_[address>>28].del(address);
 
+	// TODO error check
+
 	// write access log
 	accLog_->unsetf(ios::hex);
 	*accLog_<<"[del   ] data_size(B): "<<
@@ -243,7 +367,7 @@ BehaviorDB::del(AddrType address)
 // ------------- Pool implementation ------------
 
 Pool::Pool()
-: idPool_(0, 1<<28)
+: error_num(0), idPool_(0, 1<<28)
 {}
 
 Pool::~Pool()
@@ -274,7 +398,10 @@ Pool::create_chunk_file(SizeType chunk_size)
 		file_.open(name, ios_base::in | ios_base::out);
 		if(!file_.is_open()){
 			file_.open(name, ios_base::in | ios_base::out | ios_base::trunc);
-			assert(file_.is_open() == true);
+			if(!file_.is_open()){
+				fprintf(stderr, strerror(errno));
+				exit(1);
+			}
 		}
 	}
 	
@@ -285,7 +412,10 @@ Pool::create_chunk_file(SizeType chunk_size)
 		wrtLog_.open(name, ios_base::out | ios_base::app);
 		if(!wrtLog_.is_open()){
 			wrtLog_.open(name, ios_base::out | ios_base::trunc);
-			assert(wrtLog_.is_open() == true);
+			if(!file_.is_open()){
+				fprintf(stderr, strerror(errno));
+				exit(1);
+			}
 		}
 		wrtLog_<<unitbuf;
 	}
@@ -320,7 +450,8 @@ Pool::sizeOf(AddrType address)
 	file_.read(size_val, 8);
 	
 	if(file_.bad() || file_.fail()){
-		write_log("sizeOf", &off, file_.tellg(), 0, "Read size failure");
+		write_log("sizeOf", &off, file_.tellg(), 0, strerror(errno));
+		error_num = SYSTEM_ERROR;
 		return 0;
 	}
 
@@ -358,7 +489,8 @@ Pool::put(char const* data, SizeType size)
 
 	if(!idPool_.avail()){
 		write_log("putErr", 0, file_.tellp(), size, "IDPool overflowed");
-		return 0; // temp used
+		error_num = ADDRESS_OVERFLOW;
+		return -1; 
 	}
 	
 	AddrType off = idPool_.Acquire();
@@ -372,11 +504,11 @@ Pool::put(char const* data, SizeType size)
 	file_<<setw(8)<<setfill('0')<<(size);
 	file_.write(data, (size));
 	
-	if(!file_){
+	if(!file_.good()){
 		idPool_.Release(off);
-		write_log("putErr", &off, file_.tellp(), size, "Write data failure");
-		// TODO error report mech
-		return 0;
+		write_log("putErr", &off, file_.tellp(), size, strerror(errno));
+		error_num = SYSTEM_ERROR;
+		return -1;
 	}
 	
 	// write log
@@ -396,18 +528,24 @@ Pool::append(AddrType address, char const* data, SizeType size,
 
 	SizeType used_size = sizeOf(address);
 	
-	if(used_size == 0){ // TODO: use errono check when it is available
-		return 0;
+	if(used_size == 0 && SYSTEM_ERROR == error_num ){
+		return -1;
 	}
 
 	if(used_size + size > chunk_size_){ // needto migration
-		if(0 == next_pool){ // no pool for migration
+		if( used_size + size > next_pool->chunk_size() ){ // no pool for migration
 			write_log("appErr", &address, file_.tellg(), used_size + size, "Exceed supported chunk size");
-			return 0;	
+			error_num = DATA_TOO_BIG;
+			return -1;	
 		}
 
 		AddrType rt = next_pool_idx<<28 | next_pool->migrate(file_, used_size, data, size);
-		// TODO: if no error happen in migration
+
+		if(-1 == rt && nex_pool->error_num != 0){ // migration failed
+			error_num = next_pool->error_num;
+			return rt;
+		}
+
 		idPool_.Release(address&0x0fffffff);
 		return rt;
 	}
@@ -424,9 +562,10 @@ Pool::append(AddrType address, char const* data, SizeType size,
 	file_.seekp(used_size, ios::cur);
 	file_.write(data, size);
 
-	if(!file_){ // write failed
-		write_log("appErr", &address, file_.tellp(), size, "Write data failure");
-		return 0;
+	if(!file_.good()){ // write failed
+		write_log("appErr", &address, file_.tellp(), size, strerror(errno));
+		error_num = SYSTEM_ERROR;
+		return -1;
 	}
 
 	// write log
@@ -450,21 +589,27 @@ Pool::get(char **output, AddrType address)
 	
 	SizeType size(sizeOf(address));
 	
-	if(size == 0){ // TODO: sizeOf failure
-		return 0;	
+	if(size == 0){
+		return -1;	
 	}
 
 	*output = new char[size];
 
-	// assume sizeOf will seek to the data begin.
+	if(0 == *output){ // alocation failure
+		error_num = SYSTEM_ERROR;
+		return -1;
+	}
+
+	// TODO: assume sizeOf will seek to the data begin.
 	// is that dangerous?
 	file_.read(*output, size);
 
 	if(!file_.gcount()){ // read failure
 		delete [] *output;
 		*output = 0;
-		write_log("getErr", &address, file_.tellg(), size, "Read data failure");
-		return 0;
+		write_log("getErr", &address, file_.tellg(), size, strerror(errno));
+		error_num = SYSTEM_ERROR;
+		return -1;
 	}
 	
 	// write log
@@ -497,7 +642,8 @@ Pool::migrate(std::fstream &src_file, SizeType orig_size,
 
 	if(!idPool_.avail()){
 		write_log("migErr", 0, file_.tellp(), size, "IDPool overflowed");
-		return 0; // temp used
+		error_num = ADDRESS_OVERFLOW;
+		return -1;
 	}
 	
 	AddrType off = idPool_.Acquire();
@@ -519,24 +665,27 @@ Pool::migrate(std::fstream &src_file, SizeType orig_size,
 			src_file.read(buf, toRead);
 
 		if(!src_file.gcount()){ // read failure
-			write_log("migErr", &off, src_file.tellg(), orig_size, "Read original data failure");
-			return 0;
+			write_log("migErr", &off, src_file.tellg(), orig_size, strerror(errno));
+			error_num = SYSTEM_ERROR;
+			return -1;
 		}
 		
 		toRead -= src_file.gcount();
 		file_.write(buf, src_file.gcount());
 
 		if(!file_){ // write failure
-			write_log("migErr", &off, file_.tellp(), orig_size, "Write original data failure");
-			return 0;
+			write_log("migErr", &off, file_.tellp(), orig_size, strerror(errno));
+			error_num = SYSTEM_ERROR;
+			return -1;
 		}
 	}
 
 	file_.write(data, size);
 	
 	if(!file_){ // write failure
-		write_log("migErr", &off, file_.tellp(), size, "Append new data failure");
-		return 0;
+		write_log("migErr", &off, file_.tellp(), size, strerror(errno));
+		error_num = SYSTEM_ERROR;
+		return -1;
 	}
 	
 	// write log
