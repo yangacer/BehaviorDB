@@ -106,7 +106,7 @@ public:
 
 	bool 
 	avail() const
-	{ return (cur_ + 1 != end_ || q_.empty()); }
+	{ return ( cur_ + 1 != end_ || !q_.empty() ); }
 
 
 	void replay_transcation(char const* transcation_file)
