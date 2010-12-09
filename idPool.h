@@ -49,10 +49,16 @@ public:
 		if(!q_.empty()){
 			IDType tmp(q_.back());
 			q_.pop_back();
-			fprintf(file_, "+%u\n", tmp);
+			if(0 > fprintf(file_, "+%u\n", tmp) && errno){
+				fprintf(stderr, "idPool: %s\n", strerror(errno));
+				exit(1);
+			}
 			return tmp;
 		}
-		fprintf(file_, "+%u\n", cur_);
+		if(0 > fprintf(file_, "+%u\n", cur_) && errno){
+			fprintf(stderr, "idPool: %s\n", strerror(errno));
+			exit(1);
+		}
 		return cur_++;
 	}
 	
@@ -62,14 +68,20 @@ public:
 		if(!q_.empty()){
 			IDType tmp(q_.back());
 			q_.pop_back();
-			fprintf(file_, "+%u\n", tmp);
+			if(0 > fprintf(file_, "+%u\n", tmp) && errno){
+				fprintf(stderr, "idPool: %s\n", strerror(errno));
+				exit(1);
+			}
 			return tmp;
 		}
 
 		if(cur_+ 1 == end_)
 			throw std::overflow_error("IDPool: ID overflowed");
 
-		fprintf(file_, "+%u\n", cur_);
+		if(0 > fprintf(file_, "+%u\n", cur_) && errno){
+			fprintf(stderr, strerror(errno));
+			exit(1);
+		}
 		return cur_++;
 	
 	}
@@ -79,7 +91,12 @@ public:
 	{
 		if(id < beg_ && id >= cur_)
 			return;
-		fprintf(file_, "-%u\n", id);
+		
+		if(0 > fprintf(file_, "-%u\n", id) && errno){
+			fprintf(stderr,"%s\n", strerror(errno));
+			exit(1);
+		}
+
 		if(cur_ == id + 1){
 			--cur_;
 			return;
@@ -93,7 +110,11 @@ public:
 	{
 		if(id < beg_ || id >= cur_)
 			throw std::out_of_range("IDPool: Range error");
-		fprintf(file_, "-%u\n", id);
+		;
+		if(0 > fprintf(file_, "-%u\n", id) && errno){
+			fprintf(stderr, strerror(errno));
+			exit(1);
+		}
 		if(cur_ == id + 1){
 			--cur_;
 			return;
@@ -113,8 +134,10 @@ public:
 	{
 		FILE *tfile = fopen(transcation_file, "r+");
 		
-		if(0 == tfile)
+		if(0 == tfile && EINVAL == errno){ // no transcation files for replaying
+			errno = 0;
 			return;
+		}
 
 		char line[21] = {0};		
 		IDType id;

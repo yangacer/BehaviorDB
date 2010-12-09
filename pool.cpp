@@ -1,59 +1,11 @@
-#include <iosfwd>
+
 #include <cerrno>
-
-enum ERRORNUMBER
-{
-	ADDRESS_OVERFLOW = 1,
-	SYSTEM_ERROR = 2,
-	DATA_TOO_BIG = 4,
-	ALLOC_FAILURE = 8
-};
-
-typedef unsigned int AddrType;
-typedef unsigned int SizeType;
-
-struct Pool;
-
-struct BehaviorDB
-{
-	
-	BehaviorDB();
-	~BehaviorDB();
-
-	AddrType 
-	put(char const* data, SizeType size);
-	
-	AddrType 
-	append(AddrType address, char const* data, SizeType size);
-	
-	SizeType 
-	get(char **output, AddrType address);
-
-	AddrType
-	del(AddrType address);
-
-	int error_num;
-private:
-	// copy, assignment
-	BehaviorDB(BehaviorDB const &cp);
-	BehaviorDB& operator = (BehaviorDB const &cp);
-	
-	void clear_error();
-	bool error_return();
-	void log_access(char const* operation, AddrType address, SizeType size, char const* desc = 0);
-
-	Pool* pools_;
-	std::ofstream *accLog_, *errLog_;
-};
-
-// header ends
-
-// src begin
-
 #include <fstream>
 #include <iomanip>
 #include <sstream>
 #include <cassert>
+
+#include "bdb.h"
 #include "idPool.h"
 
 #include <iostream>
@@ -446,7 +398,7 @@ Pool::create_chunk_file(SizeType chunk_size)
 		if(!file_.is_open()){
 			file_.open(name, ios_base::in | ios_base::out | ios_base::trunc);
 			if(!file_.is_open()){
-				fprintf(stderr, strerror(errno));
+				fprintf(stderr, "Pools initial: %s\n", strerror(errno));
 				exit(1);
 			}
 		}
@@ -460,7 +412,7 @@ Pool::create_chunk_file(SizeType chunk_size)
 		if(!wrtLog_.is_open()){
 			wrtLog_.open(name, ios_base::out | ios_base::trunc);
 			if(!file_.is_open()){
-				fprintf(stderr, strerror(errno));
+				fprintf(stderr, "Pool logs initial: %s\n", strerror(errno));
 				exit(1);
 			}
 		}
@@ -769,21 +721,4 @@ Pool::migrate(std::fstream &src_file, SizeType orig_size,
 	return off;
 }
 
-// test main
-#include <iostream>
-#include <iomanip>
-int main(int argc, char **argv)
-{
-	using namespace std;
 
-	BehaviorDB bdb;
-	AddrType addr1, addr2;
-
-	char two_kb[2048] = "2k_data_tailed_by_null";
-	char ten_kb[10240] = "10k_data_tailed_by_null";
-	
-	addr1 = bdb.put(two_kb, 2048);
-	addr2 = bdb.append(addr1, ten_kb, 10240);
-
-	return 0;	
-}
