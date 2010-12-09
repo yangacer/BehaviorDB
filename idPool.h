@@ -8,6 +8,7 @@
 #include <cstdio>
 #include <cerrno>
 
+
 template<typename IDType>
 class IDPool
 {
@@ -36,7 +37,11 @@ public:
 	{ 
 		if(id >= cur_ || id < beg_)
 			return false;
+		if(q_.empty())
+			return true;
 		// perform search in retired list
+		//if( h_.find(id) )
+		//	return false;
 		if( q_.rend() != find(q_.rbegin(), q_.rend(), id) )
 			return false;
 		return true;
@@ -134,7 +139,7 @@ public:
 	{
 		FILE *tfile = fopen(transcation_file, "r+");
 		
-		if(0 == tfile && EINVAL == errno){ // no transcation files for replaying
+		if(0 == tfile){ // no transcation files for replaying
 			errno = 0;
 			return;
 		}

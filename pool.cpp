@@ -36,7 +36,7 @@ struct Pool
 	 *  @param data Data to be put into this pool.
 	 *  @param size Size of the data.
 	 *  @return Address for accesing data just put.
-	 *  @remark SYSTEM_ERROR, ADDRESS_OVERFLOW.
+	 *  @remark Error Number: SYSTEM_ERROR, ADDRESS_OVERFLOW.
 	 */
 	AddrType 
 	put(char const* data, SizeType size);
@@ -56,17 +56,21 @@ struct Pool
 	
 	/** Get chunk
 	 *  @param output Output buffer for placing retrieved data.
+	 *  @param size Size of output buffer
 	 *  @param address Indicate which chunk to be retrieved.
 	 *  @return Size of the output buffer.
-	 *  @remark Error Number: SYSTEM_ERROR.
+	 *  @remark Error Number: SYSTEM_ERROR, DATA_TOO_BIG.
+	 *  @remark In order to enhance security of library. 
+	 *  Client has to be responsible for ensuring the size of output buffer
+	 *  being large enough.
 	 */
 	SizeType 
-	get(char **output, AddrType address);
+	get(char *output, SizeType const size, AddrType address);
 	
 	/** Delete chunk
 	 *  @param address Address of chunk to be deleted.
 	 *  @return Address of chunk just deleted.
-	 *  @remark Error Number: None;
+	 *  @remark Error Number: None.
 	 */
 	AddrType
 	del(AddrType address);
@@ -108,7 +112,10 @@ protected:
 	void clear_error();
 
 private:
+	Pool(Pool const &cp);
+	Pool& operator=(Pool const &cp);
 	
+
 	SizeType chunk_size_;
 	std::fstream file_;
 	IDPool<AddrType> idPool_;
@@ -117,6 +124,15 @@ private:
 };
 
 // ---------------- Misc Functions --------------
+
+inline SizeType 
+estimate_max_size(AddrType address)
+{
+	SizeType s = address >> 28;
+	if(s > 15)
+		return -1;
+	return 1<<s;
+}
 
 inline AddrType 
 estimate_pool_index(SizeType size)
@@ -127,7 +143,10 @@ estimate_pool_index(SizeType size)
 	
 	while(bound > (1<<pIdx)<<10)
 		++pIdx;
-	
+
+	if(pIdx > 15)
+		return -1;
+
 	return pIdx;
 }
 
@@ -303,7 +322,7 @@ BehaviorDB::append(AddrType address, char const* data, SizeType size)
 }
 
 SizeType
-BehaviorDB::get(char **output, AddrType address)
+BehaviorDB::get(char *output, SizeType const size, AddrType address)
 {
 	clear_error();
 	if(error_return())	return -1;
@@ -318,12 +337,12 @@ BehaviorDB::get(char **output, AddrType address)
 	}
 	
 
-	SizeType rt = pools_[pIdx].get(output, address);
+	SizeType rt = pools_[pIdx].get(output, size, address);
 	
-	if(rt == -1 && pools_[pIdx].error_num){
+	if(rt == -1 || pools_[pIdx].error_num){
 		error_num = pools_[pIdx].error_num;
 		*errLog_<<"[error]"<<ETOS(error_num)<<endl;
-		return -1;
+		return rt;
 	}
 	
 	// write access log
@@ -537,16 +556,19 @@ Pool::append(AddrType address, char const* data, SizeType size,
 	if(error_num)
 		return -1;
 	
-	// TODO: check wheather the address has record
-	// Following code assume size value > 0
+	AddrType off = address & 0x0fffffff;
+	SizeType used_size;
 
-	SizeType used_size = sizeOf(address);
+	if(!idPool_.isAcquired(off))
+		used_size = 0;
+	else
+		used_size = sizeOf(address);
 	
 	if(used_size == -1 && SYSTEM_ERROR == error_num ){
 		return -1;
 	}
 
-	if(used_size + size > chunk_size_){ // needto migration
+	if(used_size + size > chunk_size_){ // need to migration
 		if( used_size + size > next_pool->chunk_size() ){ // no pool for migration
 			write_log("appErr", &address, file_.tellg(), used_size + size, "Exceed supported chunk size");
 			error_num = DATA_TOO_BIG;
@@ -560,7 +582,7 @@ Pool::append(AddrType address, char const* data, SizeType size,
 			return rt;
 		}
 
-		idPool_.Release(address&0x0fffffff);
+		idPool_.Release(off);
 		return rt;
 	}
 	
@@ -589,7 +611,7 @@ Pool::append(AddrType address, char const* data, SizeType size,
 }
 
 SizeType 
-Pool::get(char **output, AddrType address)
+Pool::get(char *output, SizeType const size, AddrType address)
 {
 	using namespace std;
 	
@@ -597,42 +619,32 @@ Pool::get(char **output, AddrType address)
 	if(error_num)
 		return -1;
 	
-	if(*output){
-		delete [] *output;	// !!! segmentation fault when 
-					// *output is not initialized
-		*output = 0;
-	}
-	
 	// TODO: check wheather the address has record
 	// Following code assume size value > 0
 	
-	SizeType size(sizeOf(address));
+	SizeType data_size(sizeOf(address));
 	
-	if(size == -1 && error_num == SYSTEM_ERROR){
+	if(data_size == -1 && error_num == SYSTEM_ERROR){
 		return -1;	
 	}
-
-	*output = new char[size];
-
-	if(0 == *output){ // alocation failure
-		error_num = ALLOC_FAILURE;
-		return -1;
+	
+	if(data_size > size){
+		error_num = DATA_TOO_BIG;
+		return data_size;
 	}
-
+	
 	// TODO: assume sizeOf will seek to the data begin.
 	// is that dangerous?
-	file_.read(*output, size);
+	file_.read(output, data_size);
 
 	if(!file_.gcount()){ // read failure
-		delete [] *output;
-		*output = 0;
-		write_log("getErr", &address, file_.tellg(), size, strerror(errno));
+		write_log("getErr", &address, file_.tellg(), data_size, strerror(errno));
 		error_num = SYSTEM_ERROR;
 		return -1;
 	}
 	
 	// write log
-	write_log("get", &address, file_.tellg(), size);
+	write_log("get", &address, file_.tellg(), data_size);
 	
 	return size;
 
