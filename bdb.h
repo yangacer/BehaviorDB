@@ -1,6 +1,15 @@
 #ifndef _BEHAVIORDB_H
 #define _BEHAVIORDB_H
 
+/** Define BDB_CHUNK_UNIT before including bdb.h can change
+ *  the unit of chunk used in BehaviorDB.
+ *  Default it is 10, means that the minimun chunk size is 
+ *  1K or 1024 bytes.
+ */
+#ifndef BDB_CHUNK_UNIT
+#define BDB_CHUNK_UNIT 10
+#endif
+
 #include <iosfwd>
 
 /** @file bdb.h
@@ -32,6 +41,7 @@ typedef unsigned int SizeType;
 // Forward decl
 struct Pool;
 
+/// @todo TODO: Auto migration with liveness factor (improve put effectness)
 /// BehaviorDB Interface
 struct BehaviorDB
 {
@@ -126,6 +136,10 @@ estimate_pool_index(SizeType size);
  *  BehaviorDB defines several error numbers. Any methods provided by BehaviorDB will store one of 
  *  those error number in BehaviorDB::error_num. Clients should check <strong>both</strong> return 
  *  value of methods and BehaviorDB::error_num.
+ *  
+ *  <strong>Caution</strong>
+ *  Each method clears error number <strong>except the SYSTEM_ERROR</strong> automatically before
+ *  processing request.
  *
  *  Hereby we give some checking examples:
  *
@@ -133,10 +147,10 @@ estimate_pool_index(SizeType size);
  *  \code
  *  BehaviorDB bdb;
  *  char *data = "my data";
- *  SizeType rt = bdb.put(data, strlen(data));
+ *  AddrType rt = bdb.put(data, strlen(data));
  *  if( rt == -1 && bdb.error_num ){
- *	fprintf(stderr, strerror(errno));
- *	if(bdb.error_num == SYSTEM_ERROR){
+ *	 if(bdb.error_num == SYSTEM_ERROR){
+ *		fprintf(stderr, strerror(errno));
  *		exit(1);	// Exit since system error can not be recovered
  *				// without shutdown BehaviorDB
  *	}else{  // true == (bdb.error_num & (ADDRESS_OVERFLOW | DATA_TOO_BIG)))
@@ -146,6 +160,39 @@ estimate_pool_index(SizeType size);
  *	// success put
  *  }
  *  \endcode
- *  
  *
+ *  2. BehaviorDB::append
+ *  \code
+ *  BehaviorDB bdb;
+ *  AddrType r1, r2;
+ *  // Eliminate error detection ...
+ *  r1 = bdb.put("fisrt part", strlen("first part");
+ *  r2 = bdb.append(r1, "second part", strlen("second part"));
+ *  if(r2 == -1 && bdb.error_num){
+ *	if(bdb.error_num == SYSTEM_ERROR){
+ *		// ...
+ *	}else{ 
+ *		// ADDRESS_OVERFLOW or DATA_TOO_BIG
+ *	}
+ *  }
+ *  \endcode
+ *
+ * 3. BehaviorDB::get
+ * \code
+ * // Assue addr is the address points to data we need
+ * BehaviorDB bdb;
+ * // Estimate maximun size of data by address
+ * SizeType est_size = estimate_max_size(addr);
+ * // BehaviorDB requies client pre-allocation 
+ * char *buf = (char*)malloc(est_size * sizeof(char));
+ * SizeType rt = bdb.get(buf, est_size, addr);
+ * if(rt == -1 && bdb.error_num){
+ *	if(bdb.error_num == SYSTEM_ERROR){
+ *
+ *	}else{
+ *		// DATA_TOO_BIG
+ *	}
+ * }
+ * \endcode
  */
+

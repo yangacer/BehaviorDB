@@ -141,7 +141,7 @@ estimate_pool_index(SizeType size)
 	AddrType pIdx(0);
 	SizeType bound(size); // +8 for size value
 	
-	while(bound > (1<<pIdx)<<10)
+	while(bound > (1<<pIdx)<<BDB_CHUNK_UNIT)
 		++pIdx;
 
 	if(pIdx > 15)
@@ -184,7 +184,7 @@ BehaviorDB::BehaviorDB()
 	using std::ios;
 
 	for(SizeType i=0;i<16;++i){
-		pools_[i].create_chunk_file((1<<i)<<10);	
+		pools_[i].create_chunk_file((1<<i)<<BDB_CHUNK_UNIT);	
 	}
 
 	// open access log
@@ -295,7 +295,7 @@ BehaviorDB::append(AddrType address, char const* data, SizeType size)
 	// Estimate next pool ----------------
 	// ! No preservation space for size value since
 	// it had been counted as part of existed data
-	next_pIdx = estimate_pool_index(size+((1<<pIdx)<<10));
+	next_pIdx = estimate_pool_index(size+((1<<pIdx)<<BDB_CHUNK_UNIT));
 
 	if(next_pIdx > 15)
 		next_pIdx = estimate_pool_index(size);
@@ -408,26 +408,28 @@ Pool::create_chunk_file(SizeType chunk_size)
 	
 	cvt<<"pools/"
 		<<setw(4)<<setfill('0')<<hex
-		<< (chunk_size_>>10)
+		<< (chunk_size_>>BDB_CHUNK_UNIT)
 		<< ".pool";
 	{
 		// create chunk file
 		char const* name(cvt.str().c_str());
-		file_.open(name, ios_base::in | ios_base::out);
+		file_.open(name, ios::in | ios::out | ios::ate);
 		if(!file_.is_open()){
-			file_.open(name, ios_base::in | ios_base::out | ios_base::trunc);
+			file_.open(name, ios::in | ios::out | ios::trunc);
 			if(!file_.is_open()){
 				fprintf(stderr, "Pools initial: %s\n", strerror(errno));
 				exit(1);
 			}
 		}
 	}
-	
+
+	// file_<<unitbuf;
+
 	cvt<<".log";
 	{
 		char const *name(cvt.str().c_str());
 		// init write log
-		wrtLog_.open(name, ios_base::out | ios_base::app);
+		wrtLog_.open(name, ios::out | ios::app);
 		if(!wrtLog_.is_open()){
 			wrtLog_.open(name, ios_base::out | ios_base::trunc);
 			if(!file_.is_open()){
@@ -442,7 +444,7 @@ Pool::create_chunk_file(SizeType chunk_size)
 	cvt.str("");
 	cvt<<"transcations/"
 		<<setw(4)<<setfill('0')<<hex
-		<< (chunk_size_>>10)
+		<< (chunk_size_>>BDB_CHUNK_UNIT)
 		<<".trs";
 
 	idPool_.replay_transcation(cvt.str().c_str());
@@ -472,6 +474,7 @@ Pool::sizeOf(AddrType address)
 		error_num = SYSTEM_ERROR;
 		return -1;
 	}
+	
 
 	while('0' == *size_val)
 		++size_val;
@@ -575,6 +578,7 @@ Pool::append(AddrType address, char const* data, SizeType size,
 			return -1;	
 		}
 
+		
 		AddrType rt = next_pool_idx<<28 | next_pool->migrate(file_, used_size, data, size);
 
 		if(-1 == rt && next_pool->error_num != 0){ // migration failed
@@ -619,15 +623,21 @@ Pool::get(char *output, SizeType const size, AddrType address)
 	if(error_num)
 		return -1;
 	
+	if(!idPool_.isAcquired(0x0fffffff & address)){
+		return 0;
+	}
 	// TODO: check wheather the address has record
 	// Following code assume size value > 0
 	
 	SizeType data_size(sizeOf(address));
 	
+
 	if(data_size == -1 && error_num == SYSTEM_ERROR){
 		return -1;	
 	}
 	
+	
+
 	if(data_size > size){
 		error_num = DATA_TOO_BIG;
 		return data_size;
@@ -637,12 +647,11 @@ Pool::get(char *output, SizeType const size, AddrType address)
 	// is that dangerous?
 	file_.read(output, data_size);
 
-	if(!file_.gcount()){ // read failure
+	if(data_size != file_.gcount()){ // read failure
 		write_log("getErr", &address, file_.tellg(), data_size, strerror(errno));
 		error_num = SYSTEM_ERROR;
 		return -1;
 	}
-	
 	// write log
 	write_log("get", &address, file_.tellg(), data_size);
 	
@@ -692,9 +701,16 @@ Pool::migrate(std::fstream &src_file, SizeType orig_size,
 	file_.seekp(off * chunk_size_, ios::beg);
 	
 	
+	// erase old size value
+	src_file.clear();
+	src_file.seekp(-8, ios::cur);
+	src_file.write("00000000", 8);
+	src_file.tellg(); // without this line, read will fail(why?)
+	
+	
 	// write 8 bytes size value ahead
 	file_<<setw(8)<<setfill('0')<<new_size;
-	
+
 	SizeType toRead(orig_size);
 	char buf[4096];
 	while(toRead){
@@ -732,5 +748,4 @@ Pool::migrate(std::fstream &src_file, SizeType orig_size,
 	
 	return off;
 }
-
 

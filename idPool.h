@@ -9,6 +9,9 @@
 #include <cerrno>
 
 
+/// @todo TODO: Replace IDPool data structure with bitset.
+/// @todo TODO: Transcation file compression.
+
 template<typename IDType>
 class IDPool
 {
@@ -40,8 +43,6 @@ public:
 		if(q_.empty())
 			return true;
 		// perform search in retired list
-		//if( h_.find(id) )
-		//	return false;
 		if( q_.rend() != find(q_.rbegin(), q_.rend(), id) )
 			return false;
 		return true;
