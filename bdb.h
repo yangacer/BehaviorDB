@@ -143,7 +143,7 @@ estimate_pool_index(SizeType size);
  *
  *  \section transcation_sec Transcation
  *
- *  BehaviorDB manage address by a ID pool that write transcation logs to disk in every methods
+ *  BehaviorDB manages addresses by a ID pool that write transcation logs to disk in every methods
  *  BehaviorDB provides. Notice when the ID pool fails to write log, system will be terminated
  *  immediately.
  *
