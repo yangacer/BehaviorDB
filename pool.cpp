@@ -129,7 +129,7 @@ private:
 	std::fstream file_;
 	IDPool<AddrType> idPool_;
 	std::ofstream wrtLog_;
-	
+	char file_buf_[1024*1024];
 };
 
 // ---------------- Misc Functions --------------
@@ -438,6 +438,7 @@ Pool::create_chunk_file(SizeType chunk_size)
 				exit(1);
 			}
 		}
+		file_.rdbuf()->pubsetbuf(file_buf_, 1024*1024);
 	}
 
 	
