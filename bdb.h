@@ -10,6 +10,9 @@
 #define BDB_CHUNK_UNIT 10
 #endif
 
+/// @todo TODO: Configuration object for BehaviorDB
+/// @todo TODO: Pure C wrapper
+
 #include <iosfwd>
 
 /** @file bdb.h
@@ -90,6 +93,13 @@ struct BehaviorDB
 	AddrType
 	del(AddrType address);
 
+	/** Enable/disable pool logs
+	 *  @param do_log
+	 *  @return Reference to *this
+	 */
+	BehaviorDB& 
+	set_pool_log(bool do_log);
+
 	int error_num;
 private:
 	// copy, assignment
@@ -131,13 +141,19 @@ estimate_pool_index(SizeType size);
  *
  *  To be added.
  *
+ *  \section transcation_sec Transcation
+ *
+ *  BehaviorDB manage address by a ID pool that write transcation logs to disk in every methods
+ *  BehaviorDB provides. Notice when the ID pool fails to write log, system will be terminated
+ *  immediately.
+ *
  *  \section error_handle_sec Error Handling
  *
  *  BehaviorDB defines several error numbers. Any methods provided by BehaviorDB will store one of 
  *  those error number in BehaviorDB::error_num. Clients should check <strong>both</strong> return 
  *  value of methods and BehaviorDB::error_num.
- *  
- *  <strong>Caution</strong>
+ *
+ *  <strong>Caution</strong><br/>
  *  Each method clears error number <strong>except the SYSTEM_ERROR</strong> automatically before
  *  processing request.
  *
@@ -194,5 +210,9 @@ estimate_pool_index(SizeType size);
  *	}
  * }
  * \endcode
+ * 4. BehaviorDB::del<br/>
+ * This method does not set any error number but may due to system termination
+ * once underlying transcation system crash.
+ * see @ref transcation_sec for more information.
  */
 

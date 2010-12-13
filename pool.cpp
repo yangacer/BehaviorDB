@@ -18,6 +18,7 @@ struct Pool
 
 	/** Create chunk file
 	 *  @param size Chunk size of this pool.
+	 *  @param doLog Enable/disable log of pool.
 	 *  @remark Error Number: none.
 	 *  @remark Any failure happend in this method causes
 	 *  system termination.
@@ -25,6 +26,13 @@ struct Pool
 	void 
 	create_chunk_file(SizeType size);
 	
+	/** Enable/disable logging of pool
+	 *  @param do_log
+	 *  @remark BehaviorDB enable pool log by default.
+	 */
+	void
+	log(bool do_log);
+
 	/** Get chunk size
 	 *  @return Chunk size of this pool.
 	 *  @error None.
@@ -117,6 +125,7 @@ private:
 	
 
 	SizeType chunk_size_;
+	bool doLog_;
 	std::fstream file_;
 	IDPool<AddrType> idPool_;
 	std::ofstream wrtLog_;
@@ -381,11 +390,19 @@ BehaviorDB::del(AddrType address)
 
 }
 
+BehaviorDB&
+BehaviorDB::set_pool_log(bool do_log)
+{
+	for(int i=0;i<16;++i)
+		pools_[i].log(do_log);
+
+	return *this;	
+}
 
 // ------------- Pool implementation ------------
 
 Pool::Pool()
-: error_num(0), idPool_(0, 1<<28)
+: error_num(0), doLog_(true), idPool_(0, 1<<28)
 {}
 
 Pool::~Pool()
@@ -423,8 +440,7 @@ Pool::create_chunk_file(SizeType chunk_size)
 		}
 	}
 
-	// file_<<unitbuf;
-
+	
 	cvt<<".log";
 	{
 		char const *name(cvt.str().c_str());
@@ -453,6 +469,10 @@ Pool::create_chunk_file(SizeType chunk_size)
 
 	return;
 }
+
+void
+Pool::log(bool do_log)
+{ doLog_ = do_log; }
 
 SizeType
 Pool::chunk_size() const
@@ -489,6 +509,8 @@ Pool::write_log(char const *operation,
 		SizeType size,
 		char const *desc)
 {
+	if(!doLog_) return;
+
 	wrtLog_<<"["<<setw(10)<<setfill(' ')<<operation<<"]";
 	
 	if(address)

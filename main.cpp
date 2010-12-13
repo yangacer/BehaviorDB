@@ -16,7 +16,7 @@ int main(int argc, char **argv)
 	char ten_kb[10240] = "10k_data_tailed_by_null";
 	char merge[10240+2048];
 
-
+	bdb.set_pool_log(false);
 	addr1 = bdb.put(two_kb, 2048);
 	addr2 = bdb.append(addr1, ten_kb, 10240);
 	
