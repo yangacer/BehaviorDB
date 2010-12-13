@@ -135,7 +135,8 @@ estimate_pool_index(SizeType size);
 /*! \mainpage Menual Page
  *  \section intro_sec Introduction
  *  
- *  To be added.
+ *  This document is for internal development currently. You won't find any download link here.
+ *  If anyone is interest in this project, please contact yangacer__at__gmail.
  *
  *  \section install_sec Installation
  *
