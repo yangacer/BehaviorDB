@@ -148,9 +148,12 @@ estimate_pool_index(SizeType size)
 {
 	// Determin which pool to put
 	AddrType pIdx(0);
-	SizeType bound(size); // +8 for size value
+	SizeType bound(size>>BDB_CHUNK_UNIT);
 	
-	while(bound > (1<<pIdx)<<BDB_CHUNK_UNIT)
+	while(bound > (1<<pIdx))
+		++pIdx;
+
+	if(size > (1<<pIdx)<<BDB_CHUNK_UNIT)
 		++pIdx;
 
 	if(pIdx > 15)
