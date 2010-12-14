@@ -44,12 +44,25 @@ typedef unsigned int SizeType;
 // Forward decl
 struct Pool;
 
+/** Configuration object for BehaviorDB
+ */
+struct Config
+{
+	bool pool_log;
+	SizeType chunk_unit;
+	
+	/** Setup default configuration
+	 */
+	Config():pool_log(true), chunk_unit(10){}
+};
+
 /// @todo TODO: Auto migration with liveness factor (improve put effectness)
 /// BehaviorDB Interface
 struct BehaviorDB
 {
 	
 	BehaviorDB();
+	BehaviorDB(Config const& conf);
 	~BehaviorDB();
 	
 	/** Put data into a chunk
@@ -99,9 +112,26 @@ struct BehaviorDB
 	 */
 	BehaviorDB& 
 	set_pool_log(bool do_log);
+	
+	/**
+	 *  @brief Estimate max size corresponds to the address
+	 *  @param address
+	 *  @return Maximun size corresponeds to the address or 0 
+	 *  when address overflowed.
+	 */
+	SizeType 
+	estimate_max_size(AddrType address);
+
+	/** @brief Estimate pool index according to size
+	 *  @param size
+	 *  @return Pool index or -1 when size to large.
+	 */
+	AddrType 
+	estimate_pool_index(SizeType size);
 
 	int error_num;
 private:
+	Config conf_;
 	// copy, assignment
 	BehaviorDB(BehaviorDB const &cp);
 	BehaviorDB& operator = (BehaviorDB const &cp);
@@ -114,21 +144,6 @@ private:
 	std::ofstream *accLog_, *errLog_;
 };
 
-/**
- *  @brief Estimate max size corresponds to the address
- *  @param address
- *  @return Maximun size corresponeds to the address or 0 
- *  when address overflowed.
- */
-inline SizeType 
-estimate_max_size(AddrType address);
-
-/** @brief Estimate pool index according to size
- *  @param size
- *  @return Pool index or -1 when size to large.
- */
-inline AddrType 
-estimate_pool_index(SizeType size);
 
 #endif // header ends
 
@@ -199,7 +214,7 @@ estimate_pool_index(SizeType size);
  * // Assue addr is the address points to data we need
  * BehaviorDB bdb;
  * // Estimate maximun size of data by address
- * SizeType est_size = estimate_max_size(addr);
+ * SizeType est_size = bdb.estimate_max_size(addr);
  * // BehaviorDB requies client pre-allocation 
  * char *buf = (char*)malloc(est_size * sizeof(char));
  * SizeType rt = bdb.get(buf, est_size, addr);

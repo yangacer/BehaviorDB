@@ -17,14 +17,14 @@ struct Pool
 	~Pool();
 
 	/** Create chunk file
-	 *  @param size Chunk size of this pool.
-	 *  @param doLog Enable/disable log of pool.
+	 *  @param chunk_size
+	 *  @param conf
 	 *  @remark Error Number: none.
 	 *  @remark Any failure happend in this method causes
 	 *  system termination.
 	 */
 	void 
-	create_chunk_file(SizeType size);
+	create_chunk_file(SizeType chunk_size, Config const &conf);
 	
 	/** Enable/disable logging of pool
 	 *  @param do_log
@@ -123,7 +123,7 @@ private:
 	Pool(Pool const &cp);
 	Pool& operator=(Pool const &cp);
 	
-
+	Config conf_;
 	SizeType chunk_size_;
 	bool doLog_;
 	std::fstream file_;
@@ -134,33 +134,7 @@ private:
 
 // ---------------- Misc Functions --------------
 
-inline SizeType 
-estimate_max_size(AddrType address)
-{
-	SizeType s = address >> 28;
-	if(s > 15)
-		return -1;
-	return 1<<s;
-}
 
-inline AddrType 
-estimate_pool_index(SizeType size)
-{
-	// Determin which pool to put
-	AddrType pIdx(0);
-	SizeType bound(size>>BDB_CHUNK_UNIT);
-	
-	while(bound > (1<<pIdx))
-		++pIdx;
-
-	if(size > (1<<pIdx)<<BDB_CHUNK_UNIT)
-		++pIdx;
-
-	if(pIdx > 15)
-		return -1;
-
-	return pIdx;
-}
 
 struct error_num_to_str
 {
@@ -190,13 +164,48 @@ using std::setfill;
 using std::endl;
 using std::ios;
 
+
 BehaviorDB::BehaviorDB()
-: error_num(0), pools_(new Pool[16]), accLog_(new std::ofstream), errLog_(new std::ofstream)
+: conf_(), error_num(0), 
+pools_(new Pool[16]), 
+accLog_(new std::ofstream), errLog_(new std::ofstream)
 {
 	using std::ios;
 
 	for(SizeType i=0;i<16;++i){
-		pools_[i].create_chunk_file((1<<i)<<BDB_CHUNK_UNIT);	
+		pools_[i].create_chunk_file((1<<i)<<conf_.chunk_unit, conf_);	
+	}
+
+	// open access log
+	accLog_->open("access.log", ios::out | ios::app);
+	if(!accLog_->is_open()){
+		accLog_->open("access.log", ios::out | ios::trunc);
+		if(!accLog_->is_open()){
+			fprintf(stderr, "Open access.log failed; system msg - ");
+			fprintf(stderr, strerror(errno));
+		}
+	}
+	
+	// open error log
+	errLog_->open("error.log", ios::out | ios::app);
+	if(!errLog_->is_open()){
+		errLog_->open("error.log", ios::out | ios::trunc);
+		if(!errLog_->is_open()){
+			fprintf(stderr, "Open error.log failed; system msg - ");
+			fprintf(stderr, strerror(errno));
+		}
+	}
+}
+
+BehaviorDB::BehaviorDB(Config const &conf)
+: conf_(conf), error_num(0), 
+pools_(new Pool[16]), 
+accLog_(new std::ofstream), errLog_(new std::ofstream)
+{
+	using std::ios;
+
+	for(SizeType i=0;i<16;++i){
+		pools_[i].create_chunk_file((1<<i)<<conf_.chunk_unit, conf_);	
 	}
 
 	// open access log
@@ -226,6 +235,34 @@ BehaviorDB::~BehaviorDB()
 	accLog_->close();
 	delete accLog_;
 	delete [] pools_;
+}
+
+inline SizeType 
+BehaviorDB::estimate_max_size(AddrType address)
+{
+	SizeType s = address >> 28;
+	if(s > 15)
+		return -1;
+	return 1<<s;
+}
+
+inline AddrType 
+BehaviorDB::estimate_pool_index(SizeType size)
+{
+	// Determin which pool to put
+	AddrType pIdx(0);
+	SizeType bound(size>>conf_.chunk_unit);
+	
+	while(bound > (1<<pIdx))
+		++pIdx;
+
+	if(size > (1<<pIdx)<<conf_.chunk_unit)
+		++pIdx;
+
+	if(pIdx > 15)
+		return -1;
+
+	return pIdx;
 }
 
 void
@@ -307,7 +344,7 @@ BehaviorDB::append(AddrType address, char const* data, SizeType size)
 	// Estimate next pool ----------------
 	// ! No preservation space for size value since
 	// it had been counted as part of existed data
-	next_pIdx = estimate_pool_index(size+((1<<pIdx)<<BDB_CHUNK_UNIT));
+	next_pIdx = estimate_pool_index(size+((1<<pIdx)<<conf_.chunk_unit));
 
 	if(next_pIdx > 15)
 		next_pIdx = estimate_pool_index(size);
@@ -415,10 +452,11 @@ Pool::~Pool()
 }
 
 void
-Pool::create_chunk_file(SizeType chunk_size)
+Pool::create_chunk_file(SizeType chunk_size, Config const & conf)
 { 
 	using namespace std;
-
+	
+	conf_ = conf;
 	chunk_size_ = chunk_size;
 
 	if(file_.is_open())
@@ -428,7 +466,7 @@ Pool::create_chunk_file(SizeType chunk_size)
 	
 	cvt<<"pools/"
 		<<setw(4)<<setfill('0')<<hex
-		<< (chunk_size_>>BDB_CHUNK_UNIT)
+		<< (chunk_size_>>conf_.chunk_unit)
 		<< ".pool";
 	{
 		// create chunk file
@@ -464,7 +502,7 @@ Pool::create_chunk_file(SizeType chunk_size)
 	cvt.str("");
 	cvt<<"transcations/"
 		<<setw(4)<<setfill('0')<<hex
-		<< (chunk_size_>>BDB_CHUNK_UNIT)
+		<< (chunk_size_>>conf_.chunk_unit)
 		<<".trs";
 
 	idPool_.replay_transcation(cvt.str().c_str());

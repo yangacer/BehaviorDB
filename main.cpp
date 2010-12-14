@@ -2,13 +2,17 @@
 // test main
 #include <iostream>
 #include <iomanip>
-
 #include "bdb.h"
+
 int main(int argc, char **argv)
 {
 	using namespace std;
 
-	BehaviorDB bdb;
+	Config conf;
+	conf.pool_log = false;
+	conf.chunk_unit = 8;
+
+	BehaviorDB bdb(conf);
 	AddrType addr1, addr2;
 	SizeType rt;
 
