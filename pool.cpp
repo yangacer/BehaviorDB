@@ -456,7 +456,9 @@ Pool::create_chunk_file(SizeType chunk_size, Config const & conf)
 { 
 	using namespace std;
 	
+	// setup by conf
 	conf_ = conf;
+	log(conf.pool_log);
 	chunk_size_ = chunk_size;
 
 	if(file_.is_open())
