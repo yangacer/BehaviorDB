@@ -10,7 +10,7 @@
 #define BDB_CHUNK_UNIT 10
 #endif
 
-/// @todo TODO: Configuration object for BehaviorDB
+/// @todo (Done) TODO: Configuration object for BehaviorDB
 /// @todo TODO: Pure C wrapper
 
 #include <iosfwd>
@@ -48,7 +48,13 @@ struct Pool;
  */
 struct Config
 {
+	/** Indicate whether to write pool logs
+	 */
 	bool pool_log;
+
+	/** The unit of chunk.
+	 *  If this value is k, then the unit will be 2^k.
+	 */
 	SizeType chunk_unit;
 	
 	/** Setup default configuration
@@ -62,6 +68,10 @@ struct BehaviorDB
 {
 	
 	BehaviorDB();
+
+	/** Constructor that uses client's configuration
+	 *  @param conf see Config
+	 */
 	BehaviorDB(Config const& conf);
 	~BehaviorDB();
 	
@@ -129,6 +139,9 @@ struct BehaviorDB
 	AddrType 
 	estimate_pool_index(SizeType size);
 
+	/** Error Number
+	 *  @see ERRORNUMBER
+	 */
 	int error_num;
 private:
 	Config conf_;
