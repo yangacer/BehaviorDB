@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <limits>
 #include <cstdlib>
+#include <cstring>
 #include <cstdio>
 #include <cerrno>
 

@@ -1,17 +1,10 @@
 #ifndef _BEHAVIORDB_H
 #define _BEHAVIORDB_H
 
-/** Define BDB_CHUNK_UNIT before including bdb.h can change
- *  the unit of chunk used in BehaviorDB.
- *  Default it is 10, means that the minimun chunk size is 
- *  1K or 1024 bytes.
- */
-#ifndef BDB_CHUNK_UNIT
-#define BDB_CHUNK_UNIT 10
-#endif
 
 /// @todo (Done) TODO: Configuration object for BehaviorDB
 /// @todo TODO: Pure C wrapper
+/// @todo TODO: iovec methods
 
 #include <iosfwd>
 
@@ -163,6 +156,10 @@ private:
 /*! \mainpage Menual Page
  *  \section intro_sec Introduction
  *  
+ *  BehaviorDB is a document oriented database. We provide high efficiency storing and retrieval
+ *  particular for data with various size. Within the BehaviorDB, users can write data incrementaly
+ *  without worry about extra cost of retrieving data.
+ *
  *  This document is for internal development currently. You won't find any download link here.
  *  If anyone is interest in this project, please contact yangacer__at__gmail.
  *
@@ -240,8 +237,8 @@ private:
  * }
  * \endcode
  * 4. BehaviorDB::del<br/>
- * This method does not set any error number but may due to system termination
- * once underlying transcation system crash.
+ * This method does not set any error number but may result in system termination
+ * if underlying transcation system crash.
  * see @ref transcation_sec for more information.
  */
 
