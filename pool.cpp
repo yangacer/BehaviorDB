@@ -35,7 +35,6 @@ struct Pool
 
 	/** Get chunk size
 	 *  @return Chunk size of this pool.
-	 *  @error None.
 	 */
 	SizeType 
 	chunk_size() const;
