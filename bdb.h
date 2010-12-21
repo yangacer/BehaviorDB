@@ -221,7 +221,7 @@ private:
  *
  * 3. BehaviorDB::get
  * \code
- * // Assue addr is the address points to data we need
+ * // Assume addr is the address points to data we need
  * BehaviorDB bdb;
  * // Estimate maximun size of data by address
  * SizeType est_size = bdb.estimate_max_size(addr);
