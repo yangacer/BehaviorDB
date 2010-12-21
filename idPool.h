@@ -55,11 +55,11 @@ public:
 	{
 		if(!q_.empty()){
 			IDType tmp(q_.back());
-			q_.pop_back();
 			if(0 > fprintf(file_, "+%u\n", tmp) && errno){
 				fprintf(stderr, "idPool: %s\n", strerror(errno));
 				exit(1);
 			}
+			q_.pop_back();
 			return tmp;
 		}
 		if(0 > fprintf(file_, "+%u\n", cur_) && errno){
@@ -74,11 +74,11 @@ public:
 	{
 		if(!q_.empty()){
 			IDType tmp(q_.back());
-			q_.pop_back();
 			if(0 > fprintf(file_, "+%u\n", tmp) && errno){
 				fprintf(stderr, "idPool: %s\n", strerror(errno));
 				exit(1);
 			}
+			q_.pop_back();
 			return tmp;
 		}
 
@@ -117,7 +117,7 @@ public:
 	{
 		if(id < beg_ || id >= cur_)
 			throw std::out_of_range("IDPool: Range error");
-		;
+		
 		if(0 > fprintf(file_, "-%u\n", id) && errno){
 			fprintf(stderr, strerror(errno));
 			exit(1);
