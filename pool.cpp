@@ -114,7 +114,8 @@ protected:
 		AddrType const* address,
 		AddrType tell,
 		SizeType size = 0,
-		char const *desc = 0);
+		char const *desc = 0,
+		int src_line = 0);
 
 	void clear_error();
 
@@ -533,7 +534,7 @@ Pool::sizeOf(AddrType address)
 	file_.read(size_val, 8);
 	
 	if(file_.bad() || file_.fail()){
-		write_log("sizeOf", &off, file_.tellg(), 0, strerror(errno));
+		write_log("sizeOf", &off, file_.tellg(), 0, strerror(errno), __LINE__);
 		error_num = SYSTEM_ERROR;
 		return -1;
 	}
@@ -550,7 +551,8 @@ Pool::write_log(char const *operation,
 		AddrType const* address,
 		AddrType tell,
 		SizeType size,
-		char const *desc)
+		char const *desc,
+		int src_line)
 {
 	if(!doLog_) return;
 
@@ -565,6 +567,9 @@ Pool::write_log(char const *operation,
 		wrtLog_<<" size(B): "<<setw(8)<<size;
 	if(desc)
 		wrtLog_<<" "<<desc;
+	if(src_line)
+		wrtLog_<<" src line: "<<src_line;
+
 	wrtLog_<<endl;
 }
 
@@ -585,7 +590,7 @@ Pool::put(char const* data, SizeType size)
 		return -1;
 
 	if(!idPool_.avail()){
-		write_log("putErr", 0, file_.tellp(), size, "IDPool overflowed");
+		write_log("putErr", 0, file_.tellp(), size, "IDPool overflowed", __LINE__);
 		error_num = ADDRESS_OVERFLOW;
 		return -1; 
 	}
@@ -603,7 +608,7 @@ Pool::put(char const* data, SizeType size)
 	
 	if(!file_.good()){
 		idPool_.Release(off);
-		write_log("putErr", &off, file_.tellp(), size, strerror(errno));
+		write_log("putErr", &off, file_.tellp(), size, strerror(errno), __LINE__);
 		error_num = SYSTEM_ERROR;
 		return -1;
 	}
@@ -638,7 +643,7 @@ Pool::append(AddrType address, char const* data, SizeType size,
 
 	if(used_size + size > chunk_size_){ // need to migration
 		if( used_size + size > next_pool->chunk_size() ){ // no pool for migration
-			write_log("appErr", &address, file_.tellg(), used_size + size, "Exceed supported chunk size");
+			write_log("appErr", &address, file_.tellg(), used_size + size, "Exceed supported chunk size", __LINE__);
 			error_num = DATA_TOO_BIG;
 			return -1;	
 		}
@@ -668,7 +673,7 @@ Pool::append(AddrType address, char const* data, SizeType size,
 	file_.write(data, size);
 
 	if(!file_.good()){ // write failed
-		write_log("appErr", &address, file_.tellp(), size, strerror(errno));
+		write_log("appErr", &address, file_.tellp(), size, strerror(errno), __LINE__);
 		error_num = SYSTEM_ERROR;
 		return -1;
 	}
@@ -713,7 +718,7 @@ Pool::get(char *output, SizeType const size, AddrType address)
 	file_.read(output, data_size);
 
 	if(data_size != file_.gcount()){ // read failure
-		write_log("getErr", &address, file_.tellg(), data_size, strerror(errno));
+		write_log("getErr", &address, file_.tellg(), data_size, strerror(errno), __LINE__);
 		error_num = SYSTEM_ERROR;
 		return -1;
 	}
@@ -754,7 +759,7 @@ Pool::migrate(std::fstream &src_file, SizeType orig_size,
 	SizeType new_size = orig_size + size;
 
 	if(!idPool_.avail()){
-		write_log("migErr", 0, file_.tellp(), size, "IDPool overflowed");
+		write_log("migErr", 0, file_.tellp(), size, "IDPool overflowed", __LINE__);
 		error_num = ADDRESS_OVERFLOW;
 		return -1;
 	}
@@ -785,7 +790,7 @@ Pool::migrate(std::fstream &src_file, SizeType orig_size,
 			src_file.read(buf, toRead);
 
 		if(!src_file.gcount()){ // read failure
-			write_log("migErr", &off, src_file.tellg(), orig_size, strerror(errno));
+			write_log("migErr", &off, src_file.tellg(), orig_size, strerror(errno), __LINE__);
 			error_num = SYSTEM_ERROR;
 			return -1;
 		}
@@ -794,7 +799,7 @@ Pool::migrate(std::fstream &src_file, SizeType orig_size,
 		file_.write(buf, src_file.gcount());
 
 		if(!file_){ // write failure
-			write_log("migErr", &off, file_.tellp(), orig_size, strerror(errno));
+			write_log("migErr", &off, file_.tellp(), orig_size, strerror(errno), __LINE__);
 			error_num = SYSTEM_ERROR;
 			return -1;
 		}
@@ -803,7 +808,7 @@ Pool::migrate(std::fstream &src_file, SizeType orig_size,
 	file_.write(data, size);
 	
 	if(!file_){ // write failure
-		write_log("migErr", &off, file_.tellp(), size, strerror(errno));
+		write_log("migErr", &off, file_.tellp(), size, strerror(errno), __LINE__);
 		error_num = SYSTEM_ERROR;
 		return -1;
 	}
