@@ -166,7 +166,15 @@ private:
  *
  *  \section install_sec Installation
  *
- *  To be added.
+ *  \code
+ *  // UNIX
+ *  cd BehaviorDB
+ *  mkdir -p build
+ *  cd build
+ *  cmake .. -DCMAKE_INSTALL_PREFIX=/path/to/your/deployment_directory -DDEPLOY_TEST=ON
+ *  make
+ *  make install
+ *  \endcode
  *
  *  \section transcation_sec Transcation
  *
