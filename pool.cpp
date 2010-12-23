@@ -112,7 +112,7 @@ protected:
 	void
 	write_log(char const *operation, 
 		AddrType const* address,
-		AddrType tell,
+		std::streampos tell,
 		SizeType size = 0,
 		char const *desc = 0,
 		int src_line = 0);
@@ -526,7 +526,7 @@ SizeType
 Pool::sizeOf(AddrType address)
 {
 
-	AddrType off = (address & 0x0fffffff);
+	std::streamoff off = (address & 0x0fffffff);
 	char size_val_ar[9] = {0};
 	char *size_val(size_val_ar);
 
@@ -534,7 +534,7 @@ Pool::sizeOf(AddrType address)
 	file_.read(size_val, 8);
 	
 	if(file_.bad() || file_.fail()){
-		write_log("sizeOf", &off, file_.tellg(), 0, strerror(errno), __LINE__);
+		write_log("sizeOf", &address, file_.tellg(), 0, strerror(errno), __LINE__);
 		error_num = SYSTEM_ERROR;
 		return -1;
 	}
@@ -549,7 +549,7 @@ Pool::sizeOf(AddrType address)
 void
 Pool::write_log(char const *operation, 
 		AddrType const* address,
-		AddrType tell,
+		std::streampos tell,
 		SizeType size,
 		char const *desc,
 		int src_line)
@@ -583,7 +583,6 @@ Pool::clear_error()
 AddrType
 Pool::put(char const* data, SizeType size)
 {
-	// TODO: Partial buffering for big chunk
 	
 	clear_error();
 	if(error_num)
@@ -595,7 +594,8 @@ Pool::put(char const* data, SizeType size)
 		return -1; 
 	}
 	
-	AddrType off = idPool_.Acquire();
+	AddrType addr = idPool_.Acquire();
+	std::streamoff off = addr;
 	
 	// clear() is required when previous read reach the file end
 	file_.clear();
@@ -607,14 +607,14 @@ Pool::put(char const* data, SizeType size)
 	file_.write(data, (size));
 	
 	if(!file_.good()){
-		idPool_.Release(off);
-		write_log("putErr", &off, file_.tellp(), size, strerror(errno), __LINE__);
+		idPool_.Release(addr);
+		write_log("putErr", &addr, file_.tellp(), size, strerror(errno), __LINE__);
 		error_num = SYSTEM_ERROR;
 		return -1;
 	}
 	
 	// write log
-	write_log("put", &off, file_.tellp(), size);
+	write_log("put", &addr, file_.tellp(), size);
 	
 	return off;
 }
@@ -714,6 +714,7 @@ Pool::get(char *output, SizeType const size, AddrType address)
 	}
 	
 	// TODO: assume sizeOf will seek to the data begin.
+	// TODO: Partial buffering for big chunk
 	// is that dangerous?
 	file_.read(output, data_size);
 
@@ -764,8 +765,9 @@ Pool::migrate(std::fstream &src_file, SizeType orig_size,
 		return -1;
 	}
 	
-	AddrType off = idPool_.Acquire();
-	
+	AddrType addr = idPool_.Acquire();
+	std::streamoff off = addr;
+
 	// clear() is required when previous read reach the file end
 	file_.clear();
 	file_.seekp(off * chunk_size_, ios::beg);
@@ -790,7 +792,7 @@ Pool::migrate(std::fstream &src_file, SizeType orig_size,
 			src_file.read(buf, toRead);
 
 		if(!src_file.gcount()){ // read failure
-			write_log("migErr", &off, src_file.tellg(), orig_size, strerror(errno), __LINE__);
+			write_log("migErr", &addr, src_file.tellg(), orig_size, strerror(errno), __LINE__);
 			error_num = SYSTEM_ERROR;
 			return -1;
 		}
@@ -799,7 +801,7 @@ Pool::migrate(std::fstream &src_file, SizeType orig_size,
 		file_.write(buf, src_file.gcount());
 
 		if(!file_){ // write failure
-			write_log("migErr", &off, file_.tellp(), orig_size, strerror(errno), __LINE__);
+			write_log("migErr", &addr, file_.tellp(), orig_size, strerror(errno), __LINE__);
 			error_num = SYSTEM_ERROR;
 			return -1;
 		}
@@ -808,13 +810,13 @@ Pool::migrate(std::fstream &src_file, SizeType orig_size,
 	file_.write(data, size);
 	
 	if(!file_){ // write failure
-		write_log("migErr", &off, file_.tellp(), size, strerror(errno), __LINE__);
+		write_log("migErr", &addr, file_.tellp(), size, strerror(errno), __LINE__);
 		error_num = SYSTEM_ERROR;
 		return -1;
 	}
 	
 	// write log
-	write_log("migrate", &off, file_.tellp(), new_size);
+	write_log("migrate", &addr, file_.tellp(), new_size);
 	
 	return off;
 }

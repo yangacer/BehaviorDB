@@ -32,8 +32,9 @@ enum ERRORNUMBER
 //! Define address type.
 typedef unsigned int AddrType;
 
-//! Define address type. 
+//! Define size type. 
 typedef unsigned int SizeType;
+
 
 // Forward decl
 struct Pool;
@@ -165,13 +166,15 @@ private:
  *  If anyone is interest in this project, please contact yangacer__at__gmail.
  *
  *  \section install_sec Installation
- *
+ *  Following instructions require CMake 2.8+ tool. See the official site, http://www.cmake.org 
+ *  for more information.
  *  \code
- *  // UNIX
+ *  # UNIX
  *  cd BehaviorDB
  *  mkdir -p build
  *  cd build
  *  cmake .. -DCMAKE_INSTALL_PREFIX=/path/to/your/deployment_directory -DDEPLOY_TEST=ON
+ *  # Or setup via ccmake
  *  make
  *  make install
  *  \endcode
