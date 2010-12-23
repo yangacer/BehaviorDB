@@ -173,12 +173,24 @@ private:
  *  cd BehaviorDB
  *  mkdir -p build
  *  cd build
- *  cmake .. -DCMAKE_INSTALL_PREFIX=/path/to/your/deployment_directory -DDEPLOY_TEST=ON
+ *  cmake .. -DCMAKE_INSTALL_PREFIX=/path -DDEPLOY_TEST=ON -DINSTALL_TEST=ON
  *  # Or setup via ccmake
  *  make
  *  make install
  *  \endcode
- *	
+ *  
+ *  Option Specification: [default value]<p/>
+ *
+ *  1. CMAKE_INSTALL_PREFIX [/usr/local]<br/>
+ *  The directory you want to install BehaviorDB header and library.<p/>
+ *
+ *  2. DEPLOY_TEST [OFF]<br/>
+ *  If the option is set to ON, the script create sub directories, pools and transaction, in the 
+ *  directory given in CMAKE_INSTALL_PREFIX.<p/>
+ *  
+ *  3. INSTALL_TEST [ON]<br/> 
+ *  Install test programs. <p/>
+ *
  *  \section scale_sec Scalability
  *  
  *  to be added.
