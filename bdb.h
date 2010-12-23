@@ -178,6 +178,10 @@ private:
  *  make
  *  make install
  *  \endcode
+ *	
+ *  \section scale_sec Scalability
+ *  
+ *  to be added.
  *
  *  \section transcation_sec Transcation
  *

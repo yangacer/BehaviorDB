@@ -4,35 +4,34 @@
 #include <iomanip>
 #include "bdb.h"
 
+#define MB32 ((1<<25)-8)
+
 int main(int argc, char **argv)
 {
 	using namespace std;
 
 	Config conf;
-	conf.pool_log = false;
-	conf.chunk_unit = 8;
+	conf.pool_log = true;
+	conf.chunk_unit = 10;
 
 	BehaviorDB bdb(conf);
-	AddrType addr1, addr2;
-	SizeType rt;
-
-	char two_kb[2040] = "2k_data_tailed_by_null";
-	char ten_kb[10240] = "10k_data_tailed_by_null";
-	char merge[10240+2040];
-
-	bdb.set_pool_log(false);
-	addr1 = bdb.put(two_kb, 2040);
-	addr2 = bdb.append(addr1, ten_kb, 10240);
+	AddrType addr;
 	
-	rt = bdb.get(two_kb, 2040, 536870912);
-	cout<<rt<<endl;
+	char *data = new char[MB32];
+	
+	memcpy(data, "32M data begin", 15);
+	
+	memcpy(data + (MB32 - 6), "tail", 5);
 
-	rt = bdb.get(merge, 10240+2040, addr2);
-	
-	if(rt == -1 && bdb.error_num)
-		cerr<<"Fail"<<endl;
-	
-	cout<<(&merge[0])<<(&merge[2040])<<endl;
+	for(int i=0;i<(1<<8);++i){
+		addr = bdb.put(data, MB32);
+		if(addr == -1 && bdb.error_num){
+			cerr<<"Fail at "<<i<<" data"<<endl;
+			return 0;
+		}
+		cout<<setw(8)<<hex<<setfill('0')<<addr<<endl;
+	}
+
 	
 	return 0;	
 }

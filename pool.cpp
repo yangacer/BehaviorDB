@@ -203,6 +203,11 @@ pools_(new Pool[16]),
 accLog_(new std::ofstream), errLog_(new std::ofstream)
 {
 	using std::ios;
+	
+	if(conf.chunk_unit < 4){
+		fprintf(stderr, "Chunk unit cannot lower than 4");
+		exit(1);
+	}
 
 	for(SizeType i=0;i<16;++i){
 		pools_[i].create_chunk_file((1<<i)<<conf_.chunk_unit, conf_);	
@@ -629,10 +634,9 @@ Pool::append(AddrType address, char const* data, SizeType size,
 	if(error_num)
 		return -1;
 	
-	AddrType off = address & 0x0fffffff;
 	SizeType used_size;
 
-	if(!idPool_.isAcquired(off))
+	if(!idPool_.isAcquired(address & 0x0fffffff))
 		used_size = 0;
 	else
 		used_size = sizeOf(address);
@@ -656,7 +660,7 @@ Pool::append(AddrType address, char const* data, SizeType size,
 			return rt;
 		}
 
-		idPool_.Release(off);
+		idPool_.Release(address & 0x0fffffff);
 		return rt;
 	}
 	
