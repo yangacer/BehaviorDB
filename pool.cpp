@@ -604,8 +604,10 @@ Pool::put(char const* data, SizeType size)
 	file_.seekp(off * chunk_size_, ios::beg);
 	
 	
-	// write 8 bytes size value ahead
-	file_<<setw(8)<<setfill('0')<<(size);
+	// write 8 bytes chunk header
+	ChunkHeader ch;
+	ch.size = size;
+	file_<<ch;
 	file_.write(data, (size));
 	
 	if(!file_.good()){
@@ -644,13 +646,18 @@ Pool::append(AddrType address, char const* data, SizeType size,
 	}
 
 	if(ch.size + size > chunk_size_){ // need to migration
-		if( ch.size + size > next_pool->chunk_size() ){ // no pool for migration
+		if( ch.size + size > next_pool[next_pool_idx].chunk_size() ){ // no pool for migration
 			write_log("appErr", &address, file_.tellg(), ch.size + size, "Exceed supported chunk size", __LINE__);
 			error_num = DATA_TOO_BIG;
 			return -1;	
 		}
 
 		/// @todo: re-evaluate next_pool_idx according to liveness
+		// erase old header
+		file_.clear();
+		file_.seekp(-8, ios::cur);
+		file_.write("00000000", 8);
+		file_.tellg(); // without this line, read will fail(why?)
 
 		AddrType rt = next_pool_idx<<28 | next_pool[next_pool_idx].migrate(file_, ch.size, data, size);
 
@@ -680,7 +687,7 @@ Pool::append(AddrType address, char const* data, SizeType size,
 	file_.seekp(ch.size - size, ios::cur);
 	file_.write(data, size);
 
-	if(!file_.good()){ // write failed
+	if(!file_){ // write failed
 		write_log("appErr", &address, file_.tellp(), size, strerror(errno), __LINE__);
 		error_num = SYSTEM_ERROR;
 		return -1;
@@ -762,6 +769,9 @@ Pool::migrate(std::fstream &src_file, SizeType orig_size,
 	// assume the pptr() of src_file is located 
 	// in head of original data
 	
+	ChunkHeader ch;
+	ch.size = orig_size + size;
+
 	SizeType new_size = orig_size + size;
 
 	if(!idPool_.avail()){
@@ -778,15 +788,15 @@ Pool::migrate(std::fstream &src_file, SizeType orig_size,
 	file_.seekp(off * chunk_size_, ios::beg);
 	
 	
-	// erase old size value
-	src_file.clear();
-	src_file.seekp(-8, ios::cur);
-	src_file.write("00000000", 8);
-	src_file.tellg(); // without this line, read will fail(why?)
+		
 	
-	
-	// write 8 bytes size value ahead
-	file_<<setw(8)<<setfill('0')<<new_size;
+	// write header
+	file_<<ch;
+	if(!file_){
+		write_log("migErr", 0, file_.tellp(), size, "Write header error", __LINE__);
+		error_num = SYSTEM_ERROR;
+		return -1;
+	}
 
 	SizeType toRead(orig_size);
 	char buf[4096];

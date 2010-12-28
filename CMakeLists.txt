@@ -17,6 +17,10 @@ target_link_libraries(largeput bdb)
 
 add_executable(chunk_test ${CMAKE_SOURCE_DIR}/tests/chunk_test.cpp chunk.cpp)
 
+add_executable(simple ${CMAKE_SOURCE_DIR}/tests/simple.cpp)
+target_link_libraries(simple bdb)
+
+
 set(MY_TARGETS bdb)
 set(HEADERS bdb.h)
 
@@ -27,7 +31,7 @@ if(DEPLOY_TEST)
 endif()
 
 if(INSTALL_TEST)
-	set(MY_TARGETS ${MY_TARGETS} bdb_put largeput)
+	set(MY_TARGETS ${MY_TARGETS} bdb_put largeput simple)
 endif()
 
 install (TARGETS ${MY_TARGETS}
