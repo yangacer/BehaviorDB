@@ -139,6 +139,8 @@ struct BehaviorDB
 	 */
 	int error_num;
 private:
+	void init_();
+	
 	Config conf_;
 	// copy, assignment
 	BehaviorDB(BehaviorDB const &cp);

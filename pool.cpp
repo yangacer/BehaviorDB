@@ -57,6 +57,7 @@ struct Pool
 	 *  @return Address for accessing the chunk that stores concatenated data.
 	 *  @remark Error Number: SYSTEM_ERROR, ADDRESS_OVERFLOW, DATA_TOO_BIG.
 	 */
+	/// @todo Change next_pool to first_pool (for early migration)
 	AddrType 
 	append(AddrType address, char const* data, SizeType size, 
 		AddrType next_pool_idx, Pool* next_pool);
@@ -87,7 +88,6 @@ struct Pool
 	 */
 	int error_num;
 
-protected:
 	
 	/** Get size of data stored in a chunk
 	 *  @param address Indicate which chunk.
@@ -96,7 +96,9 @@ protected:
 	 */
 	SizeType
 	sizeOf(AddrType address);
-	
+
+protected:
+
 	/** Move data from one chunk to another pool
 	 *  @param src_file File stream of another pool which had seeked to source data.
 	 *  @param orig_size Size of original data.
@@ -165,12 +167,19 @@ using std::endl;
 using std::ios;
 
 
-BehaviorDB::BehaviorDB()
-: conf_(), error_num(0), 
-pools_(new Pool[16]), 
-accLog_(new std::ofstream), errLog_(new std::ofstream)
+void BehaviorDB::init_()
 {
-	using std::ios;
+
+	if(conf_.chunk_unit < 4){
+		fprintf(stderr, "Chunk unit cannot lower than 4");
+		exit(1);
+	}
+
+	// init members other than conf_
+	error_num = 0;
+	pools_ = new Pool[16];
+	accLog_ = new std::ofstream; 
+	errLog_ = new std::ofstream;
 
 	for(SizeType i=0;i<16;++i){
 		pools_[i].create_chunk_file((1<<i)<<conf_.chunk_unit, conf_);	
@@ -197,41 +206,16 @@ accLog_(new std::ofstream), errLog_(new std::ofstream)
 	}
 }
 
-BehaviorDB::BehaviorDB(Config const &conf)
-: conf_(conf), error_num(0), 
-pools_(new Pool[16]), 
-accLog_(new std::ofstream), errLog_(new std::ofstream)
+BehaviorDB::BehaviorDB()
+: conf_()
 {
-	using std::ios;
-	
-	if(conf.chunk_unit < 4){
-		fprintf(stderr, "Chunk unit cannot lower than 4");
-		exit(1);
-	}
+	init_();
+}
 
-	for(SizeType i=0;i<16;++i){
-		pools_[i].create_chunk_file((1<<i)<<conf_.chunk_unit, conf_);	
-	}
-
-	// open access log
-	accLog_->open("access.log", ios::out | ios::app);
-	if(!accLog_->is_open()){
-		accLog_->open("access.log", ios::out | ios::trunc);
-		if(!accLog_->is_open()){
-			fprintf(stderr, "Open access.log failed; system msg - ");
-			fprintf(stderr, strerror(errno));
-		}
-	}
-	
-	// open error log
-	errLog_->open("error.log", ios::out | ios::app);
-	if(!errLog_->is_open()){
-		errLog_->open("error.log", ios::out | ios::trunc);
-		if(!errLog_->is_open()){
-			fprintf(stderr, "Open error.log failed; system msg - ");
-			fprintf(stderr, strerror(errno));
-		}
-	}
+BehaviorDB::BehaviorDB(Config const &conf)
+: conf_(conf)
+{
+	init_();	
 }
 
 BehaviorDB::~BehaviorDB()
