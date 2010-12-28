@@ -92,14 +92,6 @@ struct Pool
 
 protected:
 	
-	/** Get size of data stored in a chunk
-	 *  @param address Indicate which chunk.
-	 *  @return Size of data.
-	 *  @remark Error Number: SYSTEM_ERROR
-	 */
-	SizeType
-	sizeOf(AddrType address);
-
 	/** Seek to chunk header
 	 *  @param address
 	 *  @remark Error Number: SYSTEM_ERROR
@@ -527,25 +519,7 @@ Pool::seekToHeader(AddrType address)
 	file_.seekg(off * chunk_size_, ios::beg);
 }
 
-SizeType
-Pool::sizeOf(AddrType address)
-{
 
-	std::streamoff off = (address & 0x0fffffff);
-	char size_val_ar[9] = {0};
-	char *size_val(size_val_ar);
-
-	file_.seekg(off * chunk_size_, ios::beg);
-	file_.read(size_val, 8);
-	
-	if(file_.bad() || file_.fail()){
-		write_log("sizeOf", &address, file_.tellg(), 0, strerror(errno), __LINE__);
-		error_num = SYSTEM_ERROR;
-		return -1;
-	}
-	
-	return (strtoul(size_val, 0, 10));
-}
 
 void
 Pool::write_log(char const *operation, 
