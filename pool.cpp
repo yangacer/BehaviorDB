@@ -6,9 +6,12 @@
 #include <cassert>
 
 #include "bdb.h"
+#include "chunk.h"
 #include "idPool.h"
 
 #include <iostream>
+
+
 
 /// Pool - A Chunk Manager
 struct Pool
@@ -88,6 +91,7 @@ struct Pool
 	 */
 	int error_num;
 
+protected:
 	
 	/** Get size of data stored in a chunk
 	 *  @param address Indicate which chunk.
@@ -97,7 +101,13 @@ struct Pool
 	SizeType
 	sizeOf(AddrType address);
 
-protected:
+	/** Seek to chunk header
+	 *  @param address
+	 *  @remark Error Number: SYSTEM_ERROR
+	 */
+	void 
+	seekToHeader(AddrType address);
+
 
 	/** Move data from one chunk to another pool
 	 *  @param src_file File stream of another pool which had seeked to source data.
@@ -344,7 +354,7 @@ BehaviorDB::append(AddrType address, char const* data, SizeType size)
 		return -1;
 	}
 
-	rt = pools_[pIdx].append(address, data, size, next_pIdx, &pools_[next_pIdx]);
+	rt = pools_[pIdx].append(address, data, size, next_pIdx, pools_);
 	
 	if(rt == -1 && pools_[pIdx].error_num != 0){
 		error_num = pools_[pIdx].error_num;
@@ -511,6 +521,13 @@ SizeType
 Pool::chunk_size() const
 { return chunk_size_; }
 
+void
+Pool::seekToHeader(AddrType address)
+{
+	std::streamoff off = (address & 0x0fffffff);
+	file_.seekg(off * chunk_size_, ios::beg);
+}
+
 SizeType
 Pool::sizeOf(AddrType address)
 {
@@ -527,10 +544,6 @@ Pool::sizeOf(AddrType address)
 		error_num = SYSTEM_ERROR;
 		return -1;
 	}
-	
-
-	while('0' == *size_val)
-		++size_val;
 	
 	return (strtoul(size_val, 0, 10));
 }
@@ -618,26 +631,28 @@ Pool::append(AddrType address, char const* data, SizeType size,
 	if(error_num)
 		return -1;
 	
-	SizeType used_size;
+	ChunkHeader ch;
 
-	if(!idPool_.isAcquired(address & 0x0fffffff))
-		used_size = 0;
-	else
-		used_size = sizeOf(address);
+	if( idPool_.isAcquired(address & 0x0fffffff) ){
+		seekToHeader(address);
+		file_>>ch;
+	}
 	
-	if(used_size == -1 && SYSTEM_ERROR == error_num ){
+	if(!file_){
+		write_log("appErr", &address, file_.tellg(), ch.size + size, "Read header error", __LINE__);
 		return -1;
 	}
 
-	if(used_size + size > chunk_size_){ // need to migration
-		if( used_size + size > next_pool->chunk_size() ){ // no pool for migration
-			write_log("appErr", &address, file_.tellg(), used_size + size, "Exceed supported chunk size", __LINE__);
+	if(ch.size + size > chunk_size_){ // need to migration
+		if( ch.size + size > next_pool->chunk_size() ){ // no pool for migration
+			write_log("appErr", &address, file_.tellg(), ch.size + size, "Exceed supported chunk size", __LINE__);
 			error_num = DATA_TOO_BIG;
 			return -1;	
 		}
 
-		
-		AddrType rt = next_pool_idx<<28 | next_pool->migrate(file_, used_size, data, size);
+		/// @todo: re-evaluate next_pool_idx according to liveness
+
+		AddrType rt = next_pool_idx<<28 | next_pool[next_pool_idx].migrate(file_, ch.size, data, size);
 
 		if(-1 == rt && next_pool->error_num != 0){ // migration failed
 			error_num = next_pool->error_num;
@@ -648,16 +663,21 @@ Pool::append(AddrType address, char const* data, SizeType size,
 		return rt;
 	}
 	
-	// update new size
-	stringstream cvt;
-	cvt<<setw(8)<<setfill('0')<<(used_size + size);
-	
+	// update header
+	ch.size += size;
+	ch.liveness = (ch.liveness<<1) | 1;
+
 	file_.clear();
 	file_.seekp(-8, ios::cur);
-	file_.write(cvt.str().c_str(), 8);
+	file_<<ch;
+	
+	if(!file_){
+		write_log("appErr", &address, file_.tellg(), ch.size + size, "Write header error", __LINE__);
+		return -1;
+	}
 
 	// append data
-	file_.seekp(used_size, ios::cur);
+	file_.seekp(ch.size - size, ios::cur);
 	file_.write(data, size);
 
 	if(!file_.good()){ // write failed
@@ -667,7 +687,7 @@ Pool::append(AddrType address, char const* data, SizeType size,
 	}
 
 	// write log
-	write_log("append", &address, file_.tellp(), used_size + size);
+	write_log("append", &address, file_.tellp(), ch.size);
 
 	return address;		
 }
@@ -684,35 +704,32 @@ Pool::get(char *output, SizeType const size, AddrType address)
 	if(!idPool_.isAcquired(0x0fffffff & address)){
 		return 0;
 	}
-	// TODO: check wheather the address has record
-	// Following code assume size value > 0
 	
-	SizeType data_size(sizeOf(address));
-	
-
-	if(data_size == -1 && error_num == SYSTEM_ERROR){
-		return -1;	
+	ChunkHeader ch;
+	seekToHeader(address);
+	file_>>ch;
+	if(!file_){
+		write_log("getErr", &address, file_.tellg(), ch.size + size, "Read header error", __LINE__);
+		return -1;
 	}
-	
-	
 
-	if(data_size > size){
+
+	if(ch.size > size){
 		error_num = DATA_TOO_BIG;
-		return data_size;
+		return ch.size;
 	}
 	
-	// TODO: assume sizeOf will seek to the data begin.
 	// TODO: Partial buffering for big chunk
 	// is that dangerous?
-	file_.read(output, data_size);
+	file_.read(output, ch.size);
 
-	if(data_size != file_.gcount()){ // read failure
-		write_log("getErr", &address, file_.tellg(), data_size, strerror(errno), __LINE__);
+	if(ch.size != file_.gcount()){ // read failure
+		write_log("getErr", &address, file_.tellg(), ch.size, strerror(errno), __LINE__);
 		error_num = SYSTEM_ERROR;
 		return -1;
 	}
 	// write log
-	write_log("get", &address, file_.tellg(), data_size);
+	write_log("get", &address, file_.tellg(), ch.size);
 	
 	return size;
 
