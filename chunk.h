@@ -6,7 +6,7 @@
 
 struct ChunkHeader
 {
-	char liveness;
+	unsigned char liveness;
 	SizeType size;
 	
 	ChunkHeader()

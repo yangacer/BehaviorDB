@@ -5,7 +5,7 @@
 /// @todo (Done) TODO: Configuration object for BehaviorDB
 /// @todo TODO: Pure C wrapper
 /// @todo TODO: iovec methods
-/// @todo TODO: Early migration
+/// @todo (Done) TODO: Early migration
 
 #include <iosfwd>
 

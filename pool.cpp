@@ -60,7 +60,6 @@ struct Pool
 	 *  @return Address for accessing the chunk that stores concatenated data.
 	 *  @remark Error Number: SYSTEM_ERROR, ADDRESS_OVERFLOW, DATA_TOO_BIG.
 	 */
-	/// @todo Change next_pool to first_pool (for early migration)
 	AddrType 
 	append(AddrType address, char const* data, SizeType size, 
 		AddrType next_pool_idx, Pool* next_pool);
@@ -652,7 +651,12 @@ Pool::append(AddrType address, char const* data, SizeType size,
 			return -1;	
 		}
 
-		/// @todo: re-evaluate next_pool_idx according to liveness
+		// migrate to larger pool early
+		if(next_pool_idx < 15 && ch.liveness == 0x80 && 
+			chunk_size_ - ch.size - size < (chunk_size_ >>4)){
+			next_pool_idx++;
+		}
+		
 		// erase old header
 		file_.clear();
 		file_.seekp(-8, ios::cur);
