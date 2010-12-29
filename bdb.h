@@ -61,7 +61,6 @@ struct Config
 	Config():pool_log(true), chunk_unit(10), migrate_threshold(0x7f){}
 };
 
-/// @todo TODO: Auto migration with liveness factor (improve put effectness)
 /// BehaviorDB Interface
 struct BehaviorDB
 {
@@ -157,6 +156,7 @@ private:
 	Pool* pools_;
 	std::ofstream *accLog_, *errLog_;
 };
+
 
 
 #endif // header ends
@@ -276,3 +276,13 @@ private:
  * see @ref transcation_sec for more information.
  */
 
+/** \example simple.cpp
+ * This simple test puts 128 bytes data into BehaviorDB and keeps append 2k bytes data to the same chunk so 
+ * that make it migrate to a larger pool until no larger pool available.
+ * After such process, there will be only one migErr error logged in 8000.pool.log which is correct result.
+ *
+ * This test also outputs number of access to each pool.
+ *
+ *  \example largeput.cpp
+ *
+ */

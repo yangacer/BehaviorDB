@@ -12,16 +12,9 @@ void verify(char const *data, size_t size)
 	printf("Tail: %s", data+size-strlen("data end"));
 }
 
-/**
- * This simple test puts 128 bytes data into BehaviorDB
- * and keeps append 2k bytes data to the same chunk so 
- * that make it migrate to a larger pool until no larger
- * pool available.
- * After such process, there will be only one migErr error
- * logged in 8000.pool.log which is correct result.
- *
- * This test also outputs number of access to each pool.
+/** \include simple.cpp
  */
+
 int main()
 {
 

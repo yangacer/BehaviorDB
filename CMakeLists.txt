@@ -12,7 +12,7 @@ add_library(bdb pool.cpp chunk.cpp)
 add_executable(bdb_put ${CMAKE_SOURCE_DIR}/tests/bdb_put.cpp)
 target_link_libraries(bdb_put bdb)
 
-add_executable(largeput ${CMAKE_SOURCE_DIR}/tests/main.cpp)
+add_executable(largeput ${CMAKE_SOURCE_DIR}/tests/largeput.cpp)
 target_link_libraries(largeput bdb)
 
 add_executable(chunk_test ${CMAKE_SOURCE_DIR}/tests/chunk_test.cpp chunk.cpp)
