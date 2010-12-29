@@ -249,8 +249,6 @@ BehaviorDB::estimate_pool_index(SizeType size)
 	if(size > (1<<pIdx)<<conf_.chunk_unit)
 		++pIdx;
 
-	if(pIdx > 15)
-		return -1;
 
 	return pIdx;
 }
@@ -337,13 +335,15 @@ BehaviorDB::append(AddrType address, char const* data, SizeType size)
 	next_pIdx = estimate_pool_index(size+((1<<pIdx)<<conf_.chunk_unit));
 
 	if(next_pIdx > 15)
-		next_pIdx = estimate_pool_index(size);
-
+		next_pIdx = 15;
+	
+	/*
 	if(next_pIdx > 15){
 		error_num = DATA_TOO_BIG;
 		*errLog_<<"[error]"<<ETOS(error_num)<<": "<<size<<endl;
 		return -1;
 	}
+	*/
 
 	rt = pools_[pIdx].append(address, data, size, next_pIdx, pools_);
 	
@@ -618,39 +618,45 @@ Pool::append(AddrType address, char const* data, SizeType size,
 		return -1;
 	}
 
-	if(ch.size + size > chunk_size_){ // need to migration
+	if(ch.size + size > chunk_size_ || ch.liveness == 0x7f){ // need to migration
+		// migrate to larger pool early
+		// when the chunk is appended 127 times
+		if(next_pool_idx < 15 && ch.liveness == 0x7f)
+			next_pool_idx++;
+
 		if( ch.size + size > next_pool[next_pool_idx].chunk_size() ){ // no pool for migration
 			write_log("appErr", &address, file_.tellg(), ch.size + size, "Exceed supported chunk size", __LINE__);
 			error_num = DATA_TOO_BIG;
 			return -1;	
 		}
-
-		// migrate to larger pool early
-		if(next_pool_idx < 15 && ch.liveness == 0x80 && 
-			chunk_size_ - ch.size - size < (chunk_size_ >>4)){
-			next_pool_idx++;
-		}
 		
-		// erase old header
-		file_.clear();
-		file_.seekp(-8, ios::cur);
-		file_.write("00000000", 8);
-		file_.tellg(); // without this line, read will fail(why?)
+		// true migration
+		if(next_pool_idx != address >> 28){
 
-		AddrType rt = next_pool_idx<<28 | next_pool[next_pool_idx].migrate(file_, ch.size, data, size);
+			// erase old header
+			file_.clear();
+			//file_.seekp(-8, ios::cur);
+			seekToHeader(address);
+			file_.write("00000000", 8);
+			file_.tellg(); // without this line, read will fail(why?)
+			file_.clear();
+			file_.sync();
 
-		if(-1 == rt && next_pool->error_num != 0){ // migration failed
-			error_num = next_pool->error_num;
+			AddrType rt = next_pool_idx<<28 | next_pool[next_pool_idx].migrate(file_, ch.size, data, size);
+
+			if(-1 == rt && next_pool->error_num != 0){ // migration failed
+				error_num = next_pool->error_num;
+				return rt;
+			}
+
+			idPool_.Release(address & 0x0fffffff);
 			return rt;
 		}
-
-		idPool_.Release(address & 0x0fffffff);
-		return rt;
 	}
 	
 	// update header
 	ch.size += size;
-	ch.liveness = (ch.liveness<<1) | 1;
+	ch.liveness++;
 
 	file_.clear();
 	file_.seekp(-8, ios::cur);
@@ -765,9 +771,6 @@ Pool::migrate(std::fstream &src_file, SizeType orig_size,
 	file_.clear();
 	file_.seekp(off * chunk_size_, ios::beg);
 	
-	
-		
-	
 	// write header
 	file_<<ch;
 	if(!file_){
@@ -775,7 +778,8 @@ Pool::migrate(std::fstream &src_file, SizeType orig_size,
 		error_num = SYSTEM_ERROR;
 		return -1;
 	}
-
+	
+	/*
 	SizeType toRead(orig_size);
 	char buf[4096];
 	while(toRead){
@@ -799,9 +803,23 @@ Pool::migrate(std::fstream &src_file, SizeType orig_size,
 			return -1;
 		}
 	}
-
-	file_.write(data, size);
+	*/
+	char buf[orig_size];
+	src_file.read(buf, orig_size);
+	if(!src_file.gcount()){ // read failure
+		write_log("migErr", &addr, src_file.tellg(), orig_size, strerror(errno), __LINE__);
+		error_num = SYSTEM_ERROR;
+		return -1;
+	}
 	
+	file_.write(buf, orig_size);
+	if(!file_){ // write failure
+		write_log("migErr", &addr, file_.tellp(), orig_size, strerror(errno), __LINE__);
+		error_num = SYSTEM_ERROR;
+		return -1;
+	}
+	
+	file_.write(data, size);
 	if(!file_){ // write failure
 		write_log("migErr", &addr, file_.tellp(), size, strerror(errno), __LINE__);
 		error_num = SYSTEM_ERROR;
