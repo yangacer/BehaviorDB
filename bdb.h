@@ -52,9 +52,13 @@ struct Config
 	 */
 	SizeType chunk_unit;
 	
+	/** Threshold of early migration
+	 */
+	SizeType migrate_threshold;
+
 	/** Setup default configuration
 	 */
-	Config():pool_log(true), chunk_unit(10){}
+	Config():pool_log(true), chunk_unit(10), migrate_threshold(0x7f){}
 };
 
 /// @todo TODO: Auto migration with liveness factor (improve put effectness)

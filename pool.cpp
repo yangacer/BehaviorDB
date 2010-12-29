@@ -618,10 +618,10 @@ Pool::append(AddrType address, char const* data, SizeType size,
 		return -1;
 	}
 
-	if(ch.size + size > chunk_size_ || ch.liveness == 0x7f){ // need to migration
+	if(ch.size + size > chunk_size_ || ch.liveness == conf_.migrate_threshold){ // need to migration
 		// migrate to larger pool early
 		// when the chunk is appended 127 times
-		if(next_pool_idx < 15 && ch.liveness == 0x7f)
+		if(next_pool_idx < 15 && ch.liveness == conf_.migrate_threshold)
 			next_pool_idx++;
 
 		if( ch.size + size > next_pool[next_pool_idx].chunk_size() ){ // no pool for migration
