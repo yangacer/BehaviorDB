@@ -133,6 +133,8 @@ private:
 	IDPool<AddrType> idPool_;
 	std::ofstream wrtLog_;
 	char file_buf_[1024*1024];
+	char *migbuf_;
+	SizeType migbuf_size_;
 };
 
 // ---------------- Misc Functions --------------
@@ -437,6 +439,7 @@ Pool::Pool()
 
 Pool::~Pool()
 {
+	delete []migbuf_;
 	wrtLog_.close();
 	file_.close();
 }
@@ -451,9 +454,18 @@ Pool::create_chunk_file(SizeType chunk_size, Config const & conf)
 	log(conf.pool_log);
 	chunk_size_ = chunk_size;
 
+	// setup migbuf_
+	if(chunk_size_ == 1<<conf_.chunk_unit){
+		migbuf_size_ = 0;
+		migbuf_ = 0;
+	}else{
+		migbuf_size_ = chunk_size>>1;
+		migbuf_ = new char[migbuf_size_];
+	}
+
 	if(file_.is_open())
 		file_.close();
-	
+
 	stringstream cvt;
 	
 	cvt<<"pools/"
@@ -779,40 +791,15 @@ Pool::migrate(std::fstream &src_file, SizeType orig_size,
 		return -1;
 	}
 	
-	/*
-	SizeType toRead(orig_size);
-	char buf[4096];
-	while(toRead){
-		if(toRead > 4096)
-			src_file.read(buf, 4096);
-		else
-			src_file.read(buf, toRead);
-
-		if(!src_file.gcount()){ // read failure
-			write_log("migErr", &addr, src_file.tellg(), orig_size, strerror(errno), __LINE__);
-			error_num = SYSTEM_ERROR;
-			return -1;
-		}
-		
-		toRead -= src_file.gcount();
-		file_.write(buf, src_file.gcount());
-
-		if(!file_){ // write failure
-			write_log("migErr", &addr, file_.tellp(), orig_size, strerror(errno), __LINE__);
-			error_num = SYSTEM_ERROR;
-			return -1;
-		}
-	}
-	*/
-	char buf[orig_size];
-	src_file.read(buf, orig_size);
+	// move old data to this pool
+	src_file.read(migbuf_, orig_size);
 	if(!src_file.gcount()){ // read failure
 		write_log("migErr", &addr, src_file.tellg(), orig_size, strerror(errno), __LINE__);
 		error_num = SYSTEM_ERROR;
 		return -1;
 	}
 	
-	file_.write(buf, orig_size);
+	file_.write(migbuf_, orig_size);
 	if(!file_){ // write failure
 		write_log("migErr", &addr, file_.tellp(), orig_size, strerror(errno), __LINE__);
 		error_num = SYSTEM_ERROR;

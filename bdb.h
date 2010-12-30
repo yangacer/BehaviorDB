@@ -165,8 +165,8 @@ private:
  *  \section intro_sec Introduction
  *  
  *  BehaviorDB is a document oriented database. We provide high efficiency storing and retrieval
- *  particular for data with various size. Within the BehaviorDB, users can write data incrementaly
- *  without worry about extra cost of retrieving data.
+ *  particular for data with various size. This database is designed to be a local storage management
+ *  system that concentrate on optmizing disk I/O cost.
  *
  *  This document is for internal development currently. You won't find any download link here.
  *  If anyone is interest in this project, please contact yangacer__at__gmail.
@@ -192,7 +192,7 @@ private:
  *
  *  2. DEPLOY_TEST [OFF]<br/>
  *  If the option is set to ON, the script create sub directories, pools and transaction, in the 
- *  directory given in CMAKE_INSTALL_PREFIX.<p/>
+ *  directory given in CMAKE_INSTALL_PREFIX. These directories are required by BehaviorDB library.<p/>
  *  
  *  3. INSTALL_TEST [ON]<br/> 
  *  Install test programs. <p/>
