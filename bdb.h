@@ -23,10 +23,10 @@ enum ERRORNUMBER
 	SYSTEM_ERROR = 2,
 
 	/// Data is too big to be handle by BehaviorDB 
-	DATA_TOO_BIG = 4,
+	DATA_TOO_BIG = 3,
 
 	/// Deprecated
-	ALLOC_FAILURE = 8
+	ALLOC_FAILURE = 4
 };
 
 //! Define address type.
@@ -55,10 +55,12 @@ struct Config
 	/** Threshold of early migration
 	 */
 	SizeType migrate_threshold;
+	
+	char const * working_dir;
 
 	/** Setup default configuration
 	 */
-	Config():pool_log(true), chunk_unit(10), migrate_threshold(0x7f){}
+	Config():pool_log(true), chunk_unit(10), migrate_threshold(0x7f), working_dir("."){}
 };
 
 /// BehaviorDB Interface

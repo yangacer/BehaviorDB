@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iomanip>
 #include <sstream>
+#include <string>
 #include <cassert>
 
 #include "bdb.h"
@@ -169,7 +170,6 @@ using std::setfill;
 using std::endl;
 using std::ios;
 
-
 void BehaviorDB::init_()
 {
 
@@ -187,9 +187,14 @@ void BehaviorDB::init_()
 	for(SizeType i=0;i<16;++i){
 		pools_[i].create_chunk_file((1<<i)<<conf_.chunk_unit, conf_);	
 	}
+	
+	/// @todo TODO: Create directories (portability issue)
+
+	std::stringstream logname(conf_.working_dir);
+	logname<<"/access.log";
 
 	// open access log
-	accLog_->open("access.log", ios::out | ios::app);
+	accLog_->open(logname.str().c_str(), ios::out | ios::app);
 	if(!accLog_->is_open()){
 		accLog_->open("access.log", ios::out | ios::trunc);
 		if(!accLog_->is_open()){
@@ -197,9 +202,12 @@ void BehaviorDB::init_()
 			fprintf(stderr, strerror(errno));
 		}
 	}
-	
+	logname.str("");
+	logname<<conf_.working_dir;
+	logname<<"/error.log";
+
 	// open error log
-	errLog_->open("error.log", ios::out | ios::app);
+	errLog_->open(logname.str().c_str(), ios::out | ios::app);
 	if(!errLog_->is_open()){
 		errLog_->open("error.log", ios::out | ios::trunc);
 		if(!errLog_->is_open()){
@@ -255,7 +263,7 @@ BehaviorDB::estimate_pool_index(SizeType size)
 	return pIdx;
 }
 
-void
+inline void
 BehaviorDB::clear_error()
 {
 	// clear error bits except SYSTEM_ERROR
@@ -338,14 +346,6 @@ BehaviorDB::append(AddrType address, char const* data, SizeType size)
 
 	if(next_pIdx > 15)
 		next_pIdx = 15;
-	
-	/*
-	if(next_pIdx > 15){
-		error_num = DATA_TOO_BIG;
-		*errLog_<<"[error]"<<ETOS(error_num)<<": "<<size<<endl;
-		return -1;
-	}
-	*/
 
 	rt = pools_[pIdx].append(address, data, size, next_pIdx, pools_);
 	
@@ -468,7 +468,7 @@ Pool::create_chunk_file(SizeType chunk_size, Config const & conf)
 
 	stringstream cvt;
 	
-	cvt<<"pools/"
+	cvt<<conf_.working_dir<<"/pools/"
 		<<setw(4)<<setfill('0')<<hex
 		<< (chunk_size_>>conf_.chunk_unit)
 		<< ".pool";
@@ -504,7 +504,7 @@ Pool::create_chunk_file(SizeType chunk_size, Config const & conf)
 
 	cvt.clear();
 	cvt.str("");
-	cvt<<"transcations/"
+	cvt<<conf_.working_dir<<"/transcations/"
 		<<setw(4)<<setfill('0')<<hex
 		<< (chunk_size_>>conf_.chunk_unit)
 		<<".trs";
