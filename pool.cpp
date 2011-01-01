@@ -536,7 +536,7 @@ Pool::log(bool do_log)
 { doLog_ = do_log; }
 
 SizeType
-Pool::chunk_size() const
+inline Pool::chunk_size() const
 { return chunk_size_; }
 
 void

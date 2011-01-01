@@ -5,6 +5,7 @@
 /// @todo (Done) TODO: Configuration object for BehaviorDB
 /// @todo TODO: Pure C wrapper
 /// @todo TODO: iovec methods
+/// @todo TODO: Windows Version
 /// @todo (Done) TODO: Early migration
 
 #include <iosfwd>
@@ -174,8 +175,12 @@ private:
  *  If anyone is interest in this project, please contact yangacer__at__gmail.
  *
  *  \section install_sec Installation
+ *  
  *  Following instructions require CMake 2.8+ tool. See the official site, http://www.cmake.org 
  *  for more information.
+ *  BehaviorDB supports UNIX-like platform currently. To make it compatible with Windows system, 
+ *  some modification related to path and path delimeter are required.
+ *
  *  \code
  *  # UNIX
  *  cd BehaviorDB
