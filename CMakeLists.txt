@@ -25,8 +25,8 @@ set(MY_TARGETS bdb)
 set(HEADERS bdb.h)
 
 if(DEPLOY_TEST)
-	make_directory(${CMAKE_INSTALL_PREFIX}/pools)
-	make_directory(${CMAKE_INSTALL_PREFIX}/transcations)
+	#make_directory(${CMAKE_INSTALL_PREFIX}/pools)
+	#make_directory(${CMAKE_INSTALL_PREFIX}/transcations)
 	set(DPFILES clean.sh)
 endif()
 

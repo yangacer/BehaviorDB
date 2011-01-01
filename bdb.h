@@ -203,9 +203,9 @@ private:
  *  
  *  to be added.
  *
- *  \section transcation_sec Transcation
+ *  \section transaction_sec Transaction
  *
- *  BehaviorDB manages addresses by a ID pool that write transcation logs to disk in every methods
+ *  BehaviorDB manages addresses by a ID pool that write transaction logs to disk in every methods
  *  BehaviorDB provides. Notice when the ID pool fails to write log, system will be terminated
  *  immediately.
  *
@@ -274,8 +274,8 @@ private:
  * \endcode
  * 4. BehaviorDB::del<br/>
  * This method does not set any error number but may result in system termination
- * if underlying transcation system crash.
- * see @ref transcation_sec for more information.
+ * if underlying transaction system crash.
+ * see @ref transaction_sec for more information.
  */
 
 /** \example simple.cpp

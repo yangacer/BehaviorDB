@@ -11,7 +11,7 @@
 
 
 /// @todo TODO: Replace IDPool data structure with bitset.
-/// @todo TODO: Transcation file compression.
+/// @todo TODO: Transaction file compression.
 
 template<typename IDType>
 class IDPool
@@ -137,11 +137,11 @@ public:
 	{ return ( cur_ + 1 != end_ || !q_.empty() ); }
 
 
-	void replay_transcation(char const* transcation_file)
+	void replay_transaction(char const* transaction_file)
 	{
-		FILE *tfile = fopen(transcation_file, "r+");
+		FILE *tfile = fopen(transaction_file, "r+");
 		
-		if(0 == tfile){ // no transcation files for replaying
+		if(0 == tfile){ // no transaction files for replaying
 			errno = 0;
 			return;
 		}
@@ -167,17 +167,17 @@ public:
 		fclose(tfile);
 	}
 	
-	void init_transcation(char const* transcation_file) throw(std::runtime_error)
+	void init_transaction(char const* transaction_file) throw(std::runtime_error)
 	{
-		file_ = fopen(transcation_file, "a");
+		file_ = fopen(transaction_file, "a");
 		if(0 == file_){
-			fprintf(stderr, "Fail to open %s;system(%s)\n", transcation_file, strerror(errno));
-			throw std::runtime_error("Fail to open transcation file");
+			fprintf(stderr, "Fail to open %s;system(%s)\n", transaction_file, strerror(errno));
+			throw std::runtime_error("Fail to open transaction file");
 		}
 		
 		if(0 != setvbuf(file_, (char*)0, _IONBF, 0)){
-			fprintf(stderr, "Fail to set zero buffer on %s;system(%s)\n", transcation_file, strerror(errno));
-			throw std::runtime_error("Fail to set zero buffer on transcation_file");
+			fprintf(stderr, "Fail to set zero buffer on %s;system(%s)\n", transaction_file, strerror(errno));
+			throw std::runtime_error("Fail to set zero buffer on transaction_file");
 		}
 		
 

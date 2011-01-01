@@ -12,7 +12,8 @@
 
 #include <iostream>
 
-
+/// POSIX Headers
+#include <sys/stat.h>
 
 /// Pool - A Chunk Manager
 struct Pool
@@ -183,18 +184,32 @@ void BehaviorDB::init_()
 	pools_ = new Pool[16];
 	accLog_ = new std::ofstream; 
 	errLog_ = new std::ofstream;
+	
+	/// @todo TODO: Create directories (portability issue)
+	std::stringstream cvt;
+	cvt<<conf_.working_dir<<"/transactions";
+	if(-1 == mkdir(cvt.str().c_str(), S_IRWXU | S_IRWXG) && errno != EEXIST){
+		fprintf(stderr, "Create directory transactions failed - ");
+		fprintf(stderr, strerror(errno));
+	}
 
+	cvt.str("");
+	cvt<<conf_.working_dir<<"/pools";
+	if(-1 == mkdir(cvt.str().c_str(), S_IRWXU | S_IRWXG) && errno != EEXIST){
+		fprintf(stderr, "Create directory pools failed - ");
+		fprintf(stderr, strerror(errno));
+	}
+	
 	for(SizeType i=0;i<16;++i){
 		pools_[i].create_chunk_file((1<<i)<<conf_.chunk_unit, conf_);	
 	}
 	
-	/// @todo TODO: Create directories (portability issue)
-
-	std::stringstream logname(conf_.working_dir);
-	logname<<"/access.log";
+	cvt.str("");
+	cvt.clear();
+	cvt<<conf_.working_dir<<"/access.log";
 
 	// open access log
-	accLog_->open(logname.str().c_str(), ios::out | ios::app);
+	accLog_->open(cvt.str().c_str(), ios::out | ios::app);
 	if(!accLog_->is_open()){
 		accLog_->open("access.log", ios::out | ios::trunc);
 		if(!accLog_->is_open()){
@@ -202,12 +217,12 @@ void BehaviorDB::init_()
 			fprintf(stderr, strerror(errno));
 		}
 	}
-	logname.str("");
-	logname<<conf_.working_dir;
-	logname<<"/error.log";
+	cvt.str("");
+	cvt<<conf_.working_dir;
+	cvt<<"/error.log";
 
 	// open error log
-	errLog_->open(logname.str().c_str(), ios::out | ios::app);
+	errLog_->open(cvt.str().c_str(), ios::out | ios::app);
 	if(!errLog_->is_open()){
 		errLog_->open("error.log", ios::out | ios::trunc);
 		if(!errLog_->is_open()){
@@ -504,14 +519,14 @@ Pool::create_chunk_file(SizeType chunk_size, Config const & conf)
 
 	cvt.clear();
 	cvt.str("");
-	cvt<<conf_.working_dir<<"/transcations/"
+	cvt<<conf_.working_dir<<"/transactions/"
 		<<setw(4)<<setfill('0')<<hex
 		<< (chunk_size_>>conf_.chunk_unit)
 		<<".trs";
 
-	idPool_.replay_transcation(cvt.str().c_str());
+	idPool_.replay_transaction(cvt.str().c_str());
 
-	idPool_.init_transcation(cvt.str().c_str());
+	idPool_.init_transaction(cvt.str().c_str());
 
 	return;
 }
