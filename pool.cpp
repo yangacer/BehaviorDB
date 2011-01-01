@@ -737,8 +737,6 @@ Pool::get(char *output, SizeType const size, AddrType address)
 		return ch.size;
 	}
 	
-	// TODO: Partial buffering for big chunk
-	// is that dangerous?
 	file_.read(output, ch.size);
 
 	if(ch.size != file_.gcount()){ // read failure

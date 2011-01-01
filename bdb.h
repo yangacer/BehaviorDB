@@ -186,7 +186,7 @@ private:
  *  cd BehaviorDB
  *  mkdir -p build
  *  cd build
- *  cmake .. -DCMAKE_INSTALL_PREFIX=/path -DDEPLOY_TEST=ON -DINSTALL_TEST=ON
+ *  cmake .. -DCMAKE_INSTALL_PREFIX=/path -DINSTALL_TEST=ON
  *  # Or setup via ccmake
  *  make
  *  make install
@@ -197,22 +197,33 @@ private:
  *  1. CMAKE_INSTALL_PREFIX [/usr/local]<br/>
  *  The directory you want to install BehaviorDB header and library.<p/>
  *
- *  2. DEPLOY_TEST [OFF]<br/>
- *  If the option is set to ON, the script create sub directories, pools and transaction, in the 
- *  directory given in CMAKE_INSTALL_PREFIX. These directories are required by BehaviorDB library.<p/>
- *  
- *  3. INSTALL_TEST [ON]<br/> 
- *  Install test programs. <p/>
+ *  2. INSTALL_TEST [ON]<br/> 
+ *  Install test programs and clean.sh. The clean.sh removes all pool file, logs, and transaction logs.<p/>
  *
  *  \section scale_sec Scalability
  *  
- *  to be added.
+ *  BehaviorDB uses 16 pools, each of them can store 2^28 or 268 million chunks at most. Chunk size depends
+ *  on client's configuration which ranged between 4bytes and 64GB. See @ref config_sec for more information.<p/>
+ *
+ *  1. Maximun Size Configuration<br/>
+ *  Minimal Chunk Size = 2^21 or 2MB.<br/>
+ *  Maximal Chunk Size = 2^36 or 64GB.<br/>
+ *  Total Capacity = 512TB * (64K-1) ~ 32,767PB<p/>
+ *
+ *  2. Minimun Size Configuration<br/>
+ *  Minimal Chunk Size = 2^4 or 16byte.<br/>
+ *  Maximal Chunk Size = 2^19 or 512KB.<br/>
+ *  Total Capacity = 4GB * (64K -1) ~ 255TB.<p/>
+ *	
+ *  Notice the actual total capacity is restricted by underlying filesystem.
  *
  *  \section transaction_sec Transaction
  *
  *  BehaviorDB manages addresses by a ID pool that write transaction logs to disk in every methods
  *  BehaviorDB provides. Notice when the ID pool fails to write log, system will be terminated
  *  immediately.
+ *
+ *  \section config_sec Configuration
  *
  *  \section error_handle_sec Error Handling
  *

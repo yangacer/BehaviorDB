@@ -24,13 +24,9 @@ target_link_libraries(simple bdb)
 set(MY_TARGETS bdb)
 set(HEADERS bdb.h)
 
-if(DEPLOY_TEST)
-	#make_directory(${CMAKE_INSTALL_PREFIX}/pools)
-	#make_directory(${CMAKE_INSTALL_PREFIX}/transcations)
-	set(DPFILES clean.sh)
-endif()
 
 if(INSTALL_TEST)
+	set(DPFILES clean.sh)	
 	set(MY_TARGETS ${MY_TARGETS} bdb_put largeput simple)
 endif()
 
