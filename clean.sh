@@ -1,5 +1,5 @@
 echo "Clean pool files, transcation files, and logs"
-rm pools/*
-rm transcations/*
+rm -rf pools
+rm -rf transactions
 rm *.log
 

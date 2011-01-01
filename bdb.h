@@ -26,8 +26,8 @@ enum ERRORNUMBER
 	/// Data is too big to be handle by BehaviorDB 
 	DATA_TOO_BIG = 3,
 
-	/// Deprecated
-	ALLOC_FAILURE = 4
+	/// Pool is on streaming
+	POOL_LOCKED = 4
 };
 
 //! Define address type.
@@ -36,9 +36,6 @@ typedef unsigned int AddrType;
 //! Define size type. 
 typedef unsigned int SizeType;
 
-
-// Forward decl
-struct Pool;
 
 /** Configuration object for BehaviorDB
  */
@@ -64,6 +61,21 @@ struct Config
 	Config():pool_log(true), chunk_unit(10), migrate_threshold(0x7f), working_dir("."){}
 };
 
+// Forward decls
+struct Pool;
+struct BehaviorDB;
+
+struct StreamState
+{
+	friend struct BehaviorDB;
+	friend struct Pool;
+
+	StreamState():left_(0), pool_(0){}
+private:
+	SizeType left_;
+	Pool* pool_;
+};
+
 /// BehaviorDB Interface
 struct BehaviorDB
 {
@@ -71,7 +83,7 @@ struct BehaviorDB
 	BehaviorDB();
 
 	/** Constructor that uses client's configuration
-	 *  @param conf see Config
+	 *  @param conf See Config
 	 */
 	BehaviorDB(Config const& conf);
 	~BehaviorDB();
@@ -80,27 +92,29 @@ struct BehaviorDB
 	 *  @param data
 	 *  @param size
 	 *  @return Address of the chunk that stores the data or -1 when error happened.
-	 *  @remark Error Number: SYSTEM_ERROR, ADDRESS_OVERFLOW, DATA_TOO_BIG
+	 *  @remark Error Number: SYSTEM_ERROR, ADDRESS_OVERFLOW, DATA_TOO_BIG, POOL_LOCKED.
 	 */
 	AddrType 
 	put(char const* data, SizeType size);
-	
+
 	/** Append data to a chunk
 	 *  @param address
 	 *  @param data
 	 *  @param size
 	 *  @return Address of a chunk that stores concatenated data or -1 when errror happened.
-	 *  @remark Error Number: SYSTEM_ERROR, ADDRESS_OVERFLOW, DATA_TOO_BIG.
+	 *  @remark Error Number: SYSTEM_ERROR, ADDRESS_OVERFLOW, DATA_TOO_BIG, POOL_LOCKED.
+	 *  @see @link append.cpp
 	 */
 	AddrType 
 	append(AddrType address, char const* data, SizeType size);
 	
+
 	/** Get data from a chunk
 	 *  @param output Output buffer for placing data
 	 *  @param size Size of output buffer
 	 *  @param address Address of a chunk
 	 *  @return Size of data that stored in the chunk or -1 when error happened.
-	 *  @remark Error Number: SYSTEM_ERROR, DATA_TOO_BIG
+	 *  @remark Error Number: SYSTEM_ERROR, DATA_TOO_BIG, POOL_LOCKED.
 	 *  @remark In order to enhance security of library. 
 	 *  Client has to be responsible for ensuring the size of output buffer
 	 *  being large enough.
@@ -108,6 +122,25 @@ struct BehaviorDB
 	 */
 	SizeType 
 	get(char *output, SizeType const size, AddrType address);
+
+	/** Get data from a chunk incrementaly
+	 *  @param output
+	 *  @param size
+	 *  @param address
+	 *  @param stream Stream state
+	 *  @return Size of data that stored in the chunk or -1 when error happened.
+	 *  @remark  Error Number: SYSTEM_ERROR, DATA_TOO_BIG, POOL_LOCKED.
+	 *  @see @link getstream.cpp
+	 */
+	SizeType
+	get(char *output, SizeType const size, AddrType address, StreamState* stream);
+	
+	/** Stop incremental get explicitly
+	 *  @param stream
+	 *  @see @link getstream.cpp
+	 */
+	void
+	stop_get(StreamState* stream);
 
 	/** Delete a chunk
 	 *  @param address
@@ -294,13 +327,19 @@ private:
  * see @ref transaction_sec for more information.
  */
 
-/** \example simple.cpp
+/** \example append.cpp
+ * 
  * This simple test puts 128 bytes data into BehaviorDB and keeps append 2k bytes data to the same chunk so 
  * that make it migrate to a larger pool until no larger pool available.
  * After such process, there will be only one migErr error logged in 8000.pool.log which is correct result.
  *
  * This test also outputs number of access to each pool.
- *
+ */
+
+/**
  *  \example largeput.cpp
- *
+ */
+
+/**
+ *  \example getstream.cpp
  */

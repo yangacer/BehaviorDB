@@ -1,4 +1,3 @@
-// test main
 #include <iostream>
 #include <iomanip>
 #include "bdb.h"

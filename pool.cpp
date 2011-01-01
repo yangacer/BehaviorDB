@@ -18,6 +18,7 @@
 /// Pool - A Chunk Manager
 struct Pool
 {
+	friend struct BehaviorDB;
 	Pool();
 	~Pool();
 
@@ -79,6 +80,9 @@ struct Pool
 	SizeType 
 	get(char *output, SizeType const size, AddrType address);
 	
+	SizeType
+	get(char *output, SizeType const size, AddrType address, StreamState *stream);
+	
 	/** Delete chunk
 	 *  @param address Address of chunk to be deleted.
 	 *  @return Address of chunk just deleted.
@@ -137,6 +141,7 @@ private:
 	char file_buf_[1024*1024];
 	char *migbuf_;
 	SizeType migbuf_size_;
+	bool onStreaming_;
 };
 
 // ---------------- Misc Functions --------------
@@ -157,8 +162,8 @@ char error_num_to_str::buf[5][40] = {
 	"No error",
 	"Address Overflow",
 	"System Error",
-	"Data too big",
-	"Allocation failure"
+	"Data Too Big",
+	"Pool Locked"
 };
 
 // ------------- BehaviorDB impl -----------------
@@ -282,7 +287,7 @@ inline void
 BehaviorDB::clear_error()
 {
 	// clear error bits except SYSTEM_ERROR
-	error_num &= ~(ADDRESS_OVERFLOW | DATA_TOO_BIG | ALLOC_FAILURE);
+	error_num &= ~(ADDRESS_OVERFLOW | DATA_TOO_BIG | POOL_LOCKED);
 }
 
 bool
@@ -407,6 +412,47 @@ BehaviorDB::get(char *output, SizeType const size, AddrType address)
 	return rt;
 }
 
+SizeType
+BehaviorDB::get(char *output, SizeType size, AddrType address, StreamState *stream)
+{
+	clear_error();
+	if(error_return()) return -1;
+	
+	if(stream->pool_ && !stream->left_)
+		return 0;
+
+	if(!stream->pool_){
+		AddrType pIdx = address >> 28;
+		// check address roughly
+		if(pIdx > 15){
+			error_num = ADDRESS_OVERFLOW;
+			*errLog_<<"[error]"<<ETOS(error_num)<<": "<<address<<endl;
+			return -1;
+		}
+
+		stream->pool_ = &pools_[pIdx];
+	}
+
+	SizeType rt = stream->pool_->get(output, size, address, stream);
+	if(rt == -1 || stream->pool_->error_num){
+		*errLog_<<"[error]"<<ETOS(error_num)<<endl;
+		return rt;
+	}
+
+	log_access("get", address, rt);
+	
+	return rt;
+	
+}
+
+void
+BehaviorDB::stop_get(StreamState* stream)
+{
+	stream->pool_->onStreaming_ = false;
+	stream->pool_ = 0;
+	stream->left_ = 0;
+}
+
 AddrType
 BehaviorDB::del(AddrType address)
 {
@@ -449,7 +495,7 @@ BehaviorDB::set_pool_log(bool do_log)
 // ------------- Pool implementation ------------
 
 Pool::Pool()
-: error_num(0), doLog_(true), idPool_(0, 1<<28)
+: error_num(0), doLog_(true), idPool_(0, 1<<28), onStreaming_(false)
 {}
 
 Pool::~Pool()
@@ -578,7 +624,7 @@ Pool::write_log(char const *operation,
 void
 Pool::clear_error()
 {
-	error_num &= ~(ALLOC_FAILURE | DATA_TOO_BIG);	
+	error_num &= ~(DATA_TOO_BIG | ADDRESS_OVERFLOW | POOL_LOCKED);	
 }
 
 
@@ -589,6 +635,12 @@ Pool::put(char const* data, SizeType size)
 	clear_error();
 	if(error_num)
 		return -1;
+
+	if(onStreaming_){
+		error_num = POOL_LOCKED;
+		write_log("putErr", 0, file_.tellp(), size, "Pool locked", __LINE__);
+		return -1;
+	}
 
 	if(!idPool_.avail()){
 		write_log("putErr", 0, file_.tellp(), size, "IDPool overflowed", __LINE__);
@@ -633,6 +685,12 @@ Pool::append(AddrType address, char const* data, SizeType size,
 	if(error_num)
 		return -1;
 	
+	if(onStreaming_){
+		error_num = POOL_LOCKED;
+		write_log("appErr", &address, file_.tellg(), size, "Pool locked", __LINE__);
+		return -1;
+	}
+
 	ChunkHeader ch;
 
 	if( idPool_.isAcquired(address & 0x0fffffff) ){
@@ -713,12 +771,16 @@ Pool::append(AddrType address, char const* data, SizeType size,
 SizeType 
 Pool::get(char *output, SizeType const size, AddrType address)
 {
-	using namespace std;
-	
 	clear_error();
 	if(error_num)
 		return -1;
 	
+	if(onStreaming_){
+		error_num = POOL_LOCKED;
+		write_log("getErr", &address, file_.tellg(), size, "Pool locked", __LINE__);
+		return -1;
+	}
+
 	if(!idPool_.isAcquired(0x0fffffff & address)){
 		return 0;
 	}
@@ -748,6 +810,61 @@ Pool::get(char *output, SizeType const size, AddrType address)
 	write_log("get", &address, file_.tellg(), ch.size);
 	
 	return size;
+
+}
+
+SizeType
+Pool::get(char *output, SizeType const size, AddrType address, StreamState* stream)
+{
+	clear_error();
+	if(error_num)
+		return -1;
+	
+	if(!stream->left_){ // first read
+		if(onStreaming_){
+			error_num = POOL_LOCKED;
+			write_log("getErr", &address, file_.tellg(), size, "Pool locked", __LINE__);
+			return -1;
+		}
+		
+		onStreaming_ = true;
+
+		if(!idPool_.isAcquired(0x0fffffff & address)){
+			return 0;
+		}
+
+		ChunkHeader ch;
+		seekToHeader(address);
+		file_>>ch;
+		if(!file_){
+			write_log("getErr", &address, file_.tellg(), ch.size + size, "Read header error", __LINE__);
+			return -1;
+		}
+
+		stream->left_ = ch.size;
+	}
+	
+	SizeType toRead = (size >= stream->left_) ? stream->left_ : size;
+	
+	file_.read(output, toRead);
+
+	if(toRead != file_.gcount()){ // read failure
+		write_log("getErr", &address, file_.tellg(), toRead, strerror(errno), __LINE__);
+		error_num = SYSTEM_ERROR;
+		return -1;
+	}
+	
+	stream->left_ -= toRead;
+	
+	// write log
+	write_log("get", &address, file_.tellg(), toRead);
+	
+	// Unlock this pool
+	if(!stream->left_){
+		onStreaming_ = false;	
+	}
+
+	return toRead;
 
 }
 
