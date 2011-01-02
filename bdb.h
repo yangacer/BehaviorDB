@@ -54,11 +54,15 @@ struct Config
 	 */
 	SizeType migrate_threshold;
 	
+	/** Working Directory for BehaviorDB
+	 */
 	char const * working_dir;
 
 	/** Setup default configuration
 	 */
-	Config():pool_log(true), chunk_unit(10), migrate_threshold(0x7f), working_dir("."){}
+	Config()
+	:pool_log(true), chunk_unit(10), migrate_threshold(0x7f), working_dir(".")
+	{}
 };
 
 // Forward decls
@@ -103,7 +107,7 @@ struct BehaviorDB
 	 *  @param size
 	 *  @return Address of a chunk that stores concatenated data or -1 when errror happened.
 	 *  @remark Error Number: SYSTEM_ERROR, ADDRESS_OVERFLOW, DATA_TOO_BIG, POOL_LOCKED.
-	 *  @see @link append.cpp
+	 *  @see @link append.cpp @endlink
 	 */
 	AddrType 
 	append(AddrType address, char const* data, SizeType size);
@@ -130,14 +134,14 @@ struct BehaviorDB
 	 *  @param stream Stream state
 	 *  @return Size of data that stored in the chunk or -1 when error happened.
 	 *  @remark  Error Number: SYSTEM_ERROR, DATA_TOO_BIG, POOL_LOCKED.
-	 *  @see @link getstream.cpp
+	 *  @see @link getstream.cpp @endlink
 	 */
 	SizeType
 	get(char *output, SizeType const size, AddrType address, StreamState* stream);
 	
 	/** Stop incremental get explicitly
 	 *  @param stream
-	 *  @see @link getstream.cpp
+	 *  @see @link getstream.cpp @endlink
 	 */
 	void
 	stop_get(StreamState* stream);
@@ -153,6 +157,7 @@ struct BehaviorDB
 	/** Enable/disable pool logs
 	 *  @param do_log
 	 *  @return Reference to *this
+	 *  @remark The only configuration can be changed at runtime is pool logging.
 	 */
 	BehaviorDB& 
 	set_pool_log(bool do_log);

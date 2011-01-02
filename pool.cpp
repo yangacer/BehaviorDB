@@ -12,10 +12,12 @@
 
 #include <iostream>
 
-/// POSIX Headers
+// POSIX Headers
 #include <sys/stat.h>
 
-/// Pool - A Chunk Manager
+#define MIGBUF_SIZ 2*1024*1024
+
+//! \brief Pool - A Chunk Manager
 struct Pool
 {
 	friend struct BehaviorDB;
@@ -139,14 +141,14 @@ private:
 	IDPool<AddrType> idPool_;
 	std::ofstream wrtLog_;
 	char file_buf_[1024*1024];
-	char *migbuf_;
-	SizeType migbuf_size_;
+	static char migbuf_[MIGBUF_SIZ];
 	bool onStreaming_;
 };
 
+
 // ---------------- Misc Functions --------------
 
-
+char Pool::migbuf_[MIGBUF_SIZ]= {0};
 
 struct error_num_to_str
 {
@@ -500,7 +502,6 @@ Pool::Pool()
 
 Pool::~Pool()
 {
-	delete []migbuf_;
 	wrtLog_.close();
 	file_.close();
 }
@@ -515,14 +516,6 @@ Pool::create_chunk_file(SizeType chunk_size, Config const & conf)
 	log(conf.pool_log);
 	chunk_size_ = chunk_size;
 
-	// setup migbuf_
-	if(chunk_size_ == 1<<conf_.chunk_unit){
-		migbuf_size_ = 0;
-		migbuf_ = 0;
-	}else{
-		migbuf_size_ = chunk_size>>1;
-		migbuf_ = new char[migbuf_size_];
-	}
 
 	if(file_.is_open())
 		file_.close();
@@ -921,21 +914,28 @@ Pool::migrate(std::fstream &src_file, SizeType orig_size,
 		return -1;
 	}
 	
-	// move old data to this pool
-	src_file.read(migbuf_, orig_size);
-	if(!src_file.gcount()){ // read failure
-		write_log("migErr", &addr, src_file.tellg(), orig_size, strerror(errno), __LINE__);
-		error_num = SYSTEM_ERROR;
-		return -1;
+	SizeType toRead = orig_size;
+
+	while(toRead){
+		(toRead >= MIGBUF_SIZ)?
+			src_file.read(migbuf_, MIGBUF_SIZ) :
+			src_file.read(migbuf_, toRead);
+		if(!src_file.gcount()){
+			write_log("migErr", &addr, src_file.tellg(), orig_size, strerror(errno), __LINE__);
+			error_num = SYSTEM_ERROR;
+			return -1;
+
+		}
+		file_.write(migbuf_, src_file.gcount());
+		if(!file_){ // write failure
+			write_log("migErr", &addr, file_.tellp(), orig_size, strerror(errno), __LINE__);
+			error_num = SYSTEM_ERROR;
+			return -1;
+		}
+		toRead -= src_file.gcount();
 	}
-	
-	file_.write(migbuf_, orig_size);
-	if(!file_){ // write failure
-		write_log("migErr", &addr, file_.tellp(), orig_size, strerror(errno), __LINE__);
-		error_num = SYSTEM_ERROR;
-		return -1;
-	}
-	
+
+
 	file_.write(data, size);
 	if(!file_){ // write failure
 		write_log("migErr", &addr, file_.tellp(), size, strerror(errno), __LINE__);
