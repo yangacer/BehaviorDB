@@ -5,7 +5,7 @@ option (INSTALL_TEST "Install test program" ON)
 
 include_directories( ${CMAKE_SOURCE_DIR} )
 
-add_library(bdb pool.cpp chunk.cpp)
+add_library(bdb SHARED pool.cpp chunk.cpp)
 
 
 add_executable(bdb_put ${CMAKE_SOURCE_DIR}/tests/bdb_put.cpp)

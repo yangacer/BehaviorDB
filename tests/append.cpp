@@ -26,7 +26,7 @@ int main()
 	create("2k head", data_2k, 2048);
 	
 	Config conf;
-	conf.migrate_threshold = 0x8f;
+	conf.migrate_threshold = 0x64;
 
 	BehaviorDB bdb(conf);
 	AddrType addr;

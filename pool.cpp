@@ -117,7 +117,7 @@ protected:
 	 *  @remark Error Number: SYSTEM_ERROR, ADDRESS_OVERFLOW
 	 */
 	AddrType
-	migrate(std::fstream &src_file, SizeType orig_size, 
+	migrate(std::fstream &src_file, ChunkHeader ch, 
 		char const *data, SizeType size); 
 
 	void
@@ -720,7 +720,7 @@ Pool::append(AddrType address, char const* data, SizeType size,
 			file_.clear();
 			file_.sync();
 
-			AddrType rt = next_pool_idx<<28 | next_pool[next_pool_idx].migrate(file_, ch.size, data, size);
+			AddrType rt = next_pool_idx<<28 | next_pool[next_pool_idx].migrate(file_, ch, data, size);
 
 			if(-1 == rt && next_pool->error_num != 0){ // migration failed
 				error_num = next_pool->error_num;
@@ -877,7 +877,7 @@ Pool::del(AddrType address)
 }
 
 AddrType
-Pool::migrate(std::fstream &src_file, SizeType orig_size, 
+Pool::migrate(std::fstream &src_file, ChunkHeader ch, 
 	char const *data, SizeType size)
 {
 	clear_error();
@@ -888,10 +888,9 @@ Pool::migrate(std::fstream &src_file, SizeType orig_size,
 	// assume the pptr() of src_file is located 
 	// in head of original data
 	
-	ChunkHeader ch;
-	ch.size = orig_size + size;
-
-	SizeType new_size = orig_size + size;
+	ChunkHeader ch_new;
+	ch_new.size = ch.size + size;
+	ch_new.liveness>>=1; // half the liveness
 
 	if(!idPool_.avail()){
 		write_log("migErr", 0, file_.tellp(), size, "IDPool overflowed", __LINE__);
@@ -907,28 +906,28 @@ Pool::migrate(std::fstream &src_file, SizeType orig_size,
 	file_.seekp(off * chunk_size_, ios::beg);
 	
 	// write header
-	file_<<ch;
+	file_<<ch_new;
 	if(!file_){
 		write_log("migErr", 0, file_.tellp(), size, "Write header error", __LINE__);
 		error_num = SYSTEM_ERROR;
 		return -1;
 	}
 	
-	SizeType toRead = orig_size;
+	SizeType toRead = ch.size;
 
 	while(toRead){
 		(toRead >= MIGBUF_SIZ)?
 			src_file.read(migbuf_, MIGBUF_SIZ) :
 			src_file.read(migbuf_, toRead);
 		if(!src_file.gcount()){
-			write_log("migErr", &addr, src_file.tellg(), orig_size, strerror(errno), __LINE__);
+			write_log("migErr", &addr, src_file.tellg(), ch.size, strerror(errno), __LINE__);
 			error_num = SYSTEM_ERROR;
 			return -1;
 
 		}
 		file_.write(migbuf_, src_file.gcount());
 		if(!file_){ // write failure
-			write_log("migErr", &addr, file_.tellp(), orig_size, strerror(errno), __LINE__);
+			write_log("migErr", &addr, file_.tellp(), ch.size, strerror(errno), __LINE__);
 			error_num = SYSTEM_ERROR;
 			return -1;
 		}
@@ -944,7 +943,7 @@ Pool::migrate(std::fstream &src_file, SizeType orig_size,
 	}
 	
 	// write log
-	write_log("migrate", &addr, file_.tellp(), new_size);
+	write_log("migrate", &addr, file_.tellp(), ch_new.size);
 	
 	return off;
 }
