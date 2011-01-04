@@ -1,5 +1,7 @@
 #include "chunk.h"
 
+#include <cstdlib>
+#include <cstring>
 #include <istream>
 #include <ostream>
 #include <iomanip>

@@ -502,6 +502,7 @@ Pool::Pool()
 
 Pool::~Pool()
 {
+	fprintf(stderr, "Pool dtor called\n");
 	wrtLog_.close();
 	file_.close();
 }
@@ -735,13 +736,16 @@ Pool::append(AddrType address, char const* data, SizeType size,
 	// update header
 	ch.size += size;
 	ch.liveness++;
-
+	
+	file_.seekp(-8, std::fstream::cur);
+	
 	file_.clear();
-	file_.seekp(-8, ios::cur);
+	file_.sync();
+	
 	file_<<ch;
 	
 	if(!file_){
-		write_log("appErr", &address, file_.tellg(), ch.size + size, "Write header error", __LINE__);
+		write_log("appErr", &address, file_.tellp(), ch.size + size, "Write header error", __LINE__);
 		return -1;
 	}
 
@@ -754,9 +758,10 @@ Pool::append(AddrType address, char const* data, SizeType size,
 		error_num = SYSTEM_ERROR;
 		return -1;
 	}
+	
 
 	// write log
-	write_log("append", &address, file_.tellp(), ch.size);
+	write_log("append", &address, file_.tellg(), ch.size);
 
 	return address;		
 }
@@ -890,7 +895,7 @@ Pool::migrate(std::fstream &src_file, ChunkHeader ch,
 	
 	ChunkHeader ch_new;
 	ch_new.size = ch.size + size;
-	ch_new.liveness>>=1; // half the liveness
+	ch_new.liveness = ch_new.liveness>>(chunk_size_>>conf_.chunk_unit);
 
 	if(!idPool_.avail()){
 		write_log("migErr", 0, file_.tellp(), size, "IDPool overflowed", __LINE__);
@@ -945,6 +950,6 @@ Pool::migrate(std::fstream &src_file, ChunkHeader ch,
 	// write log
 	write_log("migrate", &addr, file_.tellp(), ch_new.size);
 	
-	return off;
+	return addr;
 }
 

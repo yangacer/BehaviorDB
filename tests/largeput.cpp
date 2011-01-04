@@ -1,5 +1,7 @@
 #include <iostream>
 #include <iomanip>
+#include <cstdlib>
+#include <cstring>
 #include "bdb.h"
 
 #define MB32 ((1<<25)-8)

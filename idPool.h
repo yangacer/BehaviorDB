@@ -34,7 +34,9 @@ public:
 
 
 	~IDPool()
-	{ if(file_) fclose(file_); }
+	{
+		fclose(file_); 
+	}
 	
 	bool
 	isAcquired(IDType const& id) const
@@ -60,12 +62,14 @@ public:
 				exit(1);
 			}
 			q_.pop_back();
+			fflush(file_);
 			return tmp;
 		}
 		if(0 > fprintf(file_, "+%u\n", cur_) && errno){
 			fprintf(stderr, "idPool: %s\n", strerror(errno));
 			exit(1);
 		}
+		fflush(file_);
 		return cur_++;
 	}
 	
@@ -142,6 +146,7 @@ public:
 		FILE *tfile = fopen(transaction_file, "r+");
 		
 		if(0 == tfile){ // no transaction files for replaying
+			fprintf(stderr, "No transaction replay at %s\n", transaction_file);
 			errno = 0;
 			return;
 		}
@@ -170,6 +175,7 @@ public:
 	void init_transaction(char const* transaction_file) throw(std::runtime_error)
 	{
 		file_ = fopen(transaction_file, "a");
+
 		if(0 == file_){
 			fprintf(stderr, "Fail to open %s;system(%s)\n", transaction_file, strerror(errno));
 			throw std::runtime_error("Fail to open transaction file");
@@ -191,7 +197,7 @@ private:
 	IDType const beg_, end_;
 	IDType cur_;
 	std::deque<IDType> q_;
-	FILE* file_;
+	FILE*  file_;
 
 };
 

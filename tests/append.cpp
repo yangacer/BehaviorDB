@@ -1,4 +1,10 @@
 #include "bdb.h"
+#include <cstring>
+#include <cstdio>
+#include <cstdlib>
+#include <cmath>
+#include <string>
+#include <iostream>
 
 void create(char const *prefix, char *data, size_t size)
 {
@@ -15,36 +21,60 @@ void verify(char const *data, size_t size)
 /** \include append.cpp
  */
 
-int main()
+int main(int argc, char **argv)
 {
+	using std::string;
+	using std::cin;
+	using std::cout;
 
-	int dist[16] = {0};
+	int n = atoi(argv[1]);
+	double x = n / 53.93232738911;
+
+	int dist[16] = {};
+	int cnt;
+	for(int i=0;i<8;++i){
+		cnt = x*pow(1.333333333333, i);
+		dist[i] = dist[15-i] = cnt;
+	}
+	/*
+	for(int i=0;i<15;++i){
+		cout<<dist[i]<<"\n";	
+	}
+	*/
+
 	char data[129];
-	char data_2k[2049];
 
 	create("128 head", data, 128);
-	create("2k head", data_2k, 2048);
 	
 	Config conf;
-	conf.migrate_threshold = 0x64;
-
+	conf.migrate_threshold = 0x40;
 	BehaviorDB bdb(conf);
-	AddrType addr;
+	AddrType addr, tmp;
 	SizeType size;
-
-	addr = bdb.put(data, 128);
-	size = bdb.get(data, 128, addr);
-	printf("put\tAddr: %8x ", addr);
-	verify(data, 128);
-	printf("\n");
+	string line;
 	
-	while(addr < 0xf00000ff){
-		addr = bdb.append(addr, data_2k, 2048);
-		dist[addr>>28]++;
+	for(int i=1;i<16;++i){
+		for(int j=0;j<dist[i];++j){
+			
+			getline(cin,line);
+			cout<<line<<"\n";
+			if(!cin)
+				return 1;
+			addr = strtoul(line.c_str(), 0, 16);
+			cout<<addr<<"\n";
+			line.clear();
+			while(addr>>28 < i && addr != -1){ 
+				addr = bdb.append(addr, data, 128);
+				
+			}
+			if(addr == -1){
+				cout<<"error encountered\n";
+				return 1;
+			}
+		}
 	}
 
-	for(int i=0;i<16;++i)
-		printf("Pool[%d]:%8d\n", i, dist[i]);	
-	
+	cout<<"Finished\n";
+
 	return 0;
 }
