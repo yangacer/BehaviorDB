@@ -196,6 +196,7 @@ private:
 
 	Pool* pools_;
 	std::ofstream *accLog_, *errLog_;
+	int lock_;
 };
 
 

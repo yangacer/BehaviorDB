@@ -14,6 +14,7 @@
 
 // POSIX Headers
 #include <sys/stat.h>
+#include <sys/file.h>
 
 #define MIGBUF_SIZ 2*1024*1024
 
@@ -143,6 +144,8 @@ private:
 	char file_buf_[1024*1024];
 	static char migbuf_[MIGBUF_SIZ];
 	bool onStreaming_;
+
+	int lock_;
 };
 
 
@@ -180,9 +183,11 @@ using std::ios;
 
 void BehaviorDB::init_()
 {
+	lock_ = open("bdb.lock", O_RDWR);
+	flock(lock_, LOCK_EX);
 
 	if(conf_.chunk_unit < 4){
-		fprintf(stderr, "Chunk unit cannot lower than 4");
+		fprintf(stderr, "Chunk unit cannot lower than 4\n");
 		exit(1);
 	}
 
@@ -198,6 +203,7 @@ void BehaviorDB::init_()
 	if(-1 == mkdir(cvt.str().c_str(), S_IRWXU | S_IRWXG) && errno != EEXIST){
 		fprintf(stderr, "Create directory transactions failed - ");
 		fprintf(stderr, strerror(errno));
+		exit(1);
 	}
 
 	cvt.str("");
@@ -205,6 +211,7 @@ void BehaviorDB::init_()
 	if(-1 == mkdir(cvt.str().c_str(), S_IRWXU | S_IRWXG) && errno != EEXIST){
 		fprintf(stderr, "Create directory pools failed - ");
 		fprintf(stderr, strerror(errno));
+		exit(1);
 	}
 	
 	for(SizeType i=0;i<16;++i){
@@ -253,6 +260,8 @@ BehaviorDB::BehaviorDB(Config const &conf)
 
 BehaviorDB::~BehaviorDB()
 {
+	flock(lock_, LOCK_UN);
+	close(lock_);
 	errLog_->close();
 	accLog_->close();
 	delete accLog_;
@@ -498,11 +507,12 @@ BehaviorDB::set_pool_log(bool do_log)
 
 Pool::Pool()
 : error_num(0), doLog_(true), idPool_(0, 1<<28), onStreaming_(false)
-{}
+{
+	
+}
 
 Pool::~Pool()
 {
-	fprintf(stderr, "Pool dtor called\n");
 	wrtLog_.close();
 	file_.close();
 }

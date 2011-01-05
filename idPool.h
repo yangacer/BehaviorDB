@@ -144,12 +144,13 @@ public:
 	void replay_transaction(char const* transaction_file)
 	{
 		FILE *tfile = fopen(transaction_file, "r+");
-		
+
 		if(0 == tfile){ // no transaction files for replaying
-			fprintf(stderr, "No transaction replay at %s\n", transaction_file);
+			//fprintf(stderr, "No transaction replay at %s\n", transaction_file);
 			errno = 0;
 			return;
 		}
+		
 
 		char line[21] = {0};		
 		IDType id;
@@ -168,16 +169,14 @@ public:
 					q_.push_back(id);
 			}
 		}
-
 		fclose(tfile);
 	}
 	
 	void init_transaction(char const* transaction_file) throw(std::runtime_error)
 	{
-		file_ = fopen(transaction_file, "a");
-
-		if(0 == file_){
-			fprintf(stderr, "Fail to open %s;system(%s)\n", transaction_file, strerror(errno));
+		
+		if(0 == (file_ = fopen(transaction_file,"a"))){
+			fprintf(stderr, "Fail to open %s; system(%s)\n", transaction_file, strerror(errno));
 			throw std::runtime_error("Fail to open transaction file");
 		}
 		

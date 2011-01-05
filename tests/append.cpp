@@ -61,7 +61,6 @@ int main(int argc, char **argv)
 			if(!cin)
 				return 1;
 			addr = strtoul(line.c_str(), 0, 16);
-			cout<<addr<<"\n";
 			line.clear();
 			while(addr>>28 < i && addr != -1){ 
 				addr = bdb.append(addr, data, 128);
