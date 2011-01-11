@@ -9,6 +9,7 @@
 #include "bdb.h"
 #include "chunk.h"
 #include "idPool.h"
+#include "GAISUtils/profiler.h"
 
 #include <iostream>
 
@@ -57,6 +58,16 @@ struct Pool
 	AddrType 
 	put(char const* data, SizeType size);
 	
+	/** Put data to a specific chunk
+	 *  @param data Data to be put into this pool.
+	 *  @param size Size of the data.
+	 *  @return Address for accesing data just put.
+	 *  @remark Error Number: SYSTEM_ERROR, ADDRESS_OVERFLOW.
+	 */
+	AddrType 
+	put(AddrType address, char const* data, SizeType size);
+
+
 	/** Append data to a chunk
 	 *  @param address Indicate which chunk to be appended.
 	 *  @param data Data to be appended.
@@ -231,6 +242,8 @@ void BehaviorDB::init_()
 			fprintf(stderr, strerror(errno));
 		}
 	}
+	accLog_->rdbuf()->pubsetbuf(accBuf_, 1000000);
+
 	cvt.str("");
 	cvt<<conf_.working_dir;
 	cvt<<"/error.log";
@@ -244,6 +257,7 @@ void BehaviorDB::init_()
 			fprintf(stderr, strerror(errno));
 		}
 	}
+	*errLog_<<std::unitbuf;
 }
 
 BehaviorDB::BehaviorDB()
@@ -352,6 +366,37 @@ BehaviorDB::put(char const* data, SizeType size)
 	return pIdx;
 }
 
+AddrType
+BehaviorDB::put(AddrType address, char const* data, SizeType size)
+{
+	clear_error();
+	if(error_return())	return -1;
+
+	AddrType pIdx = address>>28;
+	
+	if(pIdx > 15){ // exceed capacity
+		error_num = DATA_TOO_BIG;
+		*errLog_<<"[error]"<<ETOS(error_num)<<size<<endl;
+		return -1;
+	}
+	
+	AddrType rt = pools_[pIdx].put(address, data, size);
+	
+	error_num = pools_[pIdx].error_num;
+
+	if(rt == -1 && 0 != error_num){
+		*errLog_<<"[error]"<<ETOS(error_num)<<endl;
+		return -1;
+	}
+
+	pIdx = pIdx<<28 | rt;
+
+	// write access log
+	log_access("put", pIdx, size);
+	
+	return pIdx;
+	
+}
 
 AddrType
 BehaviorDB::append(AddrType address, char const* data, SizeType size)
@@ -679,12 +724,56 @@ Pool::put(char const* data, SizeType size)
 	return off;
 }
 
+AddrType
+Pool::put(AddrType address, char const* data, SizeType size)
+{
+	
+	clear_error();
+	if(error_num)
+		return -1;
+
+	if(onStreaming_){
+		error_num = POOL_LOCKED;
+		write_log("putErr", 0, file_.tellp(), size, "Pool locked", __LINE__);
+		return -1;
+	}
+
+	
+	AddrType addr = idPool_.Acquire(address & 0x0fffffff);
+	std::streamoff off = addr;
+	
+	// clear() is required when previous read reach the file end
+	file_.clear();
+	file_.seekp(off * chunk_size_, ios::beg);
+	
+	
+	// write 8 bytes chunk header
+	ChunkHeader ch;
+	ch.size = size;
+	file_<<ch;
+	file_.write(data, (size));
+	
+	if(!file_.good()){
+		idPool_.Release(addr);
+		write_log("putErr", &addr, file_.tellp(), size, strerror(errno), __LINE__);
+		error_num = SYSTEM_ERROR;
+		return -1;
+	}
+	
+	// write log
+	write_log("put", &addr, file_.tellp(), size);
+	
+	return off;
+}
+
+
 AddrType 
 Pool::append(AddrType address, char const* data, SizeType size, 
 	AddrType next_pool_idx, Pool* next_pool)
 {
 	using std::stringstream;
 	
+	// Profiler.begin("Pool Append");
 	clear_error();
 	if(error_num)
 		return -1;
@@ -694,14 +783,20 @@ Pool::append(AddrType address, char const* data, SizeType size,
 		write_log("appErr", &address, file_.tellg(), size, "Pool locked", __LINE__);
 		return -1;
 	}
-
+	
 	ChunkHeader ch;
-
-	if( idPool_.isAcquired(address & 0x0fffffff) ){
+	// Profiler.begin("isAcquired ID");
+	
+	// Test if the chunk is clean
+	// Case 1: Acquired and released, then it is clean since we zero 
+	//         out header of released chunk
+	// Case 2: Not acquired, then use default ChunkHeader ch
+	if(idPool_.next() > (address & 0x0fffffff)){
 		seekToHeader(address);
 		file_>>ch;
 	}
-	
+	// Profiler.end("isAcquired ID");
+
 	if(!file_){
 		write_log("appErr", &address, file_.tellg(), ch.size + size, "Read header error", __LINE__);
 		return -1;
@@ -721,33 +816,36 @@ Pool::append(AddrType address, char const* data, SizeType size,
 		
 		// true migration
 		if(next_pool_idx != address >> 28){
-
+			
 			// erase old header
 			file_.clear();
-			//file_.seekp(-8, ios::cur);
-			seekToHeader(address);
+			file_.seekp(-8, ios::cur);
+			//seekToHeader(address);
 			file_.write("00000000", 8);
-			file_.tellg(); // without this line, read will fail(why?)
+			//file_.tellg(); // without this line, read will fail(why?)
 			file_.clear();
 			file_.sync();
-
+			
+			// Profiler.begin("Migration");
 			AddrType rt = next_pool_idx<<28 | next_pool[next_pool_idx].migrate(file_, ch, data, size);
-
+			// Profiler.end("Migration");
 			if(-1 == rt && next_pool->error_num != 0){ // migration failed
 				error_num = next_pool->error_num;
 				return rt;
 			}
 
 			idPool_.Release(address & 0x0fffffff);
+			// Profiler.end("Pool Append");
 			return rt;
 		}
 	}
 	
+	// Profiler.begin("Normal Append");
 	// update header
 	ch.size += size;
 	ch.liveness++;
 	
-	file_.seekp(-8, std::fstream::cur);
+	file_.seekp(-8, ios::cur);
 	
 	file_.clear();
 	file_.sync();
@@ -772,7 +870,8 @@ Pool::append(AddrType address, char const* data, SizeType size,
 
 	// write log
 	write_log("append", &address, file_.tellg(), ch.size);
-
+	// Profiler.end("Normal Append");
+	// Profiler.end("Pool Append");
 	return address;		
 }
 

@@ -21,7 +21,6 @@ int main(int argc, char** argv)
 
 	for(int i=0;i<upperbound; ++i){
 		cout<<setw(8)<<setfill('0')<<hex<<bdb.put(data_128, 128)<<endl;
-		cerr<<setw(8)<<setfill('0')<<hex<<bdb.put(data_128, 128)<<endl;
 		cout.flush();
 		
 	}

@@ -51,6 +51,12 @@ public:
 		return true;
 	
 	}
+	
+	IDType 
+	next()
+	{
+		return cur_;	
+	}
 
 	IDType 
 	Acquire()
@@ -62,17 +68,33 @@ public:
 				exit(1);
 			}
 			q_.pop_back();
-			fflush(file_);
 			return tmp;
 		}
 		if(0 > fprintf(file_, "+%u\n", cur_) && errno){
 			fprintf(stderr, "idPool: %s\n", strerror(errno));
 			exit(1);
 		}
-		fflush(file_);
 		return cur_++;
 	}
 	
+	IDType
+	Acquire(IDType id)
+	{
+		if(!isAcquired(id)){
+			/** @todo TODO: Current implementation(stack) is not suit for this case.
+			 *  hashmap may worth the consideration
+			 */
+			if(id == cur_)
+				return Acquire();
+			/*
+			if(id < cur_ ){
+				exit(1);// NOT SUPPORT
+			}
+			*/
+		}
+		return id;
+	}
+
 	IDType
 	Acquire_throw() throw(std::overflow_error)
 	{
