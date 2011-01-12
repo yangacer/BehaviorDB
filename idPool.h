@@ -210,7 +210,7 @@ public:
 
 	}
 
-private:
+//private:
 
 	IDPool(IDPool const &cp);
 	IDPool& operator=(IDPool const &cp);

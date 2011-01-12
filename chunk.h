@@ -2,6 +2,7 @@
 #define _CHUNK_H_
 
 #include <iosfwd>
+#include <istream>
 #include "bdb.h"
 
 struct ChunkHeader
@@ -17,8 +18,10 @@ struct ChunkHeader
 std::istream& 
 operator>>(std::istream& is, ChunkHeader & ch);
 
+
 std::ostream& 
 operator<<(std::ostream& os, ChunkHeader const& ch);
+
 
 #endif
 

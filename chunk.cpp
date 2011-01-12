@@ -3,28 +3,32 @@
 #include <cstdlib>
 #include <cstring>
 #include <istream>
+#include <sstream>
 #include <ostream>
 #include <iomanip>
 
-using std::ios;
 using std::hex;
-using std::setfill;
-using std::setw;
+
 
 std::istream& 
 operator>>(std::istream &is, ChunkHeader &ch)
 {
-	char buf[8] = {0};
+	static char buf[9];
+	buf[8] = 0;
 
-	is.read((char*)&ch.liveness, 1);
-	is.read(buf, 7);
-	ch.size = strtoul(buf, 0, 16);
+	is.read(buf, 8);
+	ch.liveness = *buf;
+	ch.size = strtoul(&buf[1], 0, 16);
+
 	return is;	
 }
 
 std::ostream& 
 operator<<(std::ostream &os, ChunkHeader const &ch)
 {
+	using std::ios;
+	using std::setfill;
+	using std::setw;
 	os.write((char*)&ch.liveness, 1);
 
 	ios::fmtflags oldflag = os.flags();

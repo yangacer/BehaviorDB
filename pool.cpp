@@ -279,6 +279,7 @@ BehaviorDB::~BehaviorDB()
 	errLog_->close();
 	accLog_->close();
 	delete accLog_;
+	delete errLog_;
 	delete [] pools_;
 }
 
@@ -329,10 +330,12 @@ BehaviorDB::error_return()
 void
 BehaviorDB::log_access(char const *operation, AddrType address, SizeType size, char const *desc)
 {
+	
 	accLog_->unsetf(ios::hex);
 	*accLog_<<"["<<setw(6)<<setfill(' ')<<operation<<"]"
 		<<"Size(B):"<<setw(8)<<size<<" "
 		<<"Address(HEX):"<<setw(8)<<setfill('0')<<hex<<address<<endl;
+	
 }
 
 AddrType
@@ -773,7 +776,7 @@ Pool::append(AddrType address, char const* data, SizeType size,
 {
 	using std::stringstream;
 	
-	// Profiler.begin("Pool Append");
+	//Profiler.begin("Pool Append");
 	clear_error();
 	if(error_num)
 		return -1;
@@ -785,17 +788,20 @@ Pool::append(AddrType address, char const* data, SizeType size,
 	}
 	
 	ChunkHeader ch;
-	// Profiler.begin("isAcquired ID");
 	
 	// Test if the chunk is clean
 	// Case 1: Acquired and released, then it is clean since we zero 
 	//         out header of released chunk
 	// Case 2: Not acquired, then use default ChunkHeader ch
-	if(idPool_.next() > (address & 0x0fffffff)){
+	
+	if(idPool_.cur_ > (address & 0x0fffffff)){
+		//Profiler.begin("SeekHeader");
 		seekToHeader(address);
+		//Profiler.end("SeekHeader");
+		//Profiler.begin("ReadHeader");
 		file_>>ch;
+		//Profiler.end("ReadHeader");
 	}
-	// Profiler.end("isAcquired ID");
 
 	if(!file_){
 		write_log("appErr", &address, file_.tellg(), ch.size + size, "Read header error", __LINE__);
@@ -822,33 +828,29 @@ Pool::append(AddrType address, char const* data, SizeType size,
 			file_.seekp(-8, ios::cur);
 			//seekToHeader(address);
 			file_.write("00000000", 8);
-			//file_.tellg(); // without this line, read will fail(why?)
-			file_.clear();
-			file_.sync();
+			file_.tellg(); // without this line, read will fail(why?)
 			
-			// Profiler.begin("Migration");
+			//Profiler.begin("Migration");
 			AddrType rt = next_pool_idx<<28 | next_pool[next_pool_idx].migrate(file_, ch, data, size);
-			// Profiler.end("Migration");
+			//Profiler.end("Migration");
 			if(-1 == rt && next_pool->error_num != 0){ // migration failed
 				error_num = next_pool->error_num;
 				return rt;
 			}
 
 			idPool_.Release(address & 0x0fffffff);
-			// Profiler.end("Pool Append");
+			//Profiler.end("Pool Append");
 			return rt;
 		}
 	}
 	
-	// Profiler.begin("Normal Append");
+	//Profiler.begin("Normal Append");
 	// update header
 	ch.size += size;
 	ch.liveness++;
 	
-	file_.seekp(-8, ios::cur);
-	
 	file_.clear();
-	file_.sync();
+	file_.seekp(-8, ios::cur);
 	
 	file_<<ch;
 	
@@ -870,8 +872,8 @@ Pool::append(AddrType address, char const* data, SizeType size,
 
 	// write log
 	write_log("append", &address, file_.tellg(), ch.size);
-	// Profiler.end("Normal Append");
-	// Profiler.end("Pool Append");
+	//Profiler.end("Normal Append");
+	//Profiler.end("Pool Append");
 	return address;		
 }
 
