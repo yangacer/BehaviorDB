@@ -58,15 +58,6 @@ struct Pool
 	AddrType 
 	put(char const* data, SizeType size);
 	
-	/** Put data to a specific chunk
-	 *  @param data Data to be put into this pool.
-	 *  @param size Size of the data.
-	 *  @return Address for accesing data just put.
-	 *  @remark Error Number: SYSTEM_ERROR, ADDRESS_OVERFLOW.
-	 */
-	AddrType 
-	put(AddrType address, char const* data, SizeType size);
-
 
 	/** Append data to a chunk
 	 *  @param address Indicate which chunk to be appended.
@@ -369,37 +360,6 @@ BehaviorDB::put(char const* data, SizeType size)
 	return pIdx;
 }
 
-AddrType
-BehaviorDB::put(AddrType address, char const* data, SizeType size)
-{
-	clear_error();
-	if(error_return())	return -1;
-
-	AddrType pIdx = address>>28;
-	
-	if(pIdx > 15){ // exceed capacity
-		error_num = DATA_TOO_BIG;
-		*errLog_<<"[error]"<<ETOS(error_num)<<size<<endl;
-		return -1;
-	}
-	
-	AddrType rt = pools_[pIdx].put(address, data, size);
-	
-	error_num = pools_[pIdx].error_num;
-
-	if(rt == -1 && 0 != error_num){
-		*errLog_<<"[error]"<<ETOS(error_num)<<endl;
-		return -1;
-	}
-
-	pIdx = pIdx<<28 | rt;
-
-	// write access log
-	log_access("put", pIdx, size);
-	
-	return pIdx;
-	
-}
 
 struct wvCmp
 {
@@ -753,47 +713,6 @@ Pool::put(char const* data, SizeType size)
 	return off;
 }
 
-AddrType
-Pool::put(AddrType address, char const* data, SizeType size)
-{
-	
-	clear_error();
-	if(error_num)
-		return -1;
-
-	if(onStreaming_){
-		error_num = POOL_LOCKED;
-		write_log("putErr", 0, file_.tellp(), size, "Pool locked", __LINE__);
-		return -1;
-	}
-
-	
-	AddrType addr = idPool_.Acquire(address & 0x0fffffff);
-	std::streamoff off = addr;
-	
-	// clear() is required when previous read reach the file end
-	file_.clear();
-	file_.seekp(off * chunk_size_, ios::beg);
-	
-	
-	// write 8 bytes chunk header
-	ChunkHeader ch;
-	ch.size = size;
-	file_<<ch;
-	file_.write(data, (size));
-	
-	if(!file_.good()){
-		idPool_.Release(addr);
-		write_log("putErr", &addr, file_.tellp(), size, strerror(errno), __LINE__);
-		error_num = SYSTEM_ERROR;
-		return -1;
-	}
-	
-	// write log
-	write_log("put", &addr, file_.tellp(), size);
-	
-	return off;
-}
 
 
 AddrType 

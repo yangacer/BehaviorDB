@@ -109,16 +109,6 @@ struct BehaviorDB
 	AddrType 
 	put(char const* data, SizeType size);
 	
-	/** Put data into a specific chunk
-	 *  @param address
-	 *  @param data
-	 *  @param size
-	 *  @return Address of the chunk that stores the data or -1 when error happened.
-	 *  @remark Error Number: SYSTEM_ERROR, ADDRESS_OVERFLOW, DATA_TOO_BIG, POOL_LOCKED.
-	 */
-	AddrType
-	put(AddrType address, char const* data, SizeType size);
-
 	/** Append data contained by WriteVector(s)
 	 *  @param wv
 	 *  @param wv_size
