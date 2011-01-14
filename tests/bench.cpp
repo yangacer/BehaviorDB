@@ -5,7 +5,6 @@
 #include <vector>
 #include <sstream>
 #include "bdb.h"
-#include "GAISUtils/profiler.h"
 #include <fcntl.h>
 #include <cstring>
 #include <cerrno>
@@ -59,7 +58,7 @@ int main(int argc, char** argv)
 	
 	timeval put, append;
 	if('b' == mode){
-		vector<int> handles(handleCnt);
+		vector<AddrType> handles(handleCnt);
 		TimeBeg(put);
 		for(int i=0; i<handleCnt; ++i){
 			handles[i] = (bdb.put(data, 100));
@@ -70,9 +69,28 @@ int main(int argc, char** argv)
 		}
 		TimeEnd(put);
 		TimeBeg(append);
+		const int wvsSize = 500;
+		WriteVector wvs[wvsSize];
+		WriteVector wv;
+		wv.size = 100;
+		wv.buffer = data;
+		int wvIdx = 0;
 		for(size_t i=0; i<accessCnt; ++i){
 			fin>>handle;
-			handles[handle] = bdb.append(handles[handle], data, 100);
+			wv.address = &handles[handle];
+			wvs[wvIdx++] = wv;
+			if(0 == wvIdx % wvsSize || i+1 == accessCnt){
+				size_t j = (wvIdx % wvsSize)?
+					i - i % wvsSize :
+					i + 1 - wvsSize;
+				// cout<<"Processing: "<<j<<"-"<<i<<endl;
+				int rt = bdb.append(wvs, wvIdx);
+				if(rt != wvIdx){
+					cerr<<"Append bdb failed"<<endl;
+					exit(1);
+				}
+				wvIdx = 0;
+			}
 		}
 		TimeEnd(append);
 	}else{ // if('f' == mode){
@@ -102,6 +120,5 @@ int main(int argc, char** argv)
 		TimeEnd(append);
 	}
 	cout.clear();
-	Profiler.dump("Pool Append");
 
 }

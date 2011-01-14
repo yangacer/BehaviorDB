@@ -26,15 +26,18 @@ operator>>(std::istream &is, ChunkHeader &ch)
 std::ostream& 
 operator<<(std::ostream &os, ChunkHeader const &ch)
 {
+	
 	using std::ios;
 	using std::setfill;
 	using std::setw;
+	
 	os.write((char*)&ch.liveness, 1);
 
 	ios::fmtflags oldflag = os.flags();
+	os.unsetf(oldflag);
 	os<<setfill('0')<<setw(7)<<hex<<ch.size;
 	os.flags(oldflag);
-
+	
 	return os;	
 }
 

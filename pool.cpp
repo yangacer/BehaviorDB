@@ -9,7 +9,7 @@
 #include "bdb.h"
 #include "chunk.h"
 #include "idPool.h"
-#include "GAISUtils/profiler.h"
+//#include "GAISUtils/profiler.h"
 
 #include <iostream>
 
@@ -401,6 +401,31 @@ BehaviorDB::put(AddrType address, char const* data, SizeType size)
 	
 }
 
+struct wvCmp
+{
+	bool operator()(WriteVector const& x, WriteVector const &y)
+	{
+		return *x.address < *y.address;	
+	}
+};
+
+int
+BehaviorDB::append(WriteVector* wv, int wv_size)
+{
+	if(!wv) return 0;
+
+	
+	std::stable_sort(wv, wv+wv_size, wvCmp());
+	AddrType rt;
+	for(int i=0; i< wv_size; ++i){
+		rt = append(*(wv[i].address), wv[i].buffer, wv[i].size);
+		if(rt == -1 && error_num)
+			return i;
+		*wv[i].address = rt;
+	}
+	return wv_size;
+}
+
 AddrType
 BehaviorDB::append(AddrType address, char const* data, SizeType size)
 {
@@ -777,7 +802,7 @@ Pool::append(AddrType address, char const* data, SizeType size,
 {
 	using std::stringstream;
 	
-	Profiler.begin("Pool Append");
+	//Profiler.begin("Pool Append");
 	clear_error();
 	if(error_num)
 		return -1;
@@ -796,12 +821,12 @@ Pool::append(AddrType address, char const* data, SizeType size,
 	// Case 2: Not acquired, then use default ChunkHeader ch
 	
 	if(idPool_.cur_ > (address & 0x0fffffff)){
-		Profiler.begin("SeekHeader");
+		//Profiler.begin("SeekHeader");
 		seekToHeader(address);
-		Profiler.end("SeekHeader");
-		Profiler.begin("ReadHeader");
+		//Profiler.end("SeekHeader");
+		//Profiler.begin("ReadHeader");
 		file_>>ch;
-		Profiler.end("ReadHeader");
+		//Profiler.end("ReadHeader");
 	}
 
 	if(!file_){
@@ -831,21 +856,21 @@ Pool::append(AddrType address, char const* data, SizeType size,
 			file_.write("00000000", 8);
 			file_.tellg(); // without this line, read will fail(why?)
 			
-			Profiler.begin("Migration");
+			//Profiler.begin("Migration");
 			AddrType rt = next_pool_idx<<28 | next_pool[next_pool_idx].migrate(file_, ch, data, size);
-			Profiler.end("Migration");
+			//Profiler.end("Migration");
 			if(-1 == rt && next_pool->error_num != 0){ // migration failed
 				error_num = next_pool->error_num;
 				return rt;
 			}
 
 			idPool_.Release(address & 0x0fffffff);
-			Profiler.end("Pool Append");
+			//Profiler.end("Pool Append");
 			return rt;
 		}
 	}
 	
-	Profiler.begin("Normal Append");
+	//Profiler.begin("Normal Append");
 	// update header
 	ch.size += size;
 	ch.liveness++;
@@ -873,8 +898,8 @@ Pool::append(AddrType address, char const* data, SizeType size,
 
 	// write log
 	write_log("append", &address, file_.tellg(), ch.size);
-	Profiler.end("Normal Append");
-	Profiler.end("Pool Append");
+	//Profiler.end("Normal Append");
+	//Profiler.end("Pool Append");
 	return address;		
 }
 

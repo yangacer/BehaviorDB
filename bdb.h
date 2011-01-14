@@ -65,6 +65,14 @@ struct Config
 	{}
 };
 
+
+struct WriteVector
+{
+	char const* buffer;
+	SizeType size;
+	AddrType *address;
+};
+
 // Forward decls
 struct Pool;
 struct BehaviorDB;
@@ -110,6 +118,14 @@ struct BehaviorDB
 	 */
 	AddrType
 	put(AddrType address, char const* data, SizeType size);
+
+	/** Append data contained by WriteVector(s)
+	 *  @param wv
+	 *  @param wv_size
+	 *  @return The first failure WriteVector. i.e. wv_size for non failure.
+	 */
+	int
+	append(WriteVector *wv, int wv_size);
 
 	/** Append data to a chunk
 	 *  @param address
