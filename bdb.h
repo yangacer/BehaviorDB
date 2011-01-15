@@ -27,7 +27,9 @@ enum ERRORNUMBER
 	DATA_TOO_BIG = 3,
 
 	/// Pool is on streaming
-	POOL_LOCKED = 4
+	POOL_LOCKED = 4,
+
+	NON_EXIST = 5
 };
 
 //! Define address type.
@@ -109,6 +111,16 @@ struct BehaviorDB
 	AddrType 
 	put(char const* data, SizeType size);
 	
+	/** Overwrite a chunk
+	 *  @param address
+	 *  @param data
+	 *  @param size
+	 *  @return Address of the overwritten chunk
+	 *  @remark Error Number: SYSTEM_ERROR, NON_EXIST, DATA_TOO_BIG, POOL_LOCKED.
+	 */
+	AddrType
+	overwrite(AddrType address, char const* data, SizeType size);
+
 	/** Append data contained by WriteVector(s)
 	 *  @param wv
 	 *  @param wv_size

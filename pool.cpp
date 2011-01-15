@@ -58,6 +58,15 @@ struct Pool
 	AddrType 
 	put(char const* data, SizeType size);
 	
+	/** Overwrite a chunk
+	 *  @param address
+	 *  @param data
+	 *  @param size
+	 *  @return Address
+	 *  @remark Error Number: SYSTEM_ERROR, NON_EXIST
+	 */
+	AddrType
+	overwrite(AddrType address, char const *data, SizeType size);
 
 	/** Append data to a chunk
 	 *  @param address Indicate which chunk to be appended.
@@ -162,15 +171,16 @@ struct error_num_to_str
 		return buf[error_num];
 	}
 private:
-	static char buf[5][40];
+	static char buf[6][40];
 };
 
-char error_num_to_str::buf[5][40] = {
+char error_num_to_str::buf[6][40] = {
 	"No error",
-	"Address Overflow",
-	"System Error",
-	"Data Too Big",
-	"Pool Locked"
+	"Address overflow",
+	"System error",
+	"Data too big",
+	"Pool locked",
+	"Non exist address"
 };
 
 // ------------- BehaviorDB impl -----------------
@@ -323,7 +333,7 @@ BehaviorDB::log_access(char const *operation, AddrType address, SizeType size, c
 {
 	
 	accLog_->unsetf(ios::hex);
-	*accLog_<<"["<<setw(6)<<setfill(' ')<<operation<<"]"
+	*accLog_<<"["<<setw(9)<<setfill(' ')<<operation<<"]"
 		<<"Size(B):"<<setw(8)<<size<<" "
 		<<"Address(HEX):"<<setw(8)<<setfill('0')<<hex<<address<<endl;
 	
@@ -360,6 +370,35 @@ BehaviorDB::put(char const* data, SizeType size)
 	return pIdx;
 }
 
+AddrType
+BehaviorDB::overwrite(AddrType address, char const* data, SizeType size)
+{
+	clear_error();
+	if(error_return())	return -1;
+	
+	AddrType pIdx = estimate_pool_index(size+8);
+	if(pIdx < address>>28){
+		error_num = DATA_TOO_BIG;
+		*errLog_<<"[error]"<<ETOS(error_num)<<size<<endl;
+		return -1;
+	}
+	
+	AddrType rt = pools_[pIdx].overwrite(address, data, size);
+	
+	error_num = pools_[pIdx].error_num;
+
+	if(rt == -1 && 0 != error_num){
+		*errLog_<<"[error]"<<ETOS(error_num)<<endl;
+		return -1;
+	}
+
+	pIdx = pIdx<<28 | rt;
+
+	// write access log
+	log_access("overwrite", pIdx, size);
+	
+	return pIdx;
+}
 
 struct wvCmp
 {
@@ -713,7 +752,52 @@ Pool::put(char const* data, SizeType size)
 	return off;
 }
 
+AddrType
+Pool::overwrite(AddrType address, char const* data, SizeType size)
+{
+	
+	clear_error();
+	if(error_num)
+		return -1;
 
+	if(onStreaming_){
+		error_num = POOL_LOCKED;
+		write_log("owrtErr", 0, file_.tellp(), size, "Pool locked", __LINE__);
+		return -1;
+	}
+
+	if(!idPool_.isAcquired(address & 0x0fffffff)){
+		write_log("owrtErr", 0, file_.tellp(), size, "IDPool overflowed", __LINE__);
+		error_num = NON_EXIST;
+		return -1; 
+	}
+	
+	AddrType addr = address & 0x0fffffff;
+	std::streamoff off = addr;
+	
+	// clear() is required when previous read reach the file end
+	file_.clear();
+	file_.seekp(off * chunk_size_, ios::beg);
+	
+	
+	// write 8 bytes chunk header
+	ChunkHeader ch;
+	ch.size = size;
+	file_<<ch;
+	file_.write(data, (size));
+	
+	if(!file_.good()){
+		idPool_.Release(addr);
+		write_log("owrtErr", &addr, file_.tellp(), size, strerror(errno), __LINE__);
+		error_num = SYSTEM_ERROR;
+		return -1;
+	}
+	
+	// write log
+	write_log("owrt", &addr, file_.tellp(), size);
+	
+	return off;
+}
 
 AddrType 
 Pool::append(AddrType address, char const* data, SizeType size, 
