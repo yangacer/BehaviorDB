@@ -77,23 +77,6 @@ public:
 		return cur_++;
 	}
 	
-	IDType
-	Acquire(IDType id)
-	{
-		if(!isAcquired(id)){
-			/** @todo TODO: Current implementation(stack) is not suit for this case.
-			 *  hashmap may worth the consideration
-			 */
-			if(id == cur_)
-				return Acquire();
-			/*
-			if(id < cur_ ){
-				exit(1);// NOT SUPPORT
-			}
-			*/
-		}
-		return id;
-	}
 
 	IDType
 	Acquire_throw() throw(std::overflow_error)
