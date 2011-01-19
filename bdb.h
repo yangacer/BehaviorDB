@@ -39,7 +39,7 @@ typedef unsigned int AddrType;
 typedef unsigned int SizeType;
 
 
-/** Configuration object for BehaviorDB
+/** @brief Configuration object for BehaviorDB
  */
 struct Config
 {
@@ -67,7 +67,8 @@ struct Config
 	{}
 };
 
-
+/** @brief Output vector for BehaviorDB::append
+ */
 struct WriteVector
 {
 	char const* buffer;
@@ -79,6 +80,8 @@ struct WriteVector
 struct Pool;
 struct BehaviorDB;
 
+/** @brief For recording input stream state
+ */
 struct StreamState
 {
 	friend struct BehaviorDB;
@@ -370,6 +373,11 @@ private:
  * After such process, there will be only one migErr error logged in 8000.pool.log which is correct result.
  *
  * This test also outputs number of access to each pool.
+ */
+
+/** \example bench.cpp
+ *  
+ *  Benchmark for BehaviorDB and filesystem. This program also utilize WriteVector for imporoving performance.
  */
 
 /**

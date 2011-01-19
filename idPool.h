@@ -9,7 +9,6 @@
 #include <cstdio>
 #include <cerrno>
 
-
 /// @todo TODO: Replace IDPool data structure with bitset.
 /// @todo TODO: Transaction file compression.
 
