@@ -2,6 +2,11 @@
 #include <iostream>
 #include <iomanip>
 
+void usage()
+{
+	printf("put amount\n");	
+}
+
 int main(int argc, char** argv)
 {
 	using namespace std;

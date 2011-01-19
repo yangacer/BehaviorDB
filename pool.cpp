@@ -331,12 +331,10 @@ BehaviorDB::error_return()
 void
 BehaviorDB::log_access(char const *operation, AddrType address, SizeType size, char const *desc)
 {
-	
-	accLog_->unsetf(ios::hex);
-	*accLog_<<"["<<setw(9)<<setfill(' ')<<operation<<"]"
-		<<"Size(B):"<<setw(8)<<size<<" "
-		<<"Address(HEX):"<<setw(8)<<setfill('0')<<hex<<address<<endl;
-	
+	static char buf[52];
+	sprintf(buf, "[% 9s] Size(B):%8lu Address(HEX):%08x\n", operation, size, address);
+	accLog_->write(buf, 51);
+		
 }
 
 AddrType

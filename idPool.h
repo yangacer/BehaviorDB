@@ -8,6 +8,7 @@
 #include <cstring>
 #include <cstdio>
 #include <cerrno>
+#include "hash_helper.h"
 
 /// @todo TODO: Replace IDPool data structure with bitset.
 /// @todo TODO: Transaction file compression.
@@ -42,12 +43,7 @@ public:
 	{ 
 		if(id >= cur_ || id < beg_)
 			return false;
-		if(q_.empty())
-			return true;
-		// perform search in retired list
-		if( q_.rend() != find(q_.rbegin(), q_.rend(), id) )
-			return false;
-		return true;
+		return h_.find(id) == h_.end();
 	
 	}
 	
@@ -60,13 +56,14 @@ public:
 	IDType 
 	Acquire()
 	{
-		if(!q_.empty()){
-			IDType tmp(q_.back());
+
+		if(!h_.empty()){
+			IDType tmp(h_.begin()->second);
 			if(0 > fprintf(file_, "+%u\n", tmp) && errno){
 				fprintf(stderr, "idPool: %s\n", strerror(errno));
 				exit(1);
 			}
-			q_.pop_back();
+			h_.erase(h_.begin());
 			return tmp;
 		}
 		if(0 > fprintf(file_, "+%u\n", cur_) && errno){
@@ -80,13 +77,13 @@ public:
 	IDType
 	Acquire_throw() throw(std::overflow_error)
 	{
-		if(!q_.empty()){
-			IDType tmp(q_.back());
+		if(!h_.empty()){
+			IDType tmp(h_.begin()->second);
 			if(0 > fprintf(file_, "+%u\n", tmp) && errno){
 				fprintf(stderr, "idPool: %s\n", strerror(errno));
 				exit(1);
 			}
-			q_.pop_back();
+			h_.erase(h_.begin());
 			return tmp;
 		}
 
@@ -116,7 +113,7 @@ public:
 			--cur_;
 			return;
 		}
-		q_.push_back(id);
+		h_[id] = id;
 		return;
 	}
 	
@@ -134,7 +131,7 @@ public:
 			--cur_;
 			return;
 		}
-		q_.push_back(id);
+		h_[id] = id;
 		return;
 
 	}
@@ -142,7 +139,7 @@ public:
 
 	bool 
 	avail() const
-	{ return ( cur_ + 1 != end_ || !q_.empty() ); }
+	{ return ( cur_ + 1 != end_ || !h_.empty() ); }
 
 
 	void replay_transaction(char const* transaction_file)
@@ -162,15 +159,15 @@ public:
 			line[strlen(line)-1] = 0;
 			id = strtoul(&line[1], 0, 10);
 			if('+' == line[0]){
-				if(!q_.empty())
-					q_.pop_back();
+				if(!h_.empty())
+					h_.erase(id);
 				else
 					cur_ = id+1;
 			}else if('-' == line[0]){
 				if(id == cur_ -1)
 					cur_--;
 				else
-					q_.push_back(id);
+					h_[id] = id;
 			}
 		}
 		fclose(tfile);
@@ -199,7 +196,7 @@ public:
 
 	IDType const beg_, end_;
 	IDType cur_;
-	std::deque<IDType> q_;
+	STL::hash_map<IDType, IDType> h_;
 	FILE*  file_;
 
 };
