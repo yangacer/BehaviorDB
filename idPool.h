@@ -52,6 +52,12 @@ public:
 	{
 		return cur_;	
 	}
+	
+	unsigned long
+	freeListSize() const
+	{
+		return h_.size();
+	}
 
 	IDType 
 	Acquire()

@@ -23,6 +23,8 @@
 struct Pool
 {
 	friend struct BehaviorDB;
+	friend struct AddrIterator;
+
 	Pool();
 	~Pool();
 
@@ -556,7 +558,13 @@ BehaviorDB::del(AddrType address)
 		*errLog_<<"[error]"<<ETOS(error_num)<<endl;
 		return -1;
 	}
-
+	
+	// warn client when free list too long
+	if( pools_[pIdx].idPool_.freeListSize() > 1<<27 ){
+		*errLog_<<"[warning]"<<" Pool "<<
+			pIdx<<"'s freelist exceed half of pool size."<<endl;
+	}
+		
 	// write access log
 	log_access("del", address, 0);
 
@@ -573,10 +581,100 @@ BehaviorDB::set_pool_log(bool do_log)
 	return *this;	
 }
 
+AddrIterator 
+BehaviorDB::begin()
+{
+	AddrType cur_(0);
+	bool reachEnd, acquired;
+	// find the first chunk
+	int i=0;
+	for(;i<16; ++i){
+		while(	false == ( reachEnd = pools_[i].idPool_.next() <= cur_ ) &&
+			false == (acquired = pools_[i].idPool_.isAcquired(cur_)) )
+			cur_++;
+		// wheather reach end of ith pool
+		if(reachEnd){
+			cur_ = 0;
+			acquired = false;
+		}
+		if(acquired)
+			return AddrIterator(*this, i<<28 | cur_);
+	}
+	
+	return AddrIterator(*this, -1);
+	
+
+}
+
+AddrIterator
+BehaviorDB::end()
+{
+	return AddrIterator(*this, -1);	
+}
+// ------------- AddrIterator Impl -------------
+
+AddrIterator::AddrIterator()
+: cur_(0), bdb_(0)
+{}
+
+
+AddrIterator::AddrIterator(BehaviorDB &bdb, AddrType cur)
+: cur_(cur), bdb_(&bdb)
+{}
+
+AddrIterator::AddrIterator(AddrIterator const &cp)
+: cur_(cp.cur_), bdb_(cp.bdb_)
+{}
+
+AddrIterator&
+AddrIterator::operator=(AddrIterator const &cp)
+{ cur_ = cp.cur_; bdb_ = cp.bdb_; }
+
+AddrIterator&
+AddrIterator::operator++()
+{
+	bool reachEnd, acquired;
+	int i = cur_>>28;
+	AddrType iter = cur_ & 0x0fffffff;
+	iter++;
+	for(;i<16; ++i){
+		while(	false == ( reachEnd = bdb_->pools_[i].idPool_.next() <= iter ) &&
+			false == (acquired = bdb_->pools_[i].idPool_.isAcquired(iter)) )
+			iter++;
+		// wheather reach end of ith pool
+		if(reachEnd){
+			iter = 0;
+			acquired = false;
+		}
+		if(acquired){
+			cur_ = iter | i<<28;
+			return *this;
+		}
+			
+	}
+
+	cur_ = -1;
+	return *this;
+}
+
+AddrType
+AddrIterator::operator*()
+{
+	if(!bdb_ || *this == bdb_->end())
+		return -1;
+	return cur_;	
+}
+
+bool
+AddrIterator::operator==(AddrIterator const& rhs) const
+{
+	return cur_ == rhs.cur_ && bdb_ == rhs.bdb_;
+}
+
 // ------------- Pool implementation ------------
 
 Pool::Pool()
-: error_num(0), doLog_(true), idPool_(0, 1<<28), onStreaming_(false)
+: error_num(0), doLog_(true), idPool_(0, 1<<28-1), onStreaming_(false)
 {
 	
 }

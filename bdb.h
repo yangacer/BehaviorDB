@@ -78,6 +78,7 @@ struct WriteVector
 
 // Forward decls
 struct Pool;
+struct AddrIterator;
 struct BehaviorDB;
 
 /** @brief For recording input stream state
@@ -96,7 +97,7 @@ private:
 /// BehaviorDB Interface
 struct BehaviorDB
 {
-	
+	friend struct AddrIterator;
 	BehaviorDB();
 
 	/** Constructor that uses client's configuration
@@ -208,6 +209,12 @@ struct BehaviorDB
 	 */
 	AddrType 
 	estimate_pool_index(SizeType size);
+	
+	AddrIterator
+	begin();
+
+	AddrIterator
+	end();
 
 	/** Error Number
 	 *  @see ERRORNUMBER
@@ -232,6 +239,42 @@ private:
 	int lock_;
 };
 
+/** @brief Iterator for iterating used addresses of BehaviorDB
+ */
+struct AddrIterator
+{
+	friend struct BehaviorDB;
+
+	AddrIterator();
+	AddrIterator(AddrIterator const& cp);
+
+	AddrIterator& 
+	operator=(AddrIterator const& cp);
+
+	/** Advance iterator to next used address
+	 */
+	AddrIterator &
+	operator++();
+	
+	/** Get the address on iterating
+	 */
+	AddrType 
+	operator*();
+	
+	bool 
+	operator==(AddrIterator const& rhs) const;
+	
+	bool 
+	operator!=(AddrIterator const& rhs) const
+	{ return !(*this == rhs); }
+
+protected:
+	AddrIterator(BehaviorDB &bdb, AddrType cur);
+
+private:
+	AddrType cur_;
+	BehaviorDB *bdb_;
+};
 
 
 #endif // header ends

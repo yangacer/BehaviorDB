@@ -7,7 +7,7 @@ include_directories( ${CMAKE_SOURCE_DIR})
 
 add_library(bdb pool.cpp chunk.cpp)
 
-set(TEST_TARGETS bdb_put put append migrate_test getstream bench)
+set(TEST_TARGETS bdb_put put append migrate_test getstream bench iterate)
 foreach(tg ${TEST_TARGETS})
 	add_executable (${tg} ${CMAKE_SOURCE_DIR}/tests/${tg}.cpp)
 	target_link_libraries(${tg} bdb)
