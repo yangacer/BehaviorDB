@@ -26,7 +26,7 @@ int main(int argc, char** argv)
 	switch(argc){
 	case 3:
 		mode = argv[2][0];
-		if(mode != 'b' && mode != 'f'){
+		if(mode != 'b' && mode != 'f' && mode != 'r'){
 			usage();
 			exit(1);
 		}
@@ -46,7 +46,7 @@ int main(int argc, char** argv)
 
 	Config conf;
 	conf.pool_log = false;
-	conf.chunk_unit = 7;
+	conf.chunk_unit = 12;
 	conf.migrate_threshold = 0x32;
 	BehaviorDB bdb(conf);
 	unsigned int handleCnt(0), accessCnt(0), handle(0); 
@@ -69,7 +69,7 @@ int main(int argc, char** argv)
 		}
 		TimeEnd(put);
 		TimeBeg(append);
-		const int wvsSize = 500;
+		const int wvsSize = 1000;
 		WriteVector wvs[wvsSize];
 		WriteVector wv;
 		wv.size = 100;
@@ -93,7 +93,7 @@ int main(int argc, char** argv)
 			}
 		}
 		TimeEnd(append);
-	}else{ // if('f' == mode){
+	}else  if('f' == mode){ // no restriction filesystem mode
 		vector<FILE*> handles(handleCnt, 0);
 		stringstream cvt;
 		TimeBeg(put);
@@ -118,6 +118,36 @@ int main(int argc, char** argv)
 		for(int i=0; i< handleCnt; ++i)
 			fclose(handles[i]);
 		TimeEnd(append);
+	}else if('r' == mode){	// restricted filesystem mode
+		vector<string> handles(handleCnt);
+		stringstream cvt;
+		TimeBeg(put);
+		FILE* fp = 0;
+		for(int i=0; i<handleCnt; ++i){
+			cvt.str("");
+			cvt.clear();
+			cvt<<"./benchfiles/";
+			cvt<<setw(8)<<setfill('0')<<hex<<i;
+			handles[i] = cvt.str();
+			fp = fopen(handles[i].c_str(), "a");
+			if(0 == fp){
+				cerr<<"Open written file error"<<endl;
+				cerr<<"System: "<<strerror(errno)<<endl;
+				exit(1);
+			}
+			fwrite(data, 1, 100, fp);
+			fclose(fp);
+		}
+		TimeEnd(put);
+		TimeBeg(append);
+		for(size_t i=0; i<accessCnt; ++i){
+			fin>>handle;
+			fp = fopen(handles[handle].c_str(), "a");
+			fwrite(data, 1, 100, fp);
+			fclose(fp);
+		}
+		TimeEnd(append);
+
 	}
 	cout.clear();
 

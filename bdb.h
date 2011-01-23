@@ -4,10 +4,10 @@
 
 /// @todo (Done) TODO: Configuration object for BehaviorDB
 /// @todo TODO: Pure C wrapper
-/// @todo TODO: iovec methods
+/// @todo (Done) TODO: iovec methods
 /// @todo TODO: Windows Version
-/// @todo (Done) TODO: Early migration
-
+/// @todo TODO: Early migration (history estimation)
+/// @todo TODO: Allow put small data to large chunk
 #include <iosfwd>
 
 /** @file bdb.h

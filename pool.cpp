@@ -200,7 +200,7 @@ void BehaviorDB::init_()
 	lock_ = open("bdb.lock", O_RDWR);
 	flock(lock_, LOCK_EX);
 
-	if(conf_.chunk_unit < 4){
+	if(1<<conf_.chunk_unit < sizeof(ChunkHeader)){
 		fprintf(stderr, "Chunk unit cannot lower than 4\n");
 		exit(1);
 	}
