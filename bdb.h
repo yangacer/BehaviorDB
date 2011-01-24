@@ -7,7 +7,7 @@
 /// @todo (Done) TODO: iovec methods
 /// @todo TODO: Windows Version
 /// @todo TODO: Early migration (history estimation)
-/// @todo TODO: Allow put small data to large chunk
+/// @todo (Done) TODO: Allow put small data to large chunk
 #include <iosfwd>
 
 /** @file bdb.h

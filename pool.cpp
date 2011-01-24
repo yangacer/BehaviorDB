@@ -353,8 +353,16 @@ BehaviorDB::put(char const* data, SizeType size)
 		return -1;
 	}
 	
-	AddrType rt = pools_[pIdx].put(data, size);
-	
+	AddrType rt(0);
+	// invoke put until a pool has available chunk
+	do{
+		rt = pools_[pIdx].put(data, size);
+		pIdx++;
+	}while(	rt == -1 && 
+		ADDRESS_OVERFLOW == pools_[pIdx-1].error_num && 
+		pIdx < 15);
+
+	pIdx--;
 	error_num = pools_[pIdx].error_num;
 
 	if(rt == -1 && 0 != error_num){
@@ -674,7 +682,7 @@ AddrIterator::operator==(AddrIterator const& rhs) const
 // ------------- Pool implementation ------------
 
 Pool::Pool()
-: error_num(0), doLog_(true), idPool_(0, 1<<28-1), onStreaming_(false)
+: error_num(0), doLog_(true), idPool_(0, (1<<28)-1), onStreaming_(false)
 {
 	
 }

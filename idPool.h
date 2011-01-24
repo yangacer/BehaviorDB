@@ -65,14 +65,14 @@ public:
 
 		if(!h_.empty()){
 			IDType tmp(h_.begin()->second);
-			if(0 > fprintf(file_, "+%u\n", tmp) && errno){
+			if(0 > fprintf(file_, "+%lu\n", tmp) && errno){
 				fprintf(stderr, "idPool: %s\n", strerror(errno));
 				exit(1);
 			}
 			h_.erase(h_.begin());
 			return tmp;
 		}
-		if(0 > fprintf(file_, "+%u\n", cur_) && errno){
+		if(0 > fprintf(file_, "+%lu\n", cur_) && errno){
 			fprintf(stderr, "idPool: %s\n", strerror(errno));
 			exit(1);
 		}
@@ -85,7 +85,7 @@ public:
 	{
 		if(!h_.empty()){
 			IDType tmp(h_.begin()->second);
-			if(0 > fprintf(file_, "+%u\n", tmp) && errno){
+			if(0 > fprintf(file_, "+%lu\n", tmp) && errno){
 				fprintf(stderr, "idPool: %s\n", strerror(errno));
 				exit(1);
 			}
@@ -96,7 +96,7 @@ public:
 		if(cur_+ 1 == end_)
 			throw std::overflow_error("IDPool: ID overflowed");
 
-		if(0 > fprintf(file_, "+%u\n", cur_) && errno){
+		if(0 > fprintf(file_, "+%lu\n", cur_) && errno){
 			fprintf(stderr, strerror(errno));
 			exit(1);
 		}
@@ -110,7 +110,7 @@ public:
 		if(id < beg_ && id >= cur_)
 			return;
 		
-		if(0 > fprintf(file_, "-%u\n", id) && errno){
+		if(0 > fprintf(file_, "-%lu\n", id) && errno){
 			fprintf(stderr,"%s\n", strerror(errno));
 			exit(1);
 		}
@@ -129,7 +129,7 @@ public:
 		if(id < beg_ || id >= cur_)
 			throw std::out_of_range("IDPool: Range error");
 		
-		if(0 > fprintf(file_, "-%u\n", id) && errno){
+		if(0 > fprintf(file_, "-%lu\n", id) && errno){
 			fprintf(stderr, strerror(errno));
 			exit(1);
 		}
@@ -145,7 +145,7 @@ public:
 
 	bool 
 	avail() const
-	{ return ( cur_ + 1 != end_ || !h_.empty() ); }
+	{ return ( cur_ != end_ || !h_.empty() ); }
 
 
 	void replay_transaction(char const* transaction_file)
