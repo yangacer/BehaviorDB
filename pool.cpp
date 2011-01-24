@@ -641,6 +641,11 @@ AddrIterator::operator=(AddrIterator const &cp)
 AddrIterator&
 AddrIterator::operator++()
 {
+	// endian check
+	if(cur_ == -1){
+		return *this;
+	}
+
 	bool reachEnd, acquired;
 	int i = cur_>>28;
 	AddrType iter = cur_ & 0x0fffffff;

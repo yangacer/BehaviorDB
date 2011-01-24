@@ -210,9 +210,17 @@ struct BehaviorDB
 	AddrType 
 	estimate_pool_index(SizeType size);
 	
+	/** @brief Get the begining of allocated address
+	 *  @return Address iterator positioned at begining of allocated address.
+	 */
 	AddrIterator
 	begin();
 
+	/** @breif Get the end address 
+	 *  @return Address iterator means the address after the last allocated address.
+	 *  @remark The returned iterator maintains the end semantic but is not a 
+	 *  dereference-able lvalue.
+	 */
 	AddrIterator
 	end();
 
