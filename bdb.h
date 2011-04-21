@@ -9,6 +9,7 @@
 /// @todo TODO: Early migration (history estimation)
 /// @todo (Done) TODO: Allow put small data to large chunk
 #include <iosfwd>
+#include "refHistory.h"
 
 /** @file bdb.h
  *  @brief BehaviorDB header file
@@ -223,6 +224,11 @@ struct BehaviorDB
 	 */
 	AddrIterator
 	end();
+	
+	typedef unsigned int (*MigPredictorCB)(refHistory const&, AddrType, unsigned int);
+	
+	void
+	register_mig_predictor(MigPredictorCB cbf);
 
 	/** Error Number
 	 *  @see ERRORNUMBER

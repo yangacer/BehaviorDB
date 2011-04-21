@@ -9,6 +9,7 @@
 #include "bdb.h"
 #include "chunk.h"
 #include "idPool.h"
+//#include "refHistory.h"
 //#include "GAISUtils/profiler.h"
 
 #include <iostream>
@@ -159,12 +160,29 @@ private:
 	bool onStreaming_;
 
 	int lock_;
+	static refHistory rh_;
+	static BehaviorDB::MigPredictorCB pred_;
 };
 
+
+unsigned int
+MonitorPred(refHistory const& rh, AddrType address, unsigned int next_pool_idx)
+{
+	countResult cr = rh.count(address);
+	printf("@\nPUT: %.3f\nAPPEND: %.3f\nGET: %.3f\n",
+		100 * cr.count[0] / (double)rh.size(),
+		100 * cr.count[1] / (double)rh.size(),
+		100 * cr.count[2] / (double)rh.size()
+	);
+
+	return next_pool_idx;
+}
 
 // ---------------- Misc Functions --------------
 
 char Pool::migbuf_[MIGBUF_SIZ]= {0};
+refHistory Pool::rh_(10000);
+BehaviorDB::MigPredictorCB Pool::pred_(0);
 
 struct error_num_to_str
 {
@@ -371,6 +389,8 @@ BehaviorDB::put(char const* data, SizeType size)
 	}
 
 	pIdx = pIdx<<28 | rt;
+	
+	pools_[0].rh_.add(PUT, pIdx);
 
 	// write access log
 	log_access("put", pIdx, size);
@@ -401,6 +421,8 @@ BehaviorDB::overwrite(AddrType address, char const* data, SizeType size)
 	}
 
 	pIdx = pIdx<<28 | rt;
+	
+	pools_[0].rh_.add(PUT, pIdx);
 
 	// write access log
 	log_access("overwrite", pIdx, size);
@@ -465,7 +487,11 @@ BehaviorDB::append(AddrType address, char const* data, SizeType size)
 		*errLog_<<"[error]"<<ETOS(error_num)<<endl;
 		return -1;
 	}
-
+	
+	if(address != rt)
+		pools_[0].rh_.update(address, rt);
+	pools_[0].rh_.add(APPEND, rt);
+	
 	// write access log
 	log_access("append", rt, size);
 	
@@ -497,6 +523,8 @@ BehaviorDB::get(char *output, SizeType const size, AddrType address)
 		return rt;
 	}
 	
+	pools_[0].rh_.add(GET, address);
+
 	// write access log
 	log_access("get", address, rt);
 
@@ -529,6 +557,9 @@ BehaviorDB::get(char *output, SizeType size, AddrType address, StreamState *stre
 		*errLog_<<"[error]"<<ETOS(error_num)<<endl;
 		return rt;
 	}
+	
+	if(stream->left_ == 0)
+		pools_[0].rh_.add(GET, address);	
 
 	log_access("get", address, rt);
 	
@@ -572,7 +603,9 @@ BehaviorDB::del(AddrType address)
 		*errLog_<<"[warning]"<<" Pool "<<
 			pIdx<<"'s freelist exceed half of pool size."<<endl;
 	}
-		
+	
+	pools_[0].rh_.remove(address);
+
 	// write access log
 	log_access("del", address, 0);
 
@@ -619,6 +652,13 @@ BehaviorDB::end()
 {
 	return AddrIterator(*this, -1);	
 }
+
+void
+BehaviorDB::register_mig_predictor(MigPredictorCB cbf)
+{
+	pools_[0].pred_ = cbf;
+}
+
 // ------------- AddrIterator Impl -------------
 
 AddrIterator::AddrIterator()
@@ -946,7 +986,9 @@ Pool::append(AddrType address, char const* data, SizeType size,
 		return -1;
 	}
 
-	if(ch.size + size > chunk_size_ || ch.liveness == conf_.migrate_threshold){ // need to migration
+	if(ch.size + size > chunk_size_ ){//|| ch.liveness == conf_.migrate_threshold){ // need to migration
+		
+		/*
 		// migrate to larger pool early
 		// when the chunk is appended 127 times
 		if(next_pool_idx < 15 && ch.liveness == conf_.migrate_threshold)
@@ -957,29 +999,34 @@ Pool::append(AddrType address, char const* data, SizeType size,
 			error_num = DATA_TOO_BIG;
 			return -1;	
 		}
-		
-		// true migration
-		if(next_pool_idx != address >> 28){
-			
-			// erase old header
-			file_.clear();
-			file_.seekp(-8, ios::cur);
-			//seekToHeader(address);
-			file_.write("00000000", 8);
-			file_.tellg(); // without this line, read will fail(why?)
-			
-			//Profiler.begin("Migration");
-			AddrType rt = next_pool_idx<<28 | next_pool[next_pool_idx].migrate(file_, ch, data, size);
-			//Profiler.end("Migration");
-			if(-1 == rt && next_pool->error_num != 0){ // migration failed
-				error_num = next_pool->error_num;
-				return rt;
-			}
+		*/
 
-			idPool_.Release(address & 0x0fffffff);
-			//Profiler.end("Pool Append");
+		// true migration
+		//if(next_pool_idx != address >> 28){
+
+		// erase old header
+		file_.clear();
+		file_.seekp(-8, ios::cur);
+		//seekToHeader(address);
+		file_.write("00000000", 8);
+		file_.tellg(); // without this line, read will fail(why?)
+
+		//Profiler.begin("Migration");
+		// determine next pool idx according to refHistory
+		if(pred_)
+			next_pool_idx = pred_(rh_, address, next_pool_idx);
+		AddrType rt = next_pool_idx<<28 | next_pool[next_pool_idx].migrate(file_, ch, data, size);
+		//Profiler.end("Migration");
+		if(-1 == rt && next_pool->error_num != 0){ // migration failed
+			error_num = next_pool->error_num;
 			return rt;
 		}
+
+		
+		idPool_.Release(address & 0x0fffffff);
+		//Profiler.end("Pool Append");
+		return rt;
+		//}
 	}
 	
 	//Profiler.begin("Normal Append");
