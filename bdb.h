@@ -250,7 +250,11 @@ private:
 	std::ofstream *accLog_, *errLog_;
 	char accBuf_[1000000];
 
+#ifndef _WINDOWS
 	int lock_;
+#else
+	FILE* lock_;
+#endif
 };
 
 /** @brief Iterator for iterating used addresses of BehaviorDB

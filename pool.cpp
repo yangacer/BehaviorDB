@@ -1,10 +1,12 @@
 
+#include <cstdio>
 #include <cerrno>
 #include <fstream>
 #include <iomanip>
 #include <sstream>
 #include <string>
 #include <cassert>
+#include <algorithm>
 
 #include "bdb.h"
 #include "chunk.h"
@@ -16,7 +18,14 @@
 
 // POSIX Headers
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#ifndef _WINDOWS
 #include <sys/file.h>
+#else
+#include <direct.h>
+#include <io.h>
+#endif
 
 #define MIGBUF_SIZ 2*1024*1024
 
@@ -215,8 +224,14 @@ using std::ios;
 
 void BehaviorDB::init_()
 {
+#ifdef _WINDOWS
+	fopen_s(&lock_, "bdb.lock", "rw");
+	_lock_file(lock_);
+#else
 	lock_ = open("bdb.lock", O_RDWR);
 	flock(lock_, LOCK_EX);
+#endif
+	
 
 	if(1<<conf_.chunk_unit < sizeof(ChunkHeader)){
 		fprintf(stderr, "Chunk unit cannot lower than 4\n");
@@ -232,7 +247,12 @@ void BehaviorDB::init_()
 	/// @todo TODO: Create directories (portability issue)
 	std::stringstream cvt;
 	cvt<<conf_.working_dir<<"/transactions";
+
+#ifdef _WINDOWS
+	if(-1 == _mkdir(cvt.str().c_str()) && errno != EEXIST){
+#else
 	if(-1 == mkdir(cvt.str().c_str(), S_IRWXU | S_IRWXG) && errno != EEXIST){
+#endif
 		fprintf(stderr, "Create directory transactions failed - ");
 		fprintf(stderr, strerror(errno));
 		exit(1);
@@ -240,7 +260,11 @@ void BehaviorDB::init_()
 
 	cvt.str("");
 	cvt<<conf_.working_dir<<"/pools";
+#ifdef _WINDOWS
+	if(-1 == _mkdir(cvt.str().c_str()) && errno != EEXIST){
+#else
 	if(-1 == mkdir(cvt.str().c_str(), S_IRWXU | S_IRWXG) && errno != EEXIST){
+#endif
 		fprintf(stderr, "Create directory pools failed - ");
 		fprintf(stderr, strerror(errno));
 		exit(1);
@@ -295,8 +319,13 @@ BehaviorDB::BehaviorDB(Config const &conf)
 
 BehaviorDB::~BehaviorDB()
 {
+#ifdef _WINDOWS
+	_unlock_file(lock_);
+	fclose(lock_);
+#else
 	flock(lock_, LOCK_UN);
 	close(lock_);
+#endif
 	errLog_->close();
 	accLog_->close();
 	delete accLog_;
@@ -320,10 +349,10 @@ BehaviorDB::estimate_pool_index(SizeType size)
 	AddrType pIdx(0);
 	SizeType bound(size>>conf_.chunk_unit);
 	
-	while(bound > (1<<pIdx))
+	while(bound > (1u<<pIdx))
 		++pIdx;
 
-	if(size > (1<<pIdx)<<conf_.chunk_unit)
+	if(size > (1u<<pIdx)<<conf_.chunk_unit)
 		++pIdx;
 
 
@@ -676,7 +705,7 @@ AddrIterator::AddrIterator(AddrIterator const &cp)
 
 AddrIterator&
 AddrIterator::operator=(AddrIterator const &cp)
-{ cur_ = cp.cur_; bdb_ = cp.bdb_; }
+{ cur_ = cp.cur_; bdb_ = cp.bdb_; return *this;}
 
 AddrIterator&
 AddrIterator::operator++()
