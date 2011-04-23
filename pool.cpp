@@ -29,6 +29,13 @@
 
 #define MIGBUF_SIZ 2*1024*1024
 
+// path delimeter macro
+#ifdef _WINDOWS
+#define PATH_DELIM "\\"
+#else
+#define PATH_DELIM "/"
+#endif
+
 //! \brief Pool - A Chunk Manager
 struct Pool
 {
@@ -246,7 +253,7 @@ void BehaviorDB::init_()
 	
 	/// @todo TODO: Create directories (portability issue)
 	std::stringstream cvt;
-	cvt<<conf_.working_dir<<"/transactions";
+	cvt<<conf_.working_dir<<PATH_DELIM<<"transactions";
 
 #ifdef _WINDOWS
 	if(-1 == _mkdir(cvt.str().c_str()) && errno != EEXIST){
@@ -259,7 +266,7 @@ void BehaviorDB::init_()
 	}
 
 	cvt.str("");
-	cvt<<conf_.working_dir<<"/pools";
+	cvt<<conf_.working_dir<<PATH_DELIM<<"pools";
 #ifdef _WINDOWS
 	if(-1 == _mkdir(cvt.str().c_str()) && errno != EEXIST){
 #else
@@ -276,7 +283,7 @@ void BehaviorDB::init_()
 	
 	cvt.str("");
 	cvt.clear();
-	cvt<<conf_.working_dir<<"/access.log";
+	cvt<<conf_.working_dir<<PATH_DELIM<<"access.log";
 
 	// open access log
 	accLog_->open(cvt.str().c_str(), ios::out | ios::app);
@@ -291,7 +298,7 @@ void BehaviorDB::init_()
 
 	cvt.str("");
 	cvt<<conf_.working_dir;
-	cvt<<"/error.log";
+	cvt<<PATH_DELIM<<"error.log";
 
 	// open error log
 	errLog_->open(cvt.str().c_str(), ios::out | ios::app);
@@ -783,7 +790,7 @@ Pool::create_chunk_file(SizeType chunk_size, Config const & conf)
 
 	stringstream cvt;
 	
-	cvt<<conf_.working_dir<<"/pools/"
+	cvt<<conf_.working_dir<<PATH_DELIM<<"pools"<<PATH_DELIM
 		<<setw(4)<<setfill('0')<<hex
 		<< (chunk_size_>>conf_.chunk_unit)
 		<< ".pool";
@@ -819,7 +826,7 @@ Pool::create_chunk_file(SizeType chunk_size, Config const & conf)
 
 	cvt.clear();
 	cvt.str("");
-	cvt<<conf_.working_dir<<"/transactions/"
+	cvt<<conf_.working_dir<<PATH_DELIM<<"transactions"<<PATH_DELIM
 		<<setw(4)<<setfill('0')<<hex
 		<< (chunk_size_>>conf_.chunk_unit)
 		<<".trs";
