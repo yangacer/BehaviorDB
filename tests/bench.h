@@ -1,3 +1,5 @@
+#ifndef _WINDOWS
+
 #include <sys/time.h>
 #include <iostream>
 #include <iomanip>
@@ -15,3 +17,14 @@
 		usec = end.tv_usec - X.tv_usec; \
 	cout<<sec<<"."<<setfill('0')<<setw(6)<<usec<<endl; \
 }
+
+#else
+
+#include <ctime>
+#define TimeBeg(X) {}
+#define TimeEnd(X) {}
+
+typedef time_t timeval;
+
+
+#endif

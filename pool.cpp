@@ -232,7 +232,7 @@ using std::ios;
 void BehaviorDB::init_()
 {
 #ifdef _WINDOWS
-	fopen_s(&lock_, "bdb.lock", "rw");
+	fopen_s(&lock_, "bdb.lock", "w");
 	_lock_file(lock_);
 #else
 	lock_ = open("bdb.lock", O_RDWR);
@@ -796,10 +796,10 @@ Pool::create_chunk_file(SizeType chunk_size, Config const & conf)
 		<< ".pool";
 	{
 		// create chunk file
-		char const* name(cvt.str().c_str());
-		file_.open(name, ios::in | ios::out | ios::ate);
+		string name(cvt.str());
+		file_.open(name.c_str(), ios::in | ios::out | ios::ate);
 		if(!file_.is_open()){
-			file_.open(name, ios::in | ios::out | ios::trunc);
+			file_.open(name.c_str(), ios::in | ios::out | ios::trunc);
 			if(!file_.is_open()){
 				fprintf(stderr, "Pools initial: %s\n", strerror(errno));
 				exit(1);
@@ -811,11 +811,11 @@ Pool::create_chunk_file(SizeType chunk_size, Config const & conf)
 	
 	cvt<<".log";
 	{
-		char const *name(cvt.str().c_str());
+		string name(cvt.str());
 		// init write log
-		wrtLog_.open(name, ios::out | ios::app);
+		wrtLog_.open(name.c_str(), ios::out | ios::app);
 		if(!wrtLog_.is_open()){
-			wrtLog_.open(name, ios_base::out | ios_base::trunc);
+			wrtLog_.open(name.c_str(), ios_base::out | ios_base::trunc);
 			if(!file_.is_open()){
 				fprintf(stderr, "Pool logs initial: %s\n", strerror(errno));
 				exit(1);
