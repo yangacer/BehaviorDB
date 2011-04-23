@@ -41,7 +41,7 @@ int main()
 	verify(data, 128);
 	printf("\n");
 	
-	while(addr < 0xf00000ff){
+	while(addr < 0xf00000ffu){
 		addr = bdb.append(addr, data_2k, 2048);
 		dist[addr>>28]++;
 	}

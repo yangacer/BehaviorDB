@@ -286,6 +286,7 @@ void BehaviorDB::init_()
 	cvt<<conf_.working_dir<<PATH_DELIM<<"access.log";
 
 	// open access log
+	accLog_->rdbuf()->pubsetbuf(accBuf_, 1000000);
 	accLog_->open(cvt.str().c_str(), ios::out | ios::app);
 	if(!accLog_->is_open()){
 		accLog_->open("access.log", ios::out | ios::trunc);
@@ -294,7 +295,7 @@ void BehaviorDB::init_()
 			fprintf(stderr, strerror(errno));
 		}
 	}
-	accLog_->rdbuf()->pubsetbuf(accBuf_, 1000000);
+	
 
 	cvt.str("");
 	cvt<<conf_.working_dir;
@@ -797,6 +798,7 @@ Pool::create_chunk_file(SizeType chunk_size, Config const & conf)
 	{
 		// create chunk file
 		string name(cvt.str());
+		file_.rdbuf()->pubsetbuf(file_buf_, 1024*1024);
 		file_.open(name.c_str(), ios::in | ios::out | ios::ate);
 		if(!file_.is_open()){
 			file_.open(name.c_str(), ios::in | ios::out | ios::trunc);
@@ -805,7 +807,7 @@ Pool::create_chunk_file(SizeType chunk_size, Config const & conf)
 				exit(1);
 			}
 		}
-		file_.rdbuf()->pubsetbuf(file_buf_, 1024*1024);
+		
 	}
 
 	
@@ -1014,11 +1016,12 @@ Pool::append(AddrType address, char const* data, SizeType size,
 		//Profiler.end("SeekHeader");
 		//Profiler.begin("ReadHeader");
 		file_>>ch;
+		
 		//Profiler.end("ReadHeader");
 	}
-
+	
 	if(!file_){
-		write_log("appErr", &address, file_.tellg(), ch.size + size, "Read header error", __LINE__);
+		write_log("appErr", &address, file_.tellg(), ch.size + size, strerror(errno), __LINE__);
 		return -1;
 	}
 
@@ -1046,6 +1049,7 @@ Pool::append(AddrType address, char const* data, SizeType size,
 		//seekToHeader(address);
 		file_.write("00000000", 8);
 		file_.tellg(); // without this line, read will fail(why?)
+		file_.sync();
 
 		//Profiler.begin("Migration");
 		// determine next pool idx according to refHistory
@@ -1068,7 +1072,7 @@ Pool::append(AddrType address, char const* data, SizeType size,
 	//Profiler.begin("Normal Append");
 	// update header
 	ch.size += size;
-	ch.liveness++;
+	// ch.liveness++;
 	
 	file_.clear();
 	file_.seekp(-8, ios::cur);
@@ -1227,7 +1231,7 @@ Pool::migrate(std::fstream &src_file, ChunkHeader ch,
 	
 	ChunkHeader ch_new;
 	ch_new.size = ch.size + size;
-	ch_new.liveness = ch_new.liveness>>(chunk_size_>>conf_.chunk_unit);
+	// ch_new.liveness = ch_new.liveness>>(chunk_size_>>conf_.chunk_unit);
 
 	if(!idPool_.avail()){
 		write_log("migErr", 0, file_.tellp(), size, "IDPool overflowed", __LINE__);
@@ -1260,7 +1264,6 @@ Pool::migrate(std::fstream &src_file, ChunkHeader ch,
 			write_log("migErr", &addr, src_file.tellg(), ch.size, strerror(errno), __LINE__);
 			error_num = SYSTEM_ERROR;
 			return -1;
-
 		}
 		file_.write(migbuf_, src_file.gcount());
 		if(!file_){ // write failure

@@ -31,13 +31,14 @@ int main(int argc, char** argv)
 			exit(1);
 		}
 	case 2:
+		fin.rdbuf()->pubsetbuf(buffer, 1024*1024);
 		fin.open(argv[1]);
 		if(!fin.is_open()){
 			cerr<<"Error: Open distribution file failed"<<endl;
 			usage();
 			exit(1);
 		}
-		fin.rdbuf()->pubsetbuf(buffer, 1024*1024);
+		
 	break;
 	default:
 		usage();
