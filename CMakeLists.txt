@@ -3,13 +3,13 @@ cmake_minimum_required(VERSION 2.8)
 
 option (INSTALL_TEST "Install test program" ON)
 
-include_directories( ${CMAKE_SOURCE_DIR})
+include_directories( ${PROJECT_SOURCE_DIR})
 
 add_library(bdb pool.cpp chunk.cpp refHistory.cpp)
 
 set(TEST_TARGETS bdb_put put append migrate_test getstream bench iterate)
 foreach(tg ${TEST_TARGETS})
-	add_executable (${tg} ${CMAKE_SOURCE_DIR}/tests/${tg}.cpp)
+	add_executable (${tg} ${PROJECT_SOURCE_DIR}/tests/${tg}.cpp)
 	target_link_libraries(${tg} bdb)
 endforeach(tg)
 
