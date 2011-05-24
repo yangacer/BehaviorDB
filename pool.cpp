@@ -1027,18 +1027,6 @@ Pool::append(AddrType address, char const* data, SizeType size,
 
 	if(ch.size + size > chunk_size_ ){//|| ch.liveness == conf_.migrate_threshold){ // need to migration
 		
-		/*
-		// migrate to larger pool early
-		// when the chunk is appended 127 times
-		if(next_pool_idx < 15 && ch.liveness == conf_.migrate_threshold)
-			next_pool_idx++;
-
-		if( ch.size + size > next_pool[next_pool_idx].chunk_size() ){ // no pool for migration
-			write_log("appErr", &address, file_.tellg(), ch.size + size, "Exceed supported chunk size", __LINE__);
-			error_num = DATA_TOO_BIG;
-			return -1;	
-		}
-		*/
 
 		// true migration
 		//if(next_pool_idx != address >> 28){
@@ -1055,6 +1043,13 @@ Pool::append(AddrType address, char const* data, SizeType size,
 		// determine next pool idx according to refHistory
 		if(pred_)
 			next_pool_idx = pred_(rh_, address, next_pool_idx);
+
+		if(next_pool_idx == address>>28){
+			write_log("appErr", &address, file_.tellg(), ch.size+size, "Data is larger than supported chuck", __LINE__);
+			error_num = ADDRESS_OVERFLOW;
+			return -1;	
+		}
+
 		AddrType rt = next_pool_idx<<28 | next_pool[next_pool_idx].migrate(file_, ch, data, size);
 		//Profiler.end("Migration");
 		if(-1 == rt && next_pool->error_num != 0){ // migration failed

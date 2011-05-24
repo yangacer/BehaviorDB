@@ -29,6 +29,7 @@ int main()
 	create("2k head", data_2k, 2048);
 	
 	Config conf;
+	conf.pool_log = true;
 	conf.migrate_threshold = 0x40;
 
 	BehaviorDB bdb(conf);
@@ -41,11 +42,14 @@ int main()
 	verify(data, 128);
 	printf("\n");
 	
-	while(addr < 0xf00000ffu){
+	while(1){
 		addr = bdb.append(addr, data_2k, 2048);
+		if(addr >= 0xf00000ffu) break;
 		dist[addr>>28]++;
 	}
-
+	if(addr == -1){
+		printf("error occured\n");	
+	}
 	for(int i=0;i<16;++i)
 		printf("Pool[%d]:%8d\n", i, dist[i]);	
 	
