@@ -853,7 +853,7 @@ Pool::seekToHeader(AddrType address)
 {
 	std::streamoff off = (address & 0x0fffffff);
 	file_.seekg(off * chunk_size_, ios::beg);
-	//file_.peek();
+	file_.peek();
 }
 
 
