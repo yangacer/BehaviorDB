@@ -799,9 +799,9 @@ Pool::create_chunk_file(SizeType chunk_size, Config const & conf)
 		// create chunk file
 		string name(cvt.str());
 		file_.rdbuf()->pubsetbuf(file_buf_, 1024*1024);
-		file_.open(name.c_str(), ios::in | ios::out | ios::ate);
+		file_.open(name.c_str(), ios::in | ios::out | ios::ate | ios::binary);
 		if(!file_.is_open()){
-			file_.open(name.c_str(), ios::in | ios::out | ios::trunc);
+			file_.open(name.c_str(), ios::in | ios::out | ios::trunc | ios::binary);
 			if(!file_.is_open()){
 				fprintf(stderr, "Pools initial: %s\n", strerror(errno));
 				exit(1);
@@ -853,7 +853,7 @@ Pool::seekToHeader(AddrType address)
 {
 	std::streamoff off = (address & 0x0fffffff);
 	file_.seekg(off * chunk_size_, ios::beg);
-	file_.peek();
+	//file_.peek();
 }
 
 
