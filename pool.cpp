@@ -799,9 +799,9 @@ Pool::create_chunk_file(SizeType chunk_size, Config const & conf)
 		// create chunk file
 		string name(cvt.str());
 		file_.rdbuf()->pubsetbuf(file_buf_, 1024*1024);
-		file_.open(name.c_str(), ios::in | ios::out | ios::ate);
+		file_.open(name.c_str(), ios::in | ios::out | ios::ate | ios::binary);
 		if(!file_.is_open()){
-			file_.open(name.c_str(), ios::in | ios::out | ios::trunc);
+			file_.open(name.c_str(), ios::in | ios::out | ios::trunc | ios::binary);
 			if(!file_.is_open()){
 				fprintf(stderr, "Pools initial: %s\n", strerror(errno));
 				exit(1);
@@ -853,7 +853,9 @@ Pool::seekToHeader(AddrType address)
 {
 	std::streamoff off = (address & 0x0fffffff);
 	file_.seekg(off * chunk_size_, ios::beg);
+#ifndef _WIN32
 	file_.peek();
+#endif
 }
 
 
@@ -1030,14 +1032,22 @@ Pool::append(AddrType address, char const* data, SizeType size,
 
 		// true migration
 		//if(next_pool_idx != address >> 28){
+		using std::cout;
+		using std::endl;
 
 		// erase old header
 		file_.clear();
-		file_.seekp(-8, ios::cur);
-		//seekToHeader(address);
+		//file_.seekp(-8, ios::cur);
+		//cout<<"erase: "<<file_.tellp()<<endl;
+		seekToHeader(address);
+		//cout<<"erase-seek: "<<file_.tellp()<<endl;
 		file_.write("00000000", 8);
-		file_.tellg(); // without this line, read will fail(why?)
-		file_.sync();
+		//cout<<"erase-writen: "<<file_.tellp()<<endl;
+		//cout<<"erase-after(readhead): "<<file_.tellg()<<endl;
+
+		
+		file_.tellg(); // without this line, read will fail in BSD(why?)
+		file_.sync();	// without this line, read will fail in Win(why?)
 
 		//Profiler.begin("Migration");
 		// determine next pool idx according to refHistory
@@ -1080,7 +1090,9 @@ Pool::append(AddrType address, char const* data, SizeType size,
 	}
 
 	// append data
-	file_.seekp(ch.size - size, ios::cur);
+	seekToHeader(address);
+	file_.seekp(8 + ch.size - size);
+	//file_.seekp(ch.size - size, ios::cur);
 	file_.write(data, size);
 
 	if(!file_){ // write failed
@@ -1235,14 +1247,18 @@ Pool::migrate(std::fstream &src_file, ChunkHeader ch,
 	}
 	
 	AddrType addr = idPool_.Acquire();
-	std::streamoff off = addr;
+	//std::streamoff off = addr;
 
 	// clear() is required when previous read reach the file end
 	file_.clear();
-	file_.seekp(off * chunk_size_, ios::beg);
-	
+	// using std::cout;
+	// using std::endl;
+	// cout<<"dest before seek: "<<file_.tellp()<<endl;
+	seekToHeader(addr);
+	// cout<<"dest after seek: "<<file_.tellp()<<endl;
 	// write header
 	file_<<ch_new;
+	// cout<<"dest after write(8): "<<file_.tellp()<<endl;
 	if(!file_){
 		write_log("migErr", 0, file_.tellp(), size, "Write header error", __LINE__);
 		error_num = SYSTEM_ERROR;
@@ -1252,15 +1268,20 @@ Pool::migrate(std::fstream &src_file, ChunkHeader ch,
 	SizeType toRead = ch.size;
 
 	while(toRead){
+		// cout<<"src before read("<<toRead<<"): "<<src_file.tellg()<<endl;
 		(toRead >= MIGBUF_SIZ)?
 			src_file.read(migbuf_, MIGBUF_SIZ) :
 			src_file.read(migbuf_, toRead);
+		
+		// cout<<"src after read: "<<src_file.tellg()<<endl;
+		// cout<<"read from src: "<<src_file.gcount()<<endl;
 		if(!src_file.gcount()){
 			write_log("migErr", &addr, src_file.tellg(), ch.size, strerror(errno), __LINE__);
 			error_num = SYSTEM_ERROR;
 			return -1;
 		}
 		file_.write(migbuf_, src_file.gcount());
+		// cout<<"dest after write old data("<<src_file.gcount()<<"): "<<file_.tellp()<<endl;
 		if(!file_){ // write failure
 			write_log("migErr", &addr, file_.tellp(), ch.size, strerror(errno), __LINE__);
 			error_num = SYSTEM_ERROR;
@@ -1271,6 +1292,7 @@ Pool::migrate(std::fstream &src_file, ChunkHeader ch,
 
 
 	file_.write(data, size);
+	//cout<<"dest after write new data("<<size<<"): "<<file_.tellp()<<endl;
 	if(!file_){ // write failure
 		write_log("migErr", &addr, file_.tellp(), size, strerror(errno), __LINE__);
 		error_num = SYSTEM_ERROR;

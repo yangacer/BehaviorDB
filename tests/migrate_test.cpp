@@ -18,6 +18,29 @@ void verify(char const *data, size_t size)
 /** \include append.cpp
  */
 
+ /** This test should output
+ put     Addr:        0 Head: 128 head::Tail: data end
+error occured
+Pool[0]:       0
+Pool[1]:       0
+Pool[2]:       1
+Pool[3]:       2
+Pool[4]:       4
+Pool[5]:       8
+Pool[6]:      16
+Pool[7]:      32
+Pool[8]:      64
+Pool[9]:     128
+Pool[10]:     256
+Pool[11]:     512
+Pool[12]:    1024
+Pool[13]:    2048
+Pool[14]:    4096
+Pool[15]:    8192
+
+The only error will occur is ADDRESS_OVERFLOW
+
+*/
 int main()
 {
 
