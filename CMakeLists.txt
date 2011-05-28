@@ -5,7 +5,7 @@ option (INSTALL_TEST "Install test program" ON)
 
 include_directories( ${PROJECT_SOURCE_DIR})
 
-add_library(bdb pool.cpp chunk.cpp refHistory.cpp)
+add_library(bdb pool.cpp chunk.cpp refHistory.cpp bdb.cpp utils.cpp)
 
 set(TEST_TARGETS bdb_put put append migrate_test getstream bench iterate)
 foreach(tg ${TEST_TARGETS})
