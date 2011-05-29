@@ -5,7 +5,7 @@
 ##Pool
 ###Interfaces
 
-1. write<br/>
+####1. write
 
 <table>
 	<thead>
@@ -34,7 +34,7 @@
 	</tbody>
 </table>
 
-2. read
+####2. read
 
 <table>
 	<thead>
@@ -56,7 +56,7 @@
 	</tbody>
 </table>
 
-3. move
+####3. move
 
 <table>
 	<thead>
@@ -79,18 +79,23 @@
 	</tbody>
 </table>
 
-4. del Take an address as paramter and mark the address as free.
+####4. erase 
 
-5. head Take an address as parameter and get its chunk header. 
+Take an address as paramter and mark the address as free.
+
+####Miscellaneous 
+1. head Take an address as parameter and get its chunk header. 
 This method implies a seek-to-chunk operation.
 
-6. pine Make an address is invisible/visible to client. Default is visible.
+2. pine Make an address is invisible/visible to client. Default is visible.
 
-7. tell2addr-off Translate seek head to address-offset pair.
+3. tell2addr-off Translate seek head to address-offset pair.
 
-8. addr-off2tell Reverse version of tell2addr-off.
+4. addr-off2tell Reverse version of tell2addr-off.
 
-9. lock
+5. lock
+
 - acquire Prevent all operations to a pool.
+
 - release Allow operations to a pool.
 
