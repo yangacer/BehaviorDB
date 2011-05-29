@@ -84,18 +84,19 @@
 Take an address as paramter and mark the address as free.
 
 ####Miscellaneous 
-1. head Take an address as parameter and get its chunk header. 
+
+1. __head__ Take an address as parameter and get its chunk header. 
 This method implies a seek-to-chunk operation.
 
-2. pine Make an address is invisible/visible to client. Default is visible.
+2. __pine__ Make an address is invisible/visible to client. Default is visible.
 
-3. tell2addr-off Translate seek head to address-offset pair.
+3. __tell2addr-off__ Translate seek head to address-offset pair.
 
-4. addr-off2tell Reverse version of tell2addr-off.
+4. __addr-off2tell__ Reverse version of tell2addr-off.
 
-5. lock
+5. __lock__
 
-- acquire Prevent all operations to a pool.
+ - __acquire__ Prevent all operations to a pool.
 
-- release Allow operations to a pool.
+ - __release__ Allow operations to a pool.
 
