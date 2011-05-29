@@ -81,14 +81,36 @@
 
 ####4. erase 
 
-Take an address as paramter and mark the address as free.
+<table>
+	<thead>
+		<tr>
+			<th> Brief <th> Parameters <th> Description
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td> erase
+			<td> address
+			<td> Mark an address as free
+		</tr>
+		<tr>
+			<td> erase segment
+			<td> address, offset, size
+			<td> Move data after the segment forward to keep
+			data in continuous.
+		</tr>
+
+	</tabody>
+</table>
 
 ####Miscellaneous 
 
 1. __head__ Take an address as parameter and get its chunk header. 
 This method implies a seek-to-chunk operation.
 
-2. __pine__ Make an address is invisible/visible to client. Default is visible.
+2. __pine__ Make an address is invisible to client.
+
+3. __unpine__ Make an address is visible to client.
 
 3. __tell2addr-off__ Translate seek head to address-offset pair.
 
