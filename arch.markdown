@@ -1,9 +1,30 @@
-#BehaviorDB Architecture Document
+#BehaviorDB Architecture Future Document
 
 ##Address
 
 ##Pool
-###Interfaces
+
+###Constructor
+
+####Parameters:
+ 
+ - Address size
+
+ - Chunk size
+
+ - Work directory (optional)
+
+ - Log directory (optional)
+
+####Description:
+
+ // to be added
+
+###Deconstructor
+
+ // to be added
+
+###Methods
 
 ####1. write
 
@@ -67,14 +88,14 @@
 	<tbody>
 		<tr>
 			<td> move
-			<td> src_address, dest_address
-			<td> Move all data in src address to destination address
+			<td> address, *dest_pool
+			<td> Move all data in this pool to dest pool
 		</tr>
 		<tr>
 			<td> move segment
-			<td> src_address, src_offset, size, dest_address [, dest_offset]
-			<td> Move a segemnt indicated by offset size from dest_address 
-			to dest_address with optional dest_offset
+			<td> address, offset, size, *dest_pool, dest_addr [, dest_offset]
+			<td> Move a segemnt indicated by the address and the offset 
+			from this pool to dest_addr with optional dest_offset
 		</tr>
 	</tbody>
 </table>
