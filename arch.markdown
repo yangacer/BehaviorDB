@@ -1,8 +1,12 @@
 #BehaviorDB Architecture Document
 
+##Address
+
 ##Pool
 ###Interfaces
-1. insert<br/>
+
+1. write<br/>
+
 <table>
 	<thead>
 		<tr>
@@ -30,7 +34,63 @@
 	</tbody>
 </table>
 
-2. get
+2. read
+
+<table>
+	<thead>
+		<tr>
+			<th> Brief <th> Parameters <th> Description
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td> Read front
+			<td> address, buffer, size
+			<td> Read 'size' bytes data of a chunk
+		</tr>
+		<tr>
+			<td> Read segment
+			<td> address, offset, buffer, size
+			<td> Read 'size' bytes data according to the address and offset
+		</tr>
+	</tbody>
+</table>
+
 3. move
-4. del
+
+<table>
+	<thead>
+		<tr>
+			<th> Brief <th> Parameters <th> Description
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td> move
+			<td> src_address, dest_address
+			<td> Move all data in src address to destination address
+		</tr>
+		<tr>
+			<td> move segment
+			<td> src_address, src_offset, size, dest_address [, dest_offset]
+			<td> Move a segemnt indicated by offset size from dest_address 
+			to dest_address with optional dest_offset
+		</tr>
+	</tbody>
+</table>
+
+4. del Take an address as paramter and mark the address as free.
+
+5. head Take an address as parameter and get its chunk header. 
+This method implies a seek-to-chunk operation.
+
+6. pine Make an address is invisible/visible to client. Default is visible.
+
+7. tell2addr-off Translate seek head to address-offset pair.
+
+8. addr-off2tell Reverse version of tell2addr-off.
+
+9. lock
+- acquire Prevent all operations to a pool.
+- release Allow operations to a pool.
 
