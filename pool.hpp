@@ -8,6 +8,91 @@
 
 #define MIGBUF_SIZ 2*1024*1024
 
+namespace BDB
+{
+	struct pool
+	{
+		struct config
+		{
+			unsigned char addr_len;
+			unsigned int chunk_size;
+			char const* work_dir;
+			char const* log_dir;
+
+			config()
+			: addr_len(28), chunk_size(0), work_dir(""), log_dir("")
+			{}
+		};
+
+		pool();
+		~pool();
+		
+		AddrType
+		write(char const* data, size_t size);
+		
+		AddrType
+		write(AddrType addr, 
+			char const* data, size_t size, ChunkHeader const* header=0);
+
+		AddrType
+		write(AddrType addr, size_t off, 
+			char const* data, size_t size, ChunkHeader const* header=0);
+
+		size_t
+		read(AddrType addr, char* buffer, size_t size);
+
+		size_t
+		read(AddrType addr, size_t off, 
+			char* buffer, size_t size, ChunkHeader const* header=0);
+		
+		AddrType
+		move(AddrType src_addr, pool* dest_pool, ChunkHeader const* header =0);
+
+		
+		AddrType
+		merge_move(AddrType src_addr, size_t off, char const*data, size_t size,
+			pool *dest_pool, ChunkHeader const* header=0);
+
+		size_t
+		erase(AddrType addr);
+
+		size_t
+		erase(AddrType addr, size_t off, size_t size);
+		
+		ChunkHeader
+		head(AddrType addr, size_t off = 0);
+
+		AddrType
+		pine(AddrType addr);
+
+		AddrType
+		unpine(AddrType addr);
+		
+		std::pair<AddrType, size_t>
+		tell2addr_off(std::streampos fpos) const;
+
+		std::streampos
+		addr_off2tell(AddrType addr, size_t off) const;
+		
+		void lock_acq();
+		void lock_rel();
+		
+		size_t migration_buf_size() const;
+
+	private: // methods
+		
+		void create(config const& conf);
+
+		pool(pool const& cp);
+		pool& operator=(pool const& cp);
+
+	private: // data member
+		
+		
+
+	};
+} // end of namespace BDB
+
 //! \brief Pool - A Chunk Manager
 struct Pool
 {

@@ -505,3 +505,4 @@ BehaviorDB::register_mig_predictor(MigPredictorCB cbf)
 	pools_[0].pred_ = cbf;
 }
 
+
