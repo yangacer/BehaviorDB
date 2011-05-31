@@ -1,6 +1,8 @@
 #ifndef _ADDR_EVAL_HPP
 #define _ADDR_EVAL_HPP
 
+#include <cstdio>
+
 namespace BDB {
 
 	inline size_t 
@@ -12,18 +14,22 @@ namespace BDB {
 	inline bool 
 	default_capacity_test(size_t chunk_size, size_t data_size)
 	{
-		return chunk_size>>1 >= data_size;
+		if(chunk_size >= 10000000) return true;
+		// reserve 1/4 chunk size
+		return (chunk_size - (chunk_size>>2)) >= data_size;
 	}
 } // end of namespace BDB
 
 template<typename addr_t>
 struct addr_eval
 {
-	typedef size_t (*Chunk_size_est)(unsigned char dir);
+	typedef size_t (*Chunk_size_est)(unsigned char dir, size_t min_size);
 
 	// Decide how many fragmentation is acceptiable for initial data insertion
 	// Or, w.r.t. preallocation, how many fraction of a chunk one want to preserve
 	// for future insertion.
+	// *****
+	// It should return true if data/chunk_size is acceptiable, otherwise it return false
 	typedef bool (*Capacity_test)(size_t chunk_size, size_t data_size);
 	
 	unsigned char dir_prefix_len_;
@@ -38,44 +44,61 @@ struct addr_eval
 		Chunk_size_est cse = &BDB::default_chunk_size_est, 
 		Capacity_test ct = &BDB::default_capacity_test )
 	: // initialization list
-	  dir_bits_len_(dir_prefix_len), min_size_(min_size), 
-	  chunk_size_est(cse). capacity_test(ct)
+	  dir_prefix_len_(dir_prefix_len), min_size_(min_size), 
+	  chunk_size_est(cse), capacity_test(ct)
 	{
-		unsigned char zero_suffix_len = (sizeof(addr_t)-dir_prefix_len);
-		loc_addr_mask = ~(((addr_t)(-1))>>zero_suffix_len<<zero_suffix_len);
+		loc_addr_mask = ( (addr_t)(-1) >> local_addr_len()) << local_addr_len();
+		loc_addr_mask = ~loc_addr_mask;
 	}
 	
-	size_t chunk_size_estimation(unsigned char dir)
-	{ return (*chunk_size_est)(dir); }
+	unsigned char
+	global_addr_len() const
+	{ return dir_prefix_len_; }
+
+	unsigned char
+	local_addr_len() const
+	{ return (sizeof(addr_t)<<3) - dir_prefix_len_; }
+
+	size_t 
+	chunk_size_estimation(unsigned char dir) const
+	{ return (*chunk_size_est)(dir, min_size_); }
 	
 
 	unsigned char 
 	dir_count() const
 	{ return 1<<dir_prefix_len_; }
 
-	unsigned char directory(size_t size) const
+	unsigned char 
+	directory(size_t size) const
 	{
-		for(unsigned char i=0; i < dir_count(); ++i)
-			if((*capatict_test)( 
-				(*chunk_size_est)(dir, min_size_), 
+		unsigned char i;
+		for(i=0; i < dir_count(); ++i)
+			if((*capacity_test)( 
+				chunk_size_estimation(i), 
 				size ) ) 
 				break;
-		return i;
+
+		return i < dir_count() ? i : 
+			size <= chunk_size_estimation(i -1) ? i - 1 : -1;
+			;
 	}
 	
-	unsigned char addr_to_dir(addr_t addr)
+	unsigned char 
+	addr_to_dir(addr_t addr) const
 	{
-		return addr >> (sizeof(addr_t) - dir_prefix_len_);	
+		return addr >> local_addr_len() ;	
 	}
 
-	addr_t global_addr(unsigned char dir, addr_t local_addr) const
+	addr_t 
+	global_addr(unsigned char dir, addr_t local_addr) const
 	{
 		// preservation of failure
 		return (local_addr == -1) ? -1 :
-			dir<<(sizeof(addr_t)-dir_prefix_len) | (loc_addr_mask & local_addr);
+			dir << local_addr_len() | (loc_addr_mask & local_addr);
 	}
 
-	addr_t local_addr(addr_t global_addr) const
+	addr_t 
+	local_addr(addr_t global_addr) const
 	{ return loc_addr_mask & global_addr; }
 };
 
