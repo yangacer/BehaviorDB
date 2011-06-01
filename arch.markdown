@@ -42,14 +42,14 @@
 		</tr>
 		<tr>
 			<td> Append/Put 
-			<td> address, data, size 
+			<td> address, data, size, [*header = 0]
 			<td> Append data to an indicated address. When the chunk 
 			refered by the address is not allocated, this method 
 			functions as put with specified address.
 		</tr>
 		<tr>
 			<td> Insert
-			<td> address, offset, data, size
+			<td> address, offset, data, size, [*header = 0]
 			<td> Insert data to spcified offset from the address
 		</tr>
 	</tbody>
@@ -71,7 +71,7 @@
 		</tr>
 		<tr>
 			<td> Read segment
-			<td> address, offset, buffer, size
+			<td> address, offset, buffer, size, [*header = 0]
 			<td> Read 'size' bytes data according to the address and offset
 		</tr>
 	</tbody>
@@ -92,10 +92,9 @@
 			<td> Move all data in this pool to dest pool
 		</tr>
 		<tr>
-			<td> move segment
-			<td> address, offset, size, *dest_pool, dest_addr [, dest_offset]
-			<td> Move a segemnt indicated by the address and the offset 
-			from this pool to dest_addr with optional dest_offset
+			<td> merge_move
+			<td> address, offset, data, size, *dest_pool, dest_addr [*header = 0]
+			<td> Merge data within specified offset and move merged data to a pool
 		</tr>
 	</tbody>
 </table>

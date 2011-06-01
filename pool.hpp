@@ -14,6 +14,7 @@ namespace BDB
 	{
 		struct config
 		{
+			// TODO share the same addr_eval with BDBImpl
 			unsigned char addr_len;
 			unsigned int chunk_size;
 			char const* work_dir;

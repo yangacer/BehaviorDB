@@ -1,5 +1,6 @@
 #ifndef _BDBIMPL_HPP
 #define _BDBIMPL_HPP
+
 #include "addr_eval.hpp"
 
 namespace BDB {
