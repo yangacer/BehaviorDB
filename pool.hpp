@@ -1,6 +1,8 @@
 #ifndef _POOL_HPP_
 #define _POOL_HPP_
 
+#include "config.hpp"
+#include "addr_eval.hpp"
 #include "bdb.h"
 #include "chunk.h"
 #include "idPool.h"
@@ -14,38 +16,27 @@ namespace BDB
 	{
 		struct config
 		{
-			// TODO share the same addr_eval with BDBImpl
-			unsigned char addr_len;
-			unsigned int chunk_size;
+			unsigned char dirID;
 			char const* work_dir;
-			char const* log_dir;
-
+			addr_eval * addrEval;
 			config()
-			: addr_len(28), chunk_size(0), work_dir(""), log_dir("")
+			: dirID(0), work_dir(""), log_dir("")
 			{}
 		};
 
-		pool();
+		pool(config const &conf);
 		~pool();
 		
 		AddrType
 		write(char const* data, size_t size);
 		
+		// off=-1 represent an append write
 		AddrType
-		write(AddrType addr, 
-			char const* data, size_t size, ChunkHeader const* header=0);
-
-		AddrType
-		write(AddrType addr, size_t off, 
-			char const* data, size_t size, ChunkHeader const* header=0);
-
-		size_t
-		read(AddrType addr, char* buffer, size_t size);
-
-		size_t
-		read(AddrType addr, size_t off, 
-			char* buffer, size_t size, ChunkHeader const* header=0);
+		write(char const* data, size_t size, AddrType addr, size_t off=-1, ChunkHeader const* header=0);
 		
+		size_t
+		read(char* buffer, size_t size, AddrType addr, size_t off=0, ChunkHeader const* header=0);
+
 		AddrType
 		move(AddrType src_addr, pool* dest_pool, ChunkHeader const* header =0);
 
@@ -62,7 +53,8 @@ namespace BDB
 		
 		ChunkHeader
 		head(AddrType addr, size_t off = 0);
-
+		
+		/* TODO: To be considered
 		AddrType
 		pine(AddrType addr);
 
@@ -77,12 +69,12 @@ namespace BDB
 		
 		void lock_acq();
 		void lock_rel();
-		
-		size_t migration_buf_size() const;
+		*/
 
 	private: // methods
 		
-		void create(config const& conf);
+		// TODO is ctor sufficient?
+		// void create(config const& conf);
 
 		pool(pool const& cp);
 		pool& operator=(pool const& cp);
