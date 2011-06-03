@@ -5,6 +5,7 @@
 
 int main()
 {
+	using namespace BDB;
 	using namespace std;
 
 	addr_eval<unsigned int> ae(4, 256);

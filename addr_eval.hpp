@@ -39,7 +39,9 @@ namespace BDB {
 
 		addr_t loc_addr_mask;
 		
-		addr_eval(){}
+		addr_eval(): 
+		dir_prefix_len_(0), min_size_(0)
+		{}
 
 		addr_eval(unsigned char dir_prefix_len, size_t min_size, 
 			Chunk_size_est cse = &BDB::default_chunk_size_est, 
@@ -52,6 +54,13 @@ namespace BDB {
 			loc_addr_mask = ~loc_addr_mask;
 		}
 		
+		operator void const *()
+		{ 
+			if((!dir_prefix_len_ && !min_size_) || !chunk_size_est || !capacity_test)
+				return 0;
+			return this;
+		}
+
 		addr_eval&
 		set(unsigned char dir_prefix_len)
 		{ 
