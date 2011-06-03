@@ -44,7 +44,7 @@ namespace BDB {
 		AddrType rt(0);
 		while(dir < addrEval.dir_count()){
 			rt = pools_[dir].write(data, size);
-			if(rt != -1) 
+			if(rt != -1) // TODO write failure
 				break;
 			dir++;
 		}

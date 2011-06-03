@@ -7,6 +7,8 @@
 #include "chunk.h"
 #include "idPool.h"
 #include <fstream>
+#include <cstdio>
+#include <string>
 
 #define MIGBUF_SIZ 2*1024*1024
 
@@ -18,9 +20,9 @@ namespace BDB
 		{
 			unsigned char dirID;
 			char const* work_dir;
-			addr_eval * addrEval;
+			addr_eval<AddrType> * addrEval;
 			config()
-			: dirID(0), work_dir(""), log_dir("")
+			: dirID(0), work_dir("")
 			{}
 		};
 
@@ -38,10 +40,6 @@ namespace BDB
 		read(char* buffer, size_t size, AddrType addr, size_t off=0, ChunkHeader const* header=0);
 
 		AddrType
-		move(AddrType src_addr, pool* dest_pool, ChunkHeader const* header =0);
-
-		
-		AddrType
 		merge_move(AddrType src_addr, size_t off, char const*data, size_t size,
 			pool *dest_pool, ChunkHeader const* header=0);
 
@@ -52,8 +50,12 @@ namespace BDB
 		erase(AddrType addr, size_t off, size_t size);
 		
 		ChunkHeader
-		head(AddrType addr, size_t off = 0);
+		head(AddrType addr, size_t off = -1);
 		
+		// TODO make sure windows can provide/simulate off_t
+		off_t
+		seek(AddrType addr, size_t off =0);
+
 		/* TODO: To be considered
 		AddrType
 		pine(AddrType addr);
@@ -80,8 +82,12 @@ namespace BDB
 		pool& operator=(pool const& cp);
 
 	private: // data member
-		
-		
+		unsigned char dirID;
+		std::string work_dir;
+		addr_eval<AddrType> * addrEval;
+		IDPool<AddrType> idPool_;
+		std::fstream file_;
+		char mig_buf_[MIGBUF_SIZ];
 
 	};
 } // end of namespace BDB

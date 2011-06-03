@@ -21,7 +21,8 @@ public:
 	: 
 	beg_(0), 
 	cur_(0), 
-	end_(std::numeric_limits<IDType>::max())
+	end_(std::numeric_limits<IDType>::max()),
+	file_(0)
 	{}
 	
 	IDPool(IDType begin_val, 
@@ -29,15 +30,22 @@ public:
 	: 
 	beg_(begin_val), 
 	cur_(begin_val), 
-	end_(end_val)
+	end_(end_val),
+	file_(0)
 	{}
 
 
 	~IDPool()
 	{
-		fclose(file_); 
+		if(*this)
+			fclose(file_); 
 	}
 	
+	operator void const*() const
+	{
+		return (0 == file_) ? 0 : this;
+	}
+
 	bool
 	isAcquired(IDType const& id) const
 	{ 
@@ -150,7 +158,7 @@ public:
 
 	void replay_transaction(char const* transaction_file)
 	{
-		FILE *tfile = fopen(transaction_file, "r+");
+		FILE *tfile = fopen(transaction_file, "r+b");
 
 		if(0 == tfile){ // no transaction files for replaying
 			//fprintf(stderr, "No transaction replay at %s\n", transaction_file);
@@ -182,7 +190,7 @@ public:
 	void init_transaction(char const* transaction_file) throw(std::runtime_error)
 	{
 		
-		if(0 == (file_ = fopen(transaction_file,"a"))){
+		if(0 == (file_ = fopen(transaction_file,"ab"))){
 			fprintf(stderr, "Fail to open %s; system(%s)\n", transaction_file, strerror(errno));
 			throw std::runtime_error("Fail to open transaction file");
 		}
