@@ -3,25 +3,28 @@
 
 #include <iosfwd>
 #include <istream>
-#include "bdb.h"
+#include <cstdio>
 
 struct ChunkHeader
 {
-	unsigned char liveness;
-	SizeType size;
+	size_t size;
 	
 	ChunkHeader()
-	:liveness(0), size(0)
+	:size(0)
 	{}
 };
 
 std::istream& 
 operator>>(std::istream& is, ChunkHeader & ch);
 
-
 std::ostream& 
 operator<<(std::ostream& os, ChunkHeader const& ch);
 
+int
+write_header(FILE* fp, ChunkHeader const &ch);
+
+int
+read_header(FILE* fp, ChunkHeader &ch);
 
 #endif
 
