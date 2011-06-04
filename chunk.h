@@ -20,6 +20,12 @@ operator>>(std::istream& is, ChunkHeader & ch);
 std::ostream& 
 operator<<(std::ostream& os, ChunkHeader const& ch);
 
+FILE*
+operator>>(FILE* fp, ChunkHeader &ch);
+
+FILE*
+operator<<(FILE* fp, ChunkHeader const &ch);
+
 int
 write_header(FILE* fp, ChunkHeader const &ch);
 
