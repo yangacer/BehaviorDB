@@ -8,6 +8,7 @@ include_directories( ${PROJECT_SOURCE_DIR})
 add_library(bdb pool.cpp chunk.cpp refHistory.cpp bdb.cpp utils.cpp)
 
 add_executable (pool poolImpl.cpp ${PROJECT_SOURCE_DIR}/tests/pool.cpp chunk.cpp)
+add_executable (fixpool ${PROJECT_SOURCE_DIR}/tests/fixpool.cpp chunk.cpp)
 
 set(TEST_TARGETS bdb_put put append migrate_test getstream bench iterate addreval)
 foreach(tg ${TEST_TARGETS})
