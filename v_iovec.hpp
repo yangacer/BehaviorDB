@@ -28,6 +28,7 @@ namespace BDB {
 		operator()(file_src & psrc);
 
 		FILE* dest;
+		off_t dest_pos;
 		char *buf;
 		size_t bsize;
 		size_t size;

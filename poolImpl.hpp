@@ -14,6 +14,9 @@
 
 namespace BDB
 {
+	
+	struct viov;
+
 	struct pool
 	{
 		struct config
@@ -30,7 +33,7 @@ namespace BDB
 			  addrEval(0)
 			{}
 		};
-		
+
 		pool();
 		pool(config const &conf);
 		~pool();
@@ -44,6 +47,9 @@ namespace BDB
 		AddrType
 		write(char const* data, size_t size, AddrType addr, size_t off=-1, ChunkHeader const* header=0);
 		
+		AddrType
+		write(viov *vv, size_t len);
+		
 		size_t
 		read(char* buffer, size_t size, AddrType addr, size_t off=0, ChunkHeader const* header=0);
 
@@ -51,12 +57,11 @@ namespace BDB
 		merge_move(char const*data, size_t size, AddrType src_addr, size_t off,
 			pool *dest_pool, ChunkHeader const* header=0);
 
-		size_t
+		void
 		erase(AddrType addr);
 
 		size_t
 		erase(AddrType addr, size_t off, size_t size);
-		
 
 		// TODO make sure windows can provide/simulate off_t
 		off_t
@@ -69,12 +74,15 @@ namespace BDB
 		AddrType
 		unpine(AddrType addr);
 		
-		std::pair<AddrType, size_t>
-		tell2addr_off(std::streampos fpos) const;
 
-		std::streampos
+		std::pair<AddrType, size_t>
+		tell2addr_off(off_t fpos) const;
+		*/
+
+		off_t
 		addr_off2tell(AddrType addr, size_t off) const;
 		
+		/*
 		void lock_acq();
 		void lock_rel();
 		*/
