@@ -3,6 +3,7 @@
 
 #include "config.hpp"
 #include "addr_eval.hpp"
+#include "fixedPool.hpp"
 #include "chunk.h"
 #include "idPool.h"
 #include <string>
@@ -19,10 +20,14 @@ namespace BDB
 		{
 			unsigned char dirID;
 			char const* work_dir;
+			char const* trans_dir;
+			char const* header_dir;
 			addr_eval<AddrType> * addrEval;
 			
 			config()
-			: dirID(0), work_dir(""), addrEval(0)
+			: dirID(0), 
+			  work_dir(""), trans_dir(""), header_dir(""),
+			  addrEval(0)
 			{}
 		};
 		
@@ -52,9 +57,7 @@ namespace BDB
 		size_t
 		erase(AddrType addr, size_t off, size_t size);
 		
-		ChunkHeader
-		head(AddrType addr, size_t off = -1);
-		
+
 		// TODO make sure windows can provide/simulate off_t
 		off_t
 		seek(AddrType addr, size_t off =0);
@@ -87,10 +90,19 @@ namespace BDB
 	private: // data member
 		unsigned char dirID;
 		std::string work_dir;
+		std::string trans_dir;
+		
 		addr_eval<AddrType> * addrEval;
-		IDPool<AddrType> idPool_;
+		
+		// pool file
 		FILE *file_;
 		char mig_buf_[MIGBUF_SIZ];
+
+		// id file
+		IDPool<AddrType> idPool_;
+
+		// header
+		fixed_pool<ChunkHeader, 8> headerPool_;
 
 	};
 } // end of namespace BDB

@@ -3,11 +3,15 @@
 namespace BDB {
 	
 	pool::pool()
-	: dirID(0), work_dir(0), addrEval(0), file_(0)
+	: dirID(0), 
+	  work_dir(), trans_dir(),
+	  addrEval(0), file_(0), idPool_(), headerPool_()
 	{}
 
 	pool::pool(pool::config const &conf)
-	: dirID(conf.dirID), work_dir(conf.work_dir), addrEval(conf.addrEval), file_(0)
+	: dirID(conf.dirID), 
+	  work_dir(conf.work_dir), trans_dir(conf.trans_dir), 
+	  addrEval(conf.addrEval), file_(0), idPool_(), headerPool_(conf.dirID, conf.header_dir)
 	{
 		if(0 == addrEval){
 			fprintf(stderr, "addr_eval missing\n");	
@@ -26,6 +30,7 @@ namespace BDB {
 
 		// init idPool
 		sprintf(fname, "%s%02x.tran", work_dir.c_str(), dirID);
+		idPool_.replay_transaction(fname);
 		idPool_.init_transaction(fname);
 	}
 	
@@ -37,11 +42,7 @@ namespace BDB {
 	
 	pool::operator void const*() const
 	{ 
-		if(0 == file_)
-			return 0; 
-		if(0 == addrEval)
-			return 0;
-		if(0 == idPool_)
+		if(!file_ || !addrEval || !idPool_)
 			return 0;
 		return this;
 	}
@@ -59,11 +60,12 @@ namespace BDB {
 		ChunkHeader header;
 		header.size = size;
 
-		seek(loc_addr);
-		if(-1 == write_header(file_, header)){
+		if(-1 == headerPool_.write(header, loc_addr)){
 			// write failure
 			idPool_.Release(loc_addr);
 		}
+		
+		seek(loc_addr);
 
 		if(size != fwrite(data, 1, size, file_)){
 			// write failure
@@ -74,6 +76,7 @@ namespace BDB {
 
 	}
 	
+	// TODO
 	// off=-1 represent an append write
 	AddrType
 	pool::write(char const* data, size_t size, AddrType addr, size_t off, ChunkHeader const* header)
@@ -85,8 +88,11 @@ namespace BDB {
 		}
 		
 		ChunkHeader loc_header;
-		
-		loc_header = (0==header) ? head(addr, 0) : *header ;
+		if(!header)
+			loc_header = *header;
+		else
+			headerPool_.read(&loc_header, addr);
+
 		off = (-1 == off) ? loc_header.size : off;
 		
 		// data need to be moved can not larger than move buffer
@@ -97,12 +103,13 @@ namespace BDB {
 			return merge_move(data, size, addr, off, this, &loc_header); 
 		
 
-		seek(addr);
 
 		// update header 
-		if(-1 == write_header(file_, loc_header)){
+		if(-1 == headerPool_.write(loc_header, addr)){
 			// TODO error	
 		}
+
+		seek(addr);
 
 		// read data to be moved into mig_buf
 		if(moved != fread(mig_buf_, 1, moved, file_)){
@@ -124,17 +131,31 @@ namespace BDB {
 	
 	size_t
 	pool::read(char* buffer, size_t size, AddrType addr, size_t off, ChunkHeader const* header)
-	{ return 0; }
+	{
+		ChunkHeader loc_header;
+		if(!header)
+			loc_header = *header;
+		else
+			headerPool_.read(&loc_header, addr);
+		
+	}
 
 	
 	AddrType
 	pool::merge_move(char const*data, size_t size, AddrType src_addr, size_t off, 
 		pool *dest_pool, ChunkHeader const* header)
 	{
-		// TODO seek is always required when multiple processes share this lib
-		ChunkHeader loc_header = (0 == header) ? head(src_addr, off) : *header ;
+		// TODO Without lock mechansim, seek is always required 
+		// when multiple processes share this lib
+		ChunkHeader loc_header;
+		if(!header)
+			loc_header = *header;
+		else
+			headerPool_.read(&loc_header, src_addr);
 		off = (-1 == off) ? loc_header.size : off;
-	
+		
+		// seek(src_addr, sizeof(ChunkHeader));
+
 		size_t toRead = off; 
 		size_t readCnt;
 		AddrType dest_addr = dest_pool->write(0,0);
@@ -166,6 +187,9 @@ namespace BDB {
 			dest_addr = dest_pool->write(mig_buf_, readCnt, dest_addr);
 			toRead -= readCnt;
 		}
+
+		idPool_.Release(src_addr);
+
 		return dest_addr;
 	}
 
@@ -178,42 +202,12 @@ namespace BDB {
 	{ return 0;}
 	
 
-	ChunkHeader
-	pool::head(AddrType addr, size_t off)
-	{
-		off_t pos = addr;
-		ChunkHeader header;
-
-		pos *= addrEval->chunk_size_estimation(dirID);
-		
-		if(-1 == fseeko(file_, pos, SEEK_SET)){
-			// TODO error handle	
-		}
-
-		if(-1 == read_header(file_, header)){
-			// TODO error handle
-		}
-
-		if(off == -1) off = header.size;
-		
-		if(off > header.size){
-			return header;	
-		}
-		
-		pos += off + sizeof(ChunkHeader);
-		if(-1 == fseeko(file_, pos, SEEK_SET)){
-			// TODO error handle	
-		}
-
-		return header;
-	}
-
 	off_t
 	pool::seek(AddrType addr, size_t off)
 	{
 		off_t pos = addr;
 		pos *= addrEval->chunk_size_estimation(dirID);
-		pos += off + sizeof(ChunkHeader);
+		pos += off;
 		if(-1 == fseeko(file_, pos, SEEK_SET)){
 			// TODO error handle	
 		}

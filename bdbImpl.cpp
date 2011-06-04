@@ -58,7 +58,7 @@ namespace BDB {
 		unsigned char dir = addrEval.addr_to_dir(addr);
 		AddrType loc_addr = addrEval.local_addr(addr);
 		
-		ChunkHeader header = pools_[dir].head(loc_addr, off);
+		ChunkHeader header = pools_[dir].head(loc_addr, 0);
 		
 		if(size + header.size > addEval.chunk_size_estimation(dir)){
 			
@@ -79,8 +79,8 @@ namespace BDB {
 
 		// no migration
 		// **Althought the chunk need not migrate to another pool, it might be moved to 
-		// another chunk due to size of data to be moved exceed size of migration buffer 
-		// that a pool contains
+		// another chunk of the same pool due to size of data to be moved exceed size of 
+		// migration buffer that a pool contains
 		if(-1 == (loc_ addr = pools_[dir].write(data, size, loc_addr, off, &header)) ){
 			// TODO: error handling
 			return -1;	
