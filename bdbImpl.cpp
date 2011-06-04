@@ -67,7 +67,7 @@ namespace BDB {
 			AddrType next_loc_addr;
 			if(-1 == off)
 				off = header.size;
-			next_loc_addr = pools_[dir].merge_move(	loc_addr, off, data, size, 
+			next_loc_addr = pools_[dir].merge_move( data, size, loc_addr, off,
 					&pools_[next_dir], &header); 
 
 			if(-1 == next_loc_addr){
@@ -78,12 +78,15 @@ namespace BDB {
 		}
 
 		// no migration
-		if(-1 == pools_[dir].write(data, size, loc_addr, off, &header) ){
+		// **Althought the chunk need not migrate to another pool, it might be moved to 
+		// another chunk due to size of data to be moved exceed size of migration buffer 
+		// that a pool contains
+		if(-1 == (loc_ addr = pools_[dir].write(data, size, loc_addr, off, &header)) ){
 			// TODO: error handling
 			return -1;	
 		}
 		
-		return addr;
+		return addrEval.global_addr(dir, loc_addr);
 
 	}
 

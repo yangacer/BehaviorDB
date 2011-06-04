@@ -93,18 +93,24 @@ namespace BDB {
 		size_t moved = loc_header.size - off;
 		loc_header.size += size;
 		
+		if(moved > MIGBUF_SIZ)
+			return merge_move(data, size, addr, off, this, &loc_header); 
+		
+
 		seek(addr);
+
+		// update header 
 		if(-1 == write_header(file_, loc_header)){
 			// TODO error	
 		}
 
+		// read data to be moved into mig_buf
 		if(moved != fread(mig_buf_, 1, moved, file_)){
 			// TODO error 
 
 		}
 		
-		seek(addr, off);
-		
+		// write data to be moved
 		if(size != fwrite(data, 1, size, file_)){
 			// TODO error	
 		}
@@ -122,13 +128,13 @@ namespace BDB {
 
 	
 	AddrType
-	pool::merge_move(AddrType src_addr, size_t off, char const*data, size_t size,
+	pool::merge_move(char const*data, size_t size, AddrType src_addr, size_t off, 
 		pool *dest_pool, ChunkHeader const* header)
 	{
 		// TODO seek is always required when multiple processes share this lib
 		ChunkHeader loc_header = (0 == header) ? head(src_addr, off) : *header ;
 		off = (-1 == off) ? loc_header.size : off;
-
+	
 		size_t toRead = off; 
 		size_t readCnt;
 		AddrType dest_addr = dest_pool->write(0,0);

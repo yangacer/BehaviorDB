@@ -43,7 +43,7 @@ namespace BDB
 		read(char* buffer, size_t size, AddrType addr, size_t off=0, ChunkHeader const* header=0);
 
 		AddrType
-		merge_move(AddrType src_addr, size_t off, char const*data, size_t size,
+		merge_move(char const*data, size_t size, AddrType src_addr, size_t off,
 			pool *dest_pool, ChunkHeader const* header=0);
 
 		size_t
