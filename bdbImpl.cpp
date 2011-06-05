@@ -16,8 +16,10 @@ namespace BDB {
 		free(pools_);
 	}
 	
-	BDBImpl::operator void*() const
-	{ return static_cast<void *>(pools_); }
+	BDBImpl::operator void const*() const
+	{
+		return (0 != pool_) ? this : 0;
+	}
 
 	void
 	BDBImpl::init_(Config const & conf)
@@ -29,6 +31,9 @@ namespace BDB {
 		// initial pools
 		pool::config pcfg;
 		pcfg.addrEval = &addrEval;
+		pcfg.work_dir = conf.pool_dir;
+		pcfg.trans_dir = conf.trans_dir;
+		pcfg.header_dir = conf.header_dir;
 		pools_ = (pool*)malloc(sizeof(pool) * addrEval.dir_count());
 		for(unsigned char i =0; i<addrEval.dir_count(); ++i){
 			pcfg.dir = i;

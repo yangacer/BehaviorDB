@@ -12,8 +12,10 @@ namespace BDB {
 		
 		size_t min_size;
 		
-		/** Working Directory for BehaviorDB */
-		char const * working_dir;
+		char const *pool_dir;
+		char const *trans_dir;
+		char const *header_dir;
+		char const *log_dir;
 
 		Chunk_size_est cse_func;
 
@@ -22,7 +24,7 @@ namespace BDB {
 		/** Setup default configuration  */
 		Config()
 		: addr_prefix_len(4), min_size(1024), 
-		  working_dir(""),
+		  pool_dir(""), trans_dir(""), header_dir(""), log_dir(""),
 		  cse_func(&default_chunk_size_est), 
 		  ct_func(&default_capacity_test)
 		{}
@@ -38,7 +40,7 @@ namespace BDB {
 	        BDBImpl(Config const & conf);
 		~BDBImpl();
 		
-		operator void*() const;
+		operator void const*() const;
 
 		void
 		init_(Config const & conf);
@@ -67,6 +69,7 @@ namespace BDB {
 	private:
 		
 		pool* pools_;
+
 	};
 
 } // end of namespace BDB
