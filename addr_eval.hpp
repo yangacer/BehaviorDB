@@ -31,14 +31,7 @@ namespace BDB {
 		// It should return true if data/chunk_size is acceptiable, otherwise it return false
 		typedef bool (*Capacity_test)(size_t chunk_size, size_t data_size);
 		
-		unsigned char dir_prefix_len_;
-		size_t min_size_;
-		
-		Chunk_size_est chunk_size_est;
-		Capacity_test capacity_test;
-
-		addr_t loc_addr_mask;
-		
+				
 		addr_eval(): 
 		dir_prefix_len_(0), min_size_(0)
 		{}
@@ -54,7 +47,7 @@ namespace BDB {
 			loc_addr_mask = ~loc_addr_mask;
 		}
 		
-		operator void const *()
+		operator void const *() const
 		{ 
 			if((!dir_prefix_len_ && !min_size_) || !chunk_size_est || !capacity_test)
 				return 0;
@@ -132,6 +125,16 @@ namespace BDB {
 		addr_t 
 		local_addr(addr_t global_addr) const
 		{ return loc_addr_mask & global_addr; }
+
+	private:
+		unsigned char dir_prefix_len_;
+		size_t min_size_;
+		
+		Chunk_size_est chunk_size_est;
+		Capacity_test capacity_test;
+
+		addr_t loc_addr_mask;
+
 	};
 
 } // end of namespace BDB

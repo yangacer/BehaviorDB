@@ -1,3 +1,4 @@
+#include "error.hpp"
 #include "poolImpl.hpp"
 #include "v_iovec.hpp"
 #include "boost/variant/apply_visitor.hpp"
@@ -16,7 +17,7 @@ namespace BDB {
 	  addrEval(conf.addrEval), file_(0), idPool_(), headerPool_(conf.dirID, conf.header_dir)
 	{
 		if(0 == addrEval){
-			fprintf(stderr, "addr_eval missing\n");	
+			fprintf(stderr, "addr_eval missing\n");
 			exit(1);
 		}
 
@@ -29,9 +30,13 @@ namespace BDB {
 				exit(1);
 			}	
 		}
+		if(0 != setvbuf(file_, 0, _IONBF, 0)){
+			fprintf(stderr, "setvbuf to pool file failed\n");
+			exit(1);
+		}
 
 		// init idPool
-		sprintf(fname, "%s%02x.tran", work_dir.c_str(), dirID);
+		sprintf(fname, "%s%02x.tran", trans_dir.c_str(), dirID);
 		idPool_.replay_transaction(fname);
 		idPool_.init_transaction(fname);
 	}
@@ -56,6 +61,8 @@ namespace BDB {
 
 		if(!idPool_.avail()){
 			// no space error
+			on_error(ADDRESS_OVERFLOW, __LINE__);
+			return -1;
 		}
 
 		AddrType loc_addr = idPool_.Acquire();
@@ -65,15 +72,20 @@ namespace BDB {
 		if(-1 == headerPool_.write(header, loc_addr)){
 			// write failure
 			idPool_.Release(loc_addr);
+			on_error(SYSTEM_ERROR, __LINE__);
+			return -1;
 		}
 		
 		if(-1 == seek(loc_addr)){
-			// fprintf(stderr, "wrt: seek error (is eof %d)\n", 0 == feof(file_));
+			on_error(SYSTEM_ERROR, __LINE__);
+			return -1;
 		}
 
 		if(size != fwrite(data, 1, size, file_)){
 			// write failure
 			idPool_.Release(loc_addr);
+			on_error(SYSTEM_ERROR, __LINE__);
+			return -1;
 		}
 
 		return loc_addr;
@@ -89,13 +101,17 @@ namespace BDB {
 
 		if(!idPool_.isAcquired(addr) && off != -1){
 			// error: do not support until bitmap idpool available
+			on_error(NON_EXIST, __LINE__);
+			return -1;
 		}
 		
 		ChunkHeader loc_header;
 		if(header)
 			loc_header = *header;
-		else
-			headerPool_.read(&loc_header, addr);
+		else if( -1 == headerPool_.read(&loc_header, addr)){
+			on_error(SYSTEM_ERROR, __LINE__);
+			return -1;
+		}
 
 		off = (-1 == off) ? loc_header.size : off;
 		
@@ -108,31 +124,37 @@ namespace BDB {
 
 		// update header 
 		if(-1 == headerPool_.write(loc_header, addr)){
-			// TODO error	
+			on_error(SYSTEM_ERROR, __LINE__);
+			return -1;
 		}
 
 		if(-1 == seek(addr, off)){
-			// TODO error	
+			on_error(SYSTEM_ERROR, __LINE__);
+			return -1;
 		}
 
 		// read data to be moved into mig_buf
 		if(moved && moved != fread(mig_buf_, 1, moved, file_)){
-			// TODO error 
+			on_error(SYSTEM_ERROR, __LINE__);
+			return -1;
 
 		}
 		
 		if(moved && -1 == seek(addr, off)){
-			// TODO error
+			on_error(SYSTEM_ERROR, __LINE__);
+			return -1;
 		}
 
 		// write new data
 		if(size != fwrite(data, 1, size, file_)){
-			// TODO error	
+			on_error(SYSTEM_ERROR, __LINE__);
+			return -1;
 		}
 
 		// write buffered  moved data
 		if(moved && moved != fwrite(mig_buf_, 1, moved, file_)){
-			// TODO error	
+			on_error(SYSTEM_ERROR, __LINE__);
+			return -1;
 		}
 
 		return addr;
@@ -152,12 +174,13 @@ namespace BDB {
 		AddrType loc_addr = idPool_.Acquire();
 		
 		if(-1 == headerPool_.write(header, loc_addr)){
-			// error handle	
+			on_error(SYSTEM_ERROR, __LINE__);
+			return -1;
 		}
 		
 		if( -1 == seek(loc_addr) ){
-			// error handle	
-			// fprintf(stderr, "wrt: seek error (is eof %d)\n", 0 == feof(file_));
+			on_error(SYSTEM_ERROR, __LINE__);
+			return -1;
 		}
 		
 		write_viov wv;
@@ -172,7 +195,8 @@ namespace BDB {
 			    0 == boost::apply_visitor(wv, vv[i].data)){
 				// error handle
 				idPool_.Release(loc_addr);
-				break;
+				on_error(SYSTEM_ERROR, __LINE__);
+				return -1;
 			}
 			wv.dest_pos += vv[i].size;
 		}
@@ -186,21 +210,24 @@ namespace BDB {
 		ChunkHeader loc_header;
 		if(header)
 			loc_header = *header;
-		else
-			headerPool_.read(&loc_header, addr);
-
+		else if(-1 == headerPool_.read(&loc_header, addr)) {
+			on_error(SYSTEM_ERROR, __LINE__);
+			return -1;
+		}
 		if(off > loc_header.size)
 			return 0;
 
 		if(-1 == seek(addr, off)){
-			// TODO error	
+			on_error(SYSTEM_ERROR, __LINE__);
+			return -1;
 		}
 
 		if(size != fread(buffer, 1, size, file_)){
-			// TODO error
+			on_error(SYSTEM_ERROR, __LINE__);
+			return -1;
 		}
 
-		return size;
+		return loc_header.size;
 
 	}
 
@@ -212,9 +239,10 @@ namespace BDB {
 		ChunkHeader loc_header;
 		if(header)
 			loc_header = *header;
-		else
-			headerPool_.read(&loc_header, src_addr);
-
+		else if( -1 == headerPool_.read(&loc_header, src_addr) ){
+			on_error(SYSTEM_ERROR, __LINE__);
+			return -1;
+		}
 	
 		viov vv[3];
 		file_src fs;
@@ -248,7 +276,11 @@ namespace BDB {
 			loc_addr = dest_pool->write(vv, 3);
 		}
 
-		//TODO  if( error loc_addr returned )
+		if(-1 == loc_addr){
+			on_error(SYSTEM_ERROR, __LINE__);
+			return -1;
+		}
+
 		idPool_.Release(src_addr);
 		return loc_addr;
 	}
@@ -263,7 +295,7 @@ namespace BDB {
 	pool::erase(AddrType addr, size_t off, size_t size)
 	{ 
 		ChunkHeader header;
-		header.read(&header, addr);
+		headerPool_.read(&header, addr);
 		
 		if(off > header.size) return header.size;
 	
@@ -278,13 +310,13 @@ namespace BDB {
 			readCnt = (toRead > MIGBUF_SIZ) ? MIGBUF_SIZ : toRead;
 			seek(addr, off + size + loopOff);
 			if(readCnt != fread(mig_buf_, 1, readCnt, file_)){
-				// TODO error handle
-				return 0;
+				on_error(SYSTEM_ERROR, __LINE__);
+				return -1;
 			}
 			seek(addr, off + loopOff);
 			if(readCnt != fwrite(mig_buf_, 1, readCnt, file_)){
-				// TODO error handle
-				return 0;
+				on_error(SYSTEM_ERROR, __LINE__);
+				return -1;
 			}
 			loopOff += readCnt;
 			toRead -= readCnt;
@@ -314,6 +346,25 @@ namespace BDB {
 		pos *= addrEval->chunk_size_estimation(dirID);
 		pos += off;
 		return pos;
+	}
+	
+	void
+	pool::on_error(int errcode, int line)
+	{
+		// TODO: lock for mutli proc/thread
+		err_.push_back(std::make_pair<int, int>(errcode, line));	
+		// unlock
+	}
+	
+	std::pair<int, int>
+	pool::get_error(){
+		std::pair<int, int> rt(0,0);
+		if(!err_.empty()){
+			rt = err_.front();
+			err_.pop_front();
+		}
+		return rt;
+		
 	}
 
 } // end of BDB namespace

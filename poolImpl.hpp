@@ -9,6 +9,8 @@
 #include <string>
 #include <cstdio>
 #include <cstdlib>
+#include <deque>
+#include <utility>
 
 #define MIGBUF_SIZ 2*1024*1024
 
@@ -67,6 +69,12 @@ namespace BDB
 		off_t
 		seek(AddrType addr, size_t off =0);
 
+		void
+		on_error(int errcode, int line);
+		
+		std::pair<int, int>
+		get_error();
+
 		/* TODO: To be considered
 		AddrType
 		pine(AddrType addr);
@@ -100,18 +108,19 @@ namespace BDB
 		std::string work_dir;
 		std::string trans_dir;
 		
-		addr_eval<AddrType> * addrEval;
+		addr_eval<AddrType> const* addrEval;
 		
 		// pool file
 		FILE *file_;
 		char mig_buf_[MIGBUF_SIZ];
-
+		
 		// id file
 		IDPool<AddrType> idPool_;
 
 		// header
 		fixed_pool<ChunkHeader, 8> headerPool_;
-
+	public:	
+		std::deque<std::pair<int,int> > err_;
 	};
 } // end of namespace BDB
 
