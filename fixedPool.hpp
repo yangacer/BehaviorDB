@@ -17,7 +17,7 @@ namespace BDB {
 		: id_(0), work_dir_(""), file_(0)
 		{}
 
-		fixed_pool(unsigned char id, char const* work_dir)
+		fixed_pool(unsigned int id, char const* work_dir)
 		: id_(0), work_dir_(""), file_(0)
 		{
 			open(id, work_dir);
@@ -35,13 +35,13 @@ namespace BDB {
 		}
 
 		void
-		open(unsigned char id, char const* work_dir)
+		open(unsigned int id, char const* work_dir)
 		{
 			id_ = id;
 			work_dir_ = work_dir;
 
 			char fname[strlen(work_dir) + 8];
-			sprintf(fname, "%s%02x.fpo", work_dir_.c_str(), id_);
+			sprintf(fname, "%s%04x.fpo", work_dir_.c_str(), id_);
 			if(0 == (file_ = fopen(fname, "r+b"))){
 				if(0 == (file_ = fopen(fname, "w+b"))){
 					fprintf(stderr, "create fix pool failed\n");
@@ -84,7 +84,7 @@ namespace BDB {
 			return work_dir_;	
 		}
 	private:
-		unsigned char id_;
+		unsigned int id_;
 		std::string work_dir_;
 		FILE* file_;		
 	};

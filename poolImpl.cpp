@@ -23,7 +23,7 @@ namespace BDB {
 
 		// create pool file
 		char fname[work_dir.size() + 8];
-		sprintf(fname, "%s%02x.pool", work_dir.c_str(), dirID);
+		sprintf(fname, "%s%04x.pool", work_dir.c_str(), dirID);
 		if(0 == (file_ = fopen(fname, "r+b"))){
 			if(0 == (file_ = fopen(fname, "w+b"))){
 				fprintf(stderr, "create pool failed\n");
@@ -36,7 +36,7 @@ namespace BDB {
 		}
 
 		// init idPool
-		sprintf(fname, "%s%02x.tran", trans_dir.c_str(), dirID);
+		sprintf(fname, "%s%04x.tran", trans_dir.c_str(), dirID);
 		idPool_.replay_transaction(fname);
 		idPool_.init_transaction(fname);
 	}
@@ -65,10 +65,15 @@ namespace BDB {
 			return -1;
 		}
 
+		if(!addrEval->capacity_test(dirID, size)){
+			on_error(DATA_TOO_BIG, __LINE__);
+			return -1;
+		}
+
 		AddrType loc_addr = idPool_.Acquire();
 		ChunkHeader header;
 		header.size = size;
-
+		
 		if(-1 == headerPool_.write(header, loc_addr)){
 			// write failure
 			idPool_.Release(loc_addr);
@@ -99,17 +104,23 @@ namespace BDB {
 	{
 		if(!*this) return -1;
 
-		if(!idPool_.isAcquired(addr) && off != -1){
+		if(!idPool_.isAcquired(addr)){
 			// error: do not support until bitmap idpool available
 			on_error(NON_EXIST, __LINE__);
 			return -1;
 		}
 		
+
 		ChunkHeader loc_header;
 		if(header)
 			loc_header = *header;
 		else if( -1 == headerPool_.read(&loc_header, addr)){
 			on_error(SYSTEM_ERROR, __LINE__);
+			return -1;
+		}
+		
+		if(size + loc_header.size > addrEval->chunk_size_estimation(dirID)){
+			on_error(DATA_TOO_BIG, __LINE__);
 			return -1;
 		}
 
@@ -167,10 +178,16 @@ namespace BDB {
 		for(size_t i=0; i<len; ++i){
 			total += vv[i].size;		
 		}
+		
+		if(total > addrEval->chunk_size_estimation(dirID)){
+			on_error(DATA_TOO_BIG, __LINE__);
+			return -1;
+		}
 
 		ChunkHeader header;
 		header.size = total;
 		
+
 		AddrType loc_addr = idPool_.Acquire();
 		
 		if(-1 == headerPool_.write(header, loc_addr)){
@@ -207,6 +224,11 @@ namespace BDB {
 	size_t
 	pool::read(char* buffer, size_t size, AddrType addr, size_t off, ChunkHeader const* header)
 	{
+		if(!idPool_.isAcquired(addr)){
+			on_error(NON_EXIST, __LINE__);
+			return -1;
+		}
+
 		ChunkHeader loc_header;
 		if(header)
 			loc_header = *header;
@@ -285,28 +307,46 @@ namespace BDB {
 		return loc_addr;
 	}
 
-	void
+	size_t
 	pool::erase(AddrType addr)
 	{ 
-		idPool_.Release(addr);	
+		if(idPool_.isAcquired(addr))
+			idPool_.Release(addr);
+		else {
+			on_error(NON_EXIST, __LINE__);
+			return -1;
+		}
+		return 0;
 	}
 
 	size_t
 	pool::erase(AddrType addr, size_t off, size_t size)
 	{ 
+		if(!idPool_.isAcquired(addr)){
+			on_error(NON_EXIST, __LINE__);
+			return -1;
+		}
+
 		ChunkHeader header;
 		headerPool_.read(&header, addr);
 		
 		if(off > header.size) return header.size;
 	
+
+		// overflow check
+		size = (off + size > off) ?  
+			(off + size > header.size) ? header.size - off : size
+			: header.size - off;
+
 		size_t toRead = header.size - size;
+		
 		header.size -= size;
 
 		headerPool_.write(header, addr);
 		
 		size_t readCnt, loopOff(0);
 		
-		while(toRead){
+		while(toRead > 0){
 			readCnt = (toRead > MIGBUF_SIZ) ? MIGBUF_SIZ : toRead;
 			seek(addr, off + size + loopOff);
 			if(readCnt != fread(mig_buf_, 1, readCnt, file_)){

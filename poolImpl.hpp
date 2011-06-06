@@ -23,7 +23,7 @@ namespace BDB
 	{
 		struct config
 		{
-			unsigned char dirID;
+			unsigned int dirID;
 			char const* work_dir;
 			char const* trans_dir;
 			char const* header_dir;
@@ -51,7 +51,7 @@ namespace BDB
 		
 		AddrType
 		write(viov *vv, size_t len);
-		
+
 		size_t
 		read(char* buffer, size_t size, AddrType addr, size_t off=0, ChunkHeader const* header=0);
 
@@ -59,7 +59,7 @@ namespace BDB
 		merge_move(char const*data, size_t size, AddrType src_addr, size_t off,
 			pool *dest_pool, ChunkHeader const* header=0);
 
-		void
+		size_t
 		erase(AddrType addr);
 
 		size_t
@@ -104,7 +104,7 @@ namespace BDB
 		pool& operator=(pool const& cp);
 
 	private: // data member
-		unsigned char dirID;
+		unsigned int dirID;
 		std::string work_dir;
 		std::string trans_dir;
 		
