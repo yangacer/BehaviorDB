@@ -64,10 +64,9 @@ namespace BDB
 
 		size_t
 		erase(AddrType addr, size_t off, size_t size);
-
-		// TODO make sure windows can provide/simulate off_t
-		off_t
-		seek(AddrType addr, size_t off =0);
+	
+		int
+		head(ChunkHeader *header, AddrType addr) const;
 
 		void
 		on_error(int errcode, int line);
@@ -86,6 +85,10 @@ namespace BDB
 		std::pair<AddrType, size_t>
 		tell2addr_off(off_t fpos) const;
 		*/
+		
+	private:
+		off_t
+		seek(AddrType addr, size_t off =0);
 
 		off_t
 		addr_off2tell(AddrType addr, size_t off) const;

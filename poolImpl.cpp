@@ -249,7 +249,7 @@ namespace BDB {
 			return -1;
 		}
 
-		return loc_header.size;
+		return size;
 
 	}
 
@@ -365,6 +365,15 @@ namespace BDB {
 		return header.size;
 	}
 	
+	int
+	pool::head(ChunkHeader *header, AddrType addr) const
+	{ 
+		if(-1 == headerPool_.read(header, addr)){
+			const_cast<pool*>(this)->on_error(SYSTEM_ERROR, __LINE__);
+			return -1;
+		}
+		return 0;
+	}
 
 	off_t
 	pool::seek(AddrType addr, size_t off)
