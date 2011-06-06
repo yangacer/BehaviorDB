@@ -21,6 +21,15 @@ namespace BDB  {
 		NON_EXIST = 5
 	};
 
+	struct error_num_to_str
+	{
+		char const *operator()(int error_num)
+		{
+			return buf[error_num];
+		}
+	private:
+		static char buf[6][40];
+	};
 } // end of namespace BDB
 
 #endif // end of header
