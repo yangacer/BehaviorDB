@@ -79,7 +79,8 @@ namespace BDB {
 		unsigned int dir = addrEval.addr_to_dir(addr);
 		AddrType loc_addr = addrEval.local_addr(addr);
 		
-		ChunkHeader header = pools_[dir].head(loc_addr, 0);
+		ChunkHeader header;
+		pools_[dir].head(&head, loc_addr);
 		
 		if(size + header.size > addEval.chunk_size_estimation(dir)){
 			
@@ -92,7 +93,6 @@ namespace BDB {
 					&pools_[next_dir], &header); 
 
 			if(-1 == next_loc_addr){
-				// TODO: error handle
 				error(dir);
 				error(next_dir);
 				return -1;	
@@ -105,7 +105,6 @@ namespace BDB {
 		// another chunk of the same pool due to size of data to be moved exceed size of 
 		// migration buffer that a pool contains
 		if(-1 == (loc_ addr = pools_[dir].write(data, size, loc_addr, off, &header)) ){
-			// TODO: error handling
 			error(dir);
 			return -1;	
 		}
@@ -122,7 +121,6 @@ namespace BDB {
 		AddrType loc_addr = addrEval.local_addr(addr);
 		
 		if(-1 == (rt = pools_[dir].get(output, size, loc_addr, off))){
-			// TODO: error handle
 			error(dir);
 			return -1;
 		}
@@ -137,7 +135,6 @@ namespace BDB {
 		AddrType loc_addr = addrEval.local_addr(addr);
 		
 		if(-1 == pools_[dir].erase(loc_addr)){
-			// TODO: error handle
 			error(dir);
 			return -1;	
 		}
@@ -151,7 +148,6 @@ namespace BDB {
 		AddrType loc_addr = addrEval.local_addr(addr);
 
 		if(-1 == pools_[dir].erase(loc_addr, off, size)){
-			// TODO: err handle
 			error(dir);
 			return -1;
 		}

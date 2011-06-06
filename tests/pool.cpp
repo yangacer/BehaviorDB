@@ -49,10 +49,7 @@ void usage()
 void
 configuration()
 {
-	printf("minimum chunk size: 32 bytes\n");
-	printf("migration certerion: chunk overflow\n");
-	printf("pool count: 16\n");
-	printf("chunk size groth: 2 times lager than previous\n");
+	printf("all directories (pool, trans, header) are set to default, that is current directory\n");
 }
 
 int main(int argc, char** argv)
