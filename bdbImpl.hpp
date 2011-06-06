@@ -8,7 +8,7 @@ namespace BDB {
 	
 	struct Config
 	{
-		unsigned char addr_prefix_len;
+		unsigned int addr_prefix_len;
 		
 		size_t min_size;
 		
@@ -54,11 +54,19 @@ namespace BDB {
 		size_t
 		get(char *output, size_t size, AddrType addr, size_t off=0);
 		
-		AddrType
+		size_t
 		del(AddrType addr);
 
-		AddrType
+		size_t
 		del(AddrType addr, size_t off, size_t size);
+
+	protected:
+
+		void
+		error(unsigned int dir);
+		
+		void
+		error(int errcode, int line);
 
 	private: // disable interfaces
 		BDBImpl(BDBImpl const& cp);
@@ -69,7 +77,7 @@ namespace BDB {
 	private:
 		
 		pool* pools_;
-
+		FILE* log_;
 	};
 
 } // end of namespace BDB
