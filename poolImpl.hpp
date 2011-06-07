@@ -1,7 +1,7 @@
 #ifndef _POOL_HPP_
 #define _POOL_HPP_
 
-#include "config.hpp"
+#include "common.hpp"
 #include "addr_eval.hpp"
 #include "fixedPool.hpp"
 #include "chunk.h"
@@ -115,8 +115,9 @@ namespace BDB
 		
 		// pool file
 		FILE *file_;
+	public:
 		char mig_buf_[MIGBUF_SIZ];
-		
+	private:	
 		// id file
 		IDPool<AddrType> idPool_;
 

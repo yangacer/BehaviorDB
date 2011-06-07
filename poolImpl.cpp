@@ -49,7 +49,7 @@ namespace BDB {
 	
 	pool::operator void const*() const
 	{ 
-		if(!file_ || !addrEval || !idPool_)
+		if(!this || !file_ || !addrEval || !idPool_)
 			return 0;
 		return this;
 	}
@@ -243,13 +243,17 @@ namespace BDB {
 			on_error(SYSTEM_ERROR, __LINE__);
 			return -1;
 		}
+		
+		size_t toRead = (size > loc_header.size - off) ? 
+			loc_header.size - off 
+			: size;
 
-		if(size != fread(buffer, 1, size, file_)){
+		if(toRead != fread(buffer, 1, toRead, file_)){
 			on_error(SYSTEM_ERROR, __LINE__);
 			return -1;
 		}
 
-		return size;
+		return toRead;
 
 	}
 
@@ -338,7 +342,7 @@ namespace BDB {
 			(off + size > header.size) ? header.size - off : size
 			: header.size - off;
 
-		size_t toRead = header.size - size;
+		size_t toRead = header.size - size - off;
 		
 		header.size -= size;
 

@@ -1,4 +1,6 @@
 #include "bdbImpl.hpp"
+#include "poolImpl.hpp"
+#include "error.hpp"
 
 namespace BDB {
 
@@ -12,6 +14,7 @@ namespace BDB {
 	
 	BDBImpl::~BDBImpl()
 	{
+		if(!pools_) return;
 		for(unsigned int i =0; i<addrEval.dir_count(); ++i)
 			pools_[i].~pool();
 		free(pools_);
@@ -19,13 +22,18 @@ namespace BDB {
 	
 	BDBImpl::operator void const*() const
 	{
-		return (0 != pool_) ? this : 0;
+		if(!this || !pools_)
+			return 0;
+		return this;
 	}
 
 	void
 	BDBImpl::init_(Config const & conf)
 	{
-		addrEval.set(conf.min_size).set(conf.addr_prefix_len);
+		addrEval.set(conf.min_size).
+			set((unsigned char)conf.addr_prefix_len).
+			set(conf.cse_func).
+			set(conf.ct_func);
 
 		// initial pools
 		pool::config pcfg;
@@ -35,13 +43,13 @@ namespace BDB {
 		pcfg.header_dir = conf.header_dir;
 		pools_ = (pool*)malloc(sizeof(pool) * addrEval.dir_count());
 		for(unsigned int i =0; i<addrEval.dir_count(); ++i){
-			pcfg.dir = i;
+			pcfg.dirID = i;
 			new (&pools_[i]) pool(pcfg); 
 		}
 
 		// init log
-		char fname[log_dir.size() + 9];
-		sprintf(fname, "%serror.log", log_dir.c_str());
+		char fname[strlen(conf.log_dir) + 9];
+		sprintf(fname, "%serror.log", conf.log_dir);
 		if(0 == (log_ = fopen(fname, "r+b"))){
 			if(0 == (log_ = fopen(fname, "w+b"))){
 				fprintf(stderr, "create log file failed\n");
@@ -58,7 +66,8 @@ namespace BDB {
 	AddrType
 	BDBImpl::put(char const *data, size_t size)
 	{
-		// size to pool index
+		if(!*this) return -1;
+
 		unsigned int dir = addrEval.directory(size);
 		AddrType rt(0);
 		while(dir < addrEval.dir_count()){
@@ -76,19 +85,23 @@ namespace BDB {
 	AddrType
 	BDBImpl::put(char const* data, size_t size, AddrType addr, size_t off)
 	{
+		if(!*this) return -1;
+
 		unsigned int dir = addrEval.addr_to_dir(addr);
 		AddrType loc_addr = addrEval.local_addr(addr);
 		
 		ChunkHeader header;
-		pools_[dir].head(&head, loc_addr);
+		pools_[dir].head(&header, loc_addr);
 		
-		if(size + header.size > addEval.chunk_size_estimation(dir)){
+		if(size + header.size > addrEval.chunk_size_estimation(dir)){
 			
 			// migration
-			unsigned int next_dir = (*MigPredictor)(addr);
+			unsigned int next_dir = addrEval.directory(size + header.size); //(*MigPredictor)(addr);
 			AddrType next_loc_addr;
 			if(-1 == off)
 				off = header.size;
+			
+			// TODO migrate failure 
 			next_loc_addr = pools_[dir].merge_move( data, size, loc_addr, off,
 					&pools_[next_dir], &header); 
 
@@ -104,7 +117,7 @@ namespace BDB {
 		// **Althought the chunk need not migrate to another pool, it might be moved to 
 		// another chunk of the same pool due to size of data to be moved exceed size of 
 		// migration buffer that a pool contains
-		if(-1 == (loc_ addr = pools_[dir].write(data, size, loc_addr, off, &header)) ){
+		if(-1 == (loc_addr = pools_[dir].write(data, size, loc_addr, off, &header)) ){
 			error(dir);
 			return -1;	
 		}
@@ -116,21 +129,43 @@ namespace BDB {
 	size_t
 	BDBImpl::get(char *output, size_t size, AddrType addr, size_t off)
 	{
+		if(!*this) return -1;
+
 		size_t rt(0);
 		unsigned int dir = addrEval.addr_to_dir(addr);
 		AddrType loc_addr = addrEval.local_addr(addr);
 		
-		if(-1 == (rt = pools_[dir].get(output, size, loc_addr, off))){
+		if(-1 == (rt = pools_[dir].read(output, size, loc_addr, off))){
 			error(dir);
-			return -1;
+			return 0;
 		}
 		return rt;
 	}
 	
+	size_t
+	BDBImpl::get(std::string *output, size_t max, AddrType addr, size_t off)
+	{
+		if(!output) return 0;
+		if(output->size()) output->clear();
+		
+		size_t dir = addrEval.addr_to_dir(addr);
+		char *buf = pools_[dir].mig_buf_;
+
+		size_t readCnt(0), total(0);
+		while(0 < (readCnt = get(buf, MIGBUF_SIZ, addr, off))){
+			if(total + readCnt > max) break;
+			output->append(buf, readCnt);
+			off += readCnt;
+			total += readCnt;
+		}
+		return total;
+	}
 
 	size_t
 	BDBImpl::del(AddrType addr)
 	{
+		if(!*this) return -1;
+
 		unsigned int dir = addrEval.addr_to_dir(addr);
 		AddrType loc_addr = addrEval.local_addr(addr);
 		
@@ -144,6 +179,8 @@ namespace BDB {
 	size_t
 	BDBImpl::del(AddrType addr, size_t off, size_t size)
 	{
+		if(!*this) return -1;
+
 		unsigned int dir = addrEval.addr_to_dir(addr);
 		AddrType loc_addr = addrEval.local_addr(addr);
 
@@ -165,7 +202,7 @@ namespace BDB {
 			fprintf(log_, "Pool ID\tLine\tMessage\n");
 		}
 		
-		fprintf(log_, "None    \t%d\t%s\n", dir, error.second, error_num_to_str()(error.first));
+		fprintf(log_, "None    \t%d\t%s\n", line, error_num_to_str()(errcode));
 		
 		//unlock
 	}
@@ -175,9 +212,9 @@ namespace BDB {
 	{	
 		if(0 == log_) return;
 
-		std::pair<int, int> error = pools_[dir].get_error();
+		std::pair<int, int> err = pools_[dir].get_error();
 		
-		if(error.first == 0) return;
+		if(err.first == 0) return;
 
 		// TODO lock log
 		
@@ -186,9 +223,9 @@ namespace BDB {
 		}
 
 		while(1){
-			fprintf(log_, "%08x\t%d\t%s\n", dir, error.second, error_num_to_str()(error.first));
-			error = pools_[dir].get_error();
-			if(error.first == 0) break;
+			fprintf(log_, "%08x\t%d\t%s\n", dir, err.second, error_num_to_str()(err.first));
+			err = pools_[dir].get_error();
+			if(err.first == 0) break;
 		}
 
 		// TODO unlock

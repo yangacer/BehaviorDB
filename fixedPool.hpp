@@ -1,7 +1,7 @@
 #ifndef FIXEDPOOL_HPP_
 #define FIXEDPOOL_HPP_
 
-#include "config.hpp"
+#include "common.hpp"
 #include <string>
 #include <cstdio>
 #include <cstring>

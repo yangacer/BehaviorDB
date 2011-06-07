@@ -1,37 +1,14 @@
 #ifndef _ADDR_EVAL_HPP
 #define _ADDR_EVAL_HPP
 
-#include <cstdio>
+#include "common.hpp"
 
 namespace BDB {
 
-	inline size_t 
-	default_chunk_size_est(unsigned int dir, size_t min_size)
-	{
-		return min_size<<dir;
-	}
-
-	inline bool 
-	default_capacity_test(size_t chunk_size, size_t data_size)
-	{
-		if(chunk_size >= 10000000) return true;
-		// reserve 1/4 chunk size
-		return (chunk_size - (chunk_size>>2)) >= data_size;
-	}
-
+	
 	template<typename addr_t>
 	struct addr_eval
 	{
-		typedef size_t (*Chunk_size_est)(unsigned int dir, size_t min_size);
-
-		// Decide how many fragmentation is acceptiable for initial data insertion
-		// Or, w.r.t. preallocation, how many fraction of a chunk one want to preserve
-		// for future insertion.
-		// *****
-		// It should return true if data/chunk_size is acceptiable, otherwise it return false
-		typedef bool (*Capacity_test)(size_t chunk_size, size_t data_size);
-		
-				
 		addr_eval(): 
 		dir_prefix_len_(0), min_size_(0)
 		{}
@@ -74,7 +51,7 @@ namespace BDB {
 
 		addr_eval&
 		set(Capacity_test capacity_test_func)
-		{ capacity_test = capacity_test_func; return *this; }
+		{ capacity_test_ = capacity_test_func; return *this; }
 
 		unsigned int
 		global_addr_len() const

@@ -1,7 +1,7 @@
 #ifndef _POOL_HPP_
 #define _POOL_HPP_
 
-#include "config.hpp"
+#include "common.hpp"
 #include "addr_eval.hpp"
 #include "bdb.h"
 #include "chunk.h"
