@@ -40,7 +40,12 @@ namespace BDB {
 			id_ = id;
 			work_dir_ = work_dir;
 
-			char fname[strlen(work_dir) + 8];
+			char fname[256];
+			if(work_dir_.size() > 256) {
+				fprintf(stderr, "length of pool_dir string is too long\n");
+				exit(1);
+			}
+			
 			sprintf(fname, "%s%04x.fpo", work_dir_.c_str(), id_);
 			if(0 == (file_ = fopen(fname, "r+b"))){
 				if(0 == (file_ = fopen(fname, "w+b"))){
@@ -49,6 +54,7 @@ namespace BDB {
 				}
 			}
 			setvbuf(file_, 0, _IONBF, 0);
+			
 
 		}
 

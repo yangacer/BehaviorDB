@@ -22,7 +22,13 @@ namespace BDB {
 		}
 
 		// create pool file
-		char fname[work_dir.size() + 8];
+		
+		char fname[256];
+		if(work_dir.size() > 256) {
+			fprintf(stderr, "length of pool_dir string is too long\n");
+			exit(1);
+		}
+
 		sprintf(fname, "%s%04x.pool", work_dir.c_str(), dirID);
 		if(0 == (file_ = fopen(fname, "r+b"))){
 			if(0 == (file_ = fopen(fname, "w+b"))){
@@ -39,6 +45,8 @@ namespace BDB {
 		sprintf(fname, "%s%04x.tran", trans_dir.c_str(), dirID);
 		idPool_.replay_transaction(fname);
 		idPool_.init_transaction(fname);
+		
+		
 	}
 	
 	pool::~pool()
@@ -256,7 +264,22 @@ namespace BDB {
 		return toRead;
 
 	}
-
+	
+	size_t
+	pool::read(std::string *buffer, size_t max, AddrType addr, size_t off, ChunkHeader const* header)
+	{
+		if(!buffer) return 0;
+		if(buffer->size()) buffer->clear();
+		size_t readCnt(0), total(0);
+		while(0 < (readCnt = read(mig_buf_, MIGBUF_SIZ, addr, off))){
+			if(-1 == readCnt) return -1;
+			if(total + readCnt > max) break;
+			buffer->append(mig_buf_, readCnt);
+			off += readCnt;
+			total += readCnt;
+		}
+		return total;
+	}
 	
 	AddrType
 	pool::merge_move(char const*data, size_t size, AddrType src_addr, size_t off, 

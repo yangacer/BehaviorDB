@@ -48,7 +48,12 @@ namespace BDB {
 		}
 
 		// init log
-		char fname[strlen(conf.log_dir) + 9];
+		char fname[256];
+		if(strlen(conf.log_dir) > 256){
+			fprintf(stderr, "length of pool_dir string is too long\n");
+			exit(1);
+		}
+
 		sprintf(fname, "%serror.log", conf.log_dir);
 		if(0 == (log_ = fopen(fname, "r+b"))){
 			if(0 == (log_ = fopen(fname, "w+b"))){
@@ -56,11 +61,11 @@ namespace BDB {
 				exit(1);
 			}	
 		}
-		if(0 != setvbuf(log_, 0, _IOLBF, 0)){
+		if(0 != setvbuf(log_, log_buf_, _IOLBF, 256)){
 			fprintf(stderr, "setvbuf to log file failed\n");
 			exit(1);
 		}
-
+		
 	}
 	
 	AddrType
@@ -145,20 +150,15 @@ namespace BDB {
 	size_t
 	BDBImpl::get(std::string *output, size_t max, AddrType addr, size_t off)
 	{
-		if(!output) return 0;
-		if(output->size()) output->clear();
+		size_t rt(0);
+		unsigned int dir = addrEval.addr_to_dir(addr);
+		AddrType loc_addr = addrEval.local_addr(addr);
 		
-		size_t dir = addrEval.addr_to_dir(addr);
-		char *buf = pools_[dir].mig_buf_;
-
-		size_t readCnt(0), total(0);
-		while(0 < (readCnt = get(buf, MIGBUF_SIZ, addr, off))){
-			if(total + readCnt > max) break;
-			output->append(buf, readCnt);
-			off += readCnt;
-			total += readCnt;
+		if( -1 == (rt = pools_[dir].read(output, max, loc_addr, off))){
+			error(dir);
+			return 0;
 		}
-		return total;
+		return rt;
 	}
 
 	size_t

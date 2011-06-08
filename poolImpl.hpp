@@ -11,6 +11,7 @@
 #include <cstdlib>
 #include <deque>
 #include <utility>
+#include <string>
 
 #define MIGBUF_SIZ 2*1024*1024
 
@@ -54,7 +55,10 @@ namespace BDB
 
 		size_t
 		read(char* buffer, size_t size, AddrType addr, size_t off=0, ChunkHeader const* header=0);
-
+		
+		size_t
+		read(std::string *buffer, size_t max, AddrType addr, size_t off=0, ChunkHeader const* header=0);
+		
 		AddrType
 		merge_move(char const*data, size_t size, AddrType src_addr, size_t off,
 			pool *dest_pool, ChunkHeader const* header=0);

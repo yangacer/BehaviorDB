@@ -9,6 +9,10 @@
 #define ftello(X) _ftelli64(X)
 #define fseeko(X,Y,Z) _fseeki64(X,Y,Z)
 
+#pragma warning( disable: 4290 ) // exception specification non-implmented
+#pragma warning( disable: 4251 ) // template export warning
+#pragma warning( disable: 4996 ) // allow POSIX 
+
 #endif
 
 // TODO make sure this is OK in win

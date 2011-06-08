@@ -67,6 +67,7 @@ namespace BDB {
 		
 		pool* pools_;
 		FILE* log_;
+		char log_buf_[256];
 	};
 
 } // end of namespace BDB
