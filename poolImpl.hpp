@@ -5,7 +5,7 @@
 #include "addr_eval.hpp"
 #include "fixedPool.hpp"
 #include "chunk.h"
-#include "idPool.h"
+#include "idPool.hpp"
 #include <string>
 #include <cstdio>
 #include <cstdlib>

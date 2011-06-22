@@ -10,7 +10,7 @@ include_directories( ${PROJECT_SOURCE_DIR} /usr/local/include)
 add_executable (pool poolImpl.cpp ${PROJECT_SOURCE_DIR}/tests/pool.cpp chunk.cpp v_iovec.cpp)
 add_executable (bdb error.cpp bdb.cpp bdbImpl.cpp poolImpl.cpp ${PROJECT_SOURCE_DIR}/tests/bdb.cpp chunk.cpp v_iovec.cpp)
 add_executable (fixpool ${PROJECT_SOURCE_DIR}/tests/fixpool.cpp chunk.cpp)
-
+add_executable (idp ${PROJECT_SOURCE_DIR}/tests/idpool.cpp)
 
 #set(TEST_TARGETS bdb_put put append migrate_test getstream bench iterate addreval)
 #foreach(tg ${TEST_TARGETS})

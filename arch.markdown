@@ -3,8 +3,22 @@
 ##Address
 
 ##Pool
+###Data Model
 
-###Constructor
+
+
+###Configuration
+
+A pool has options of configuration as follows:
+
+1. Directory Identification (dirID)
+2. Working Directory (work_dir)
+3. Address Evaluator (addrEval)
+
+###External Data Format
+####Pool file
+
+
 
 ####Parameters:
  
@@ -24,6 +38,16 @@
 
  // to be added
 
+###Error Handling
+
+####Construction Error
+Error occurs during construction causes program call exit(1) immediately, some error message will be written to stderr.
+
+####Runtime Error
+When error happens during process of methods of a pool object, the object records error code and source line. These 
+information will be logged by BehaviorDB in upper layer. For more information about the error code, please refer to 
+error.hpp.
+
 ###Methods
 
 ####1. write
@@ -37,20 +61,20 @@
 	<tbody>
 		<tr>
 			<td> Put 
-			<td> data, size 
+			<td> data, size
 			<td> Put data to a new chunk with new address
 		</tr>
 		<tr>
-			<td> Append/Put 
-			<td> address, data, size, [*header = 0]
+			<td> Append/Insert 
+			<td> data, size, address [, off=-1, *header = 0]
 			<td> Append data to an indicated address. When the chunk 
 			refered by the address is not allocated, this method 
 			functions as put with specified address.
 		</tr>
 		<tr>
-			<td> Insert
-			<td> address, offset, data, size, [*header = 0]
-			<td> Insert data to spcified offset from the address
+			<td> Vectorized Put
+			<td> variant IO vector
+			<td> [to be added]
 		</tr>
 	</tbody>
 </table>
@@ -93,7 +117,7 @@
 		</tr>
 		<tr>
 			<td> merge_move
-			<td> address, offset, data, size, *dest_pool, dest_addr [*header = 0]
+			<td> data, size, address, offset, *dest_pool, dest_addr [*header = 0]
 			<td> Merge data within specified offset and move merged data to a pool
 		</tr>
 	</tbody>
