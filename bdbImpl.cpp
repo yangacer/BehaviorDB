@@ -6,7 +6,7 @@
 namespace BDB {
 
 	BDBImpl::BDBImpl()
-	: pools_(0), log_(0)
+	: pools_(0), log_(0), global_id_(0)
 	{}
 
 	BDBImpl::BDBImpl(Config const & conf)
@@ -56,17 +56,21 @@ namespace BDB {
 		}
 
 		sprintf(fname, "%serror.log", conf.log_dir);
-		if(0 == (log_ = fopen(fname, "r+b"))){
-			if(0 == (log_ = fopen(fname, "w+b"))){
-				fprintf(stderr, "create log file failed\n");
-				exit(1);
-			}	
+		if(0 == (log_ = fopen(fname, "ab"))){
+			fprintf(stderr, "create log file failed\n");
+			exit(1);
+
 		}
 		if(0 != setvbuf(log_, log_buf_, _IOLBF, 256)){
 			fprintf(stderr, "setvbuf to log file failed\n");
 			exit(1);
 		}
 		
+		// init IDValPool
+		global_id_ = new IDValPool<AddrType, AddrType>(conf.beg, conf.end);
+		sprintf(fname, "%sglobal_id.trans", conf.root_dir);
+		global_id_->replay_transaction(fname);
+		global_id_->init_transaction(fname);
 	}
 	
 	AddrType
@@ -79,12 +83,27 @@ namespace BDB {
 		while(dir < addrEval.dir_count()){
 			rt = pools_[dir].write(data, size);
 			if(rt != -1){ 
-				error(dir);
+				// error(dir);
+				// return -1;
 				break;
 			}
 			dir++;
 		}
-		return addrEval.global_addr(dir, rt);
+		
+		if(-1 == rt){
+			error(dir-1);
+			return -1;
+		}
+
+		rt = addrEval.global_addr(dir, rt);
+		rt = global_id_->Acquire(rt);
+
+		if(-1 == rt){
+			error(ADDRESS_OVERFLOW, __LINE__);
+			return -1;
+		}
+
+		return rt;
 	}
 
 
@@ -92,10 +111,15 @@ namespace BDB {
 	BDBImpl::put(char const* data, size_t size, AddrType addr, size_t off)
 	{
 		if(!*this) return -1;
+		AddrType internal_addr;
+		if(-1 == (internal_addr = global_id_->Find(addr))){
+			return -1;	
+		}
 
-		unsigned int dir = addrEval.addr_to_dir(addr);
-		AddrType loc_addr = addrEval.local_addr(addr);
-		
+		unsigned int dir = addrEval.addr_to_dir(internal_addr);
+		AddrType loc_addr = addrEval.local_addr(internal_addr);
+		AddrType rt;
+
 		ChunkHeader header;
 		pools_[dir].head(&header, loc_addr);
 		
@@ -116,7 +140,10 @@ namespace BDB {
 				error(next_dir);
 				return -1;	
 			}
-			return addrEval.global_addr(next_dir, next_loc_addr);
+			rt = addrEval.global_addr(next_dir, next_loc_addr);
+			global_id_->Update(addr, rt);
+			
+			return addr;
 		}
 
 		// no migration
@@ -128,7 +155,11 @@ namespace BDB {
 			return -1;	
 		}
 		
-		return addrEval.global_addr(dir, loc_addr);
+		rt = addrEval.global_addr(dir, loc_addr);
+		global_id_->Update(addr, rt);
+		
+		return addr;
+
 
 	}
 
@@ -136,6 +167,10 @@ namespace BDB {
 	BDBImpl::get(char *output, size_t size, AddrType addr, size_t off)
 	{
 		if(!*this) return -1;
+		
+		if(-1 == (addr = global_id_->Find(addr))){
+			return 0;	
+		}
 
 		size_t rt(0);
 		unsigned int dir = addrEval.addr_to_dir(addr);
@@ -151,6 +186,12 @@ namespace BDB {
 	size_t
 	BDBImpl::get(std::string *output, size_t max, AddrType addr, size_t off)
 	{
+		if(!*this) return -1;
+		
+		if(-1 == (addr = global_id_->Find(addr))){
+			return 0;	
+		}
+
 		size_t rt(0);
 		unsigned int dir = addrEval.addr_to_dir(addr);
 		AddrType loc_addr = addrEval.local_addr(addr);
@@ -167,13 +208,20 @@ namespace BDB {
 	{
 		if(!*this) return -1;
 
-		unsigned int dir = addrEval.addr_to_dir(addr);
-		AddrType loc_addr = addrEval.local_addr(addr);
+		AddrType internal_addr;
+
+		if(-1 == (internal_addr = global_id_->Find(addr))){
+			return 0;	
+		}
+
+		unsigned int dir = addrEval.addr_to_dir(internal_addr);
+		AddrType loc_addr = addrEval.local_addr(internal_addr);
 		
 		if(-1 == pools_[dir].erase(loc_addr)){
 			error(dir);
 			return -1;	
 		}
+		global_id_->Release(addr);
 		return addr;
 	}
 
@@ -181,6 +229,10 @@ namespace BDB {
 	BDBImpl::del(AddrType addr, size_t off, size_t size)
 	{
 		if(!*this) return -1;
+		
+		if(-1 == (addr = global_id_->Find(addr))){
+			return 0;	
+		}
 
 		unsigned int dir = addrEval.addr_to_dir(addr);
 		AddrType loc_addr = addrEval.local_addr(addr);
@@ -220,11 +272,11 @@ namespace BDB {
 		// TODO lock log
 		
 		if(0 == ftello(log_)){ // write column names
-			fprintf(log_, "Pool ID\tLine\tMessage\n");
+			fprintf(log_, "Pool_ID  Line Message\n");
 		}
 
 		while(1){
-			fprintf(log_, "%08x\t%d\t%s\n", dir, err.second, error_num_to_str()(err.first));
+			fprintf(log_, "%08x %4d %s\n", dir, err.second, error_num_to_str()(err.first));
 			err = pools_[dir].get_error();
 			if(err.first == 0) break;
 		}
