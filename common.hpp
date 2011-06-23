@@ -50,6 +50,7 @@ namespace BDB {
 		unsigned int addr_prefix_len;
 		size_t min_size;
 		
+		char const *root_dir;
 		char const *pool_dir;
 		char const *trans_dir;
 		char const *header_dir;
@@ -63,7 +64,7 @@ namespace BDB {
 		Config()
 		: beg(1), end(100000001),
 		  addr_prefix_len(4), min_size(32), 
-		  pool_dir(""), trans_dir(""), header_dir(""), log_dir(""),
+		  root_dir(""), pool_dir(""), trans_dir(""), header_dir(""), log_dir(""),
 		  cse_func(&default_chunk_size_est), 
 		  ct_func(&default_capacity_test)
 		{}

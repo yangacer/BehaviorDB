@@ -24,7 +24,7 @@ int main()
 	// prepend
 	char const *data3 = "yang";
 	addr = bdb.put(data3, 4, addr, 0);
-
+	
 	// insert
 	char const *data4 = " made";
 	addr = bdb.put(data4, 5, addr, 8);
@@ -37,13 +37,15 @@ int main()
 		rec.append(buf, readCnt);
 		off += readCnt;
 	}
-	printf("%s\n", rec.c_str());
+	printf("should:\t%s%s%s%s\n", data3, data, data4, data2);
+	printf("result:\t%s\n", rec.c_str());
 	
 	// read into string
 	rec.clear();
 	rec.reserve(off);
 	bdb.get(&rec, 1024, addr);
-	printf("%s\n", rec.c_str());
+	printf("should:\t%s%s%s%s\n", data3, data, data4, data2);
+	printf("result:\t%s\n", rec.c_str());
 
 	// erase partial
 	bdb.del(addr, 13, 10);

@@ -2,17 +2,17 @@
 
 template<typename B>
 IDPool<B>::IDPool()
-: beg_(0), end_(std::numeric_limits<B>::max()), file_(0), bm_(), full_alloc_(false)
+: beg_(0), end_(std::numeric_limits<B>::max()-1), file_(0), bm_(), full_alloc_(false)
 {
-	bm_.resize((end_- beg_)>>6, true);
+	bm_.resize((end_- beg_)>>16, true);
 }
 
 template<typename B>
 IDPool<B>::IDPool(B beg)
-: beg_(beg), end_(std::numeric_limits<B>::max()), file_(0), bm_(), full_alloc_(false)
+: beg_(beg), end_(std::numeric_limits<B>::max()-1), file_(0), bm_(), full_alloc_(false)
 {
 	assert( beg_ <= end_ );
-	bm_.resize((end_- beg_)>>6, true);
+	bm_.resize((end_- beg_)>>16, true);
 }
 
 template<typename B>
@@ -117,7 +117,7 @@ template<typename B>
 void 
 IDPool<B>::replay_transaction(char const* transaction_file)
 {
-	FILE *tfile = fopen(transaction_file, "r+b");
+	FILE *tfile = fopen(transaction_file, "rb");
 
 	if(0 == tfile){ // no transaction files for replaying
 		//fprintf(stderr, "No transaction replay at %s\n", transaction_file);
@@ -219,11 +219,33 @@ B IDValPool<B,V>::Acquire(V const &val)
 
 }
 
+template<typename B, typename V>
+V IDValPool<B,V>::Find(B const & id) const
+{
+	return isAcquired(id) ? 
+		arr_[ id - super::beg_ ] : 
+		-1;
+}
+
+
+template<typename B, typename V>
+void IDValPool<B,V>::Update(B const& id, V const& val)
+{
+	if(!isAcquired(id)) return;
+	
+	if(0 > fprintf(super::file_, "+%lu\t%lu\n", id - super::beg_, val) && errno){
+		fprintf(stderr, "idPool: %s\n", strerror(errno));
+		exit(1);
+	}
+	
+	arr_[id - super::beg_] = val;
+
+}
 
 template<typename B, typename V>
 void IDValPool<B,V>::replay_transaction(char const* transaction_file)
 {
-	FILE *tfile = fopen(transaction_file, "r+b");
+	FILE *tfile = fopen(transaction_file, "rb");
 
 	if(0 == tfile) // no transaction files for replaying
 		return;

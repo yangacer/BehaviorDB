@@ -18,19 +18,19 @@ protected:
 public:
 	// Default CTOR
 	// beg: 0 
-	// end: numeric_limits<BlockType>::max()
+	// end: numeric_limits<BlockType>::max() - 1
 	// storage: dynamic bitmap
 	// partial allocation
 	IDPool();
 	
-	// beg: user-defined (<= numric_limits<BlockType>::max())
+	// beg: user-defined (< numric_limits<BlockType>::max())
 	// end: numric_limits<BlockType>::max()
 	// storage: dynamic bitmap
 	// partial allocation
 	IDPool(BlockType beg);
 
-	// beg: user-defined (<= numric_limits<BlockType>::max())
-	// end: user-defined (<= numric_limits<BlockType>::max())
+	// beg: user-defined (< numric_limits<BlockType>::max())
+	// end: user-defined (< numric_limits<BlockType>::max())
 	IDPool(BlockType beg, BlockType end);
 	
 	~IDPool();
@@ -78,6 +78,10 @@ public:
 	~IDValPool();
 
 	BlockType Acquire(ValueType const &val);
+	
+	ValueType Find(BlockType const &id) const;
+		
+	void Update(BlockType const& id, ValueType const &val);
 
 	void replay_transaction(char const* transaction_file);
 private:
