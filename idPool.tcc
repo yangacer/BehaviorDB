@@ -81,7 +81,7 @@ IDPool<B>::Release(B const &id)
 	if(id - beg_ >= bm_.size())
 		return -1;
 	
-	if(0 > fprintf(file_, "-%lu\n", id) && errno){
+	if(0 > fprintf(file_, "-%lu\n", id - beg_) && errno){
 		fprintf(stderr,"%s\n", strerror(errno));
 		exit(1);
 	}
@@ -132,15 +132,15 @@ IDPool<B>::replay_transaction(char const* transaction_file)
 		line[strlen(line)-1] = 0;
 		id = strtoul(&line[1], 0, 10);
 		if('+' == line[0]){
-			if(bm_.size() <= id - beg_){ 
+			if(bm_.size() <= id){ 
 				if(full_alloc_)
 					throw std::runtime_error("ID in trans file does not fit into idPool");
 				else	
 					extend();
 			}
-			bm_[id - beg_] = false;
+			bm_[id] = false;
 		}else if('-' == line[0]){
-			bm_[id - beg_] = true;
+			bm_[id] = true;
 		}
 	}
 	fclose(tfile);
@@ -176,4 +176,77 @@ bool IDPool<B>::extend()
 	bm_.resize(size, true); 
 	return true;
 }
+
+
+// ------------ IDValPool Impl ----------------
+
+template<typename B, typename V>
+IDValPool<B,V>::IDValPool(B beg, B end)
+: super(beg, end), arr_(0)
+{
+	arr_ = new V[end - beg];
+	if(!arr_) throw std::bad_alloc();
+}
+
+template<typename B, typename V>
+IDValPool<B,V>::~IDValPool()
+{
+	delete [] arr_;	
+}
+
+template<typename B, typename V>
+B IDValPool<B,V>::Acquire(V const &val)
+{
+	if(!*this) return -1;
+
+	typename super::Bitmap::size_type rt;
+	
+	// extend bitmap
+	if(super::Bitmap::npos == (rt = super::bm_.find_first())){
+		return -1;
+	}
+	
+	if(0 > fprintf(super::file_, "+%lu\t%lu\n", rt, val) && errno){
+		fprintf(stderr, "idPool: %s\n", strerror(errno));
+		exit(1);
+	}
+
+	super::bm_[rt] = false;
+	arr_[rt] = val;
+
+	return 	super::beg_ + rt;
+
+
+}
+
+
+template<typename B, typename V>
+void IDValPool<B,V>::replay_transaction(char const* transaction_file)
+{
+	FILE *tfile = fopen(transaction_file, "r+b");
+
+	if(0 == tfile) // no transaction files for replaying
+		return;
+	
+
+	char line[21] = {0};		
+	B id; 
+	V val;
+	while(fgets(line, 20, tfile)){
+		line[strlen(line)-1] = 0;
+		//id = strtoul(&line[1], 0, 10);
+		sscanf(line + 1, "%lu\t%lu", &id, &val);
+		if('+' == line[0]){
+			if(super::bm_.size() <= id)
+				throw std::runtime_error("ID in trans file does not fit into idPool");
+			super::bm_[id] = false;
+			arr_[id] = val;
+		}else if('-' == line[0]){
+			super::bm_[id] = true;
+		}
+	}
+	fclose(tfile);
+	
+}
+
 

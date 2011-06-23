@@ -46,8 +46,8 @@ namespace BDB {
 
 	struct Config
 	{
+		AddrType beg, end;
 		unsigned int addr_prefix_len;
-		
 		size_t min_size;
 		
 		char const *pool_dir;
@@ -61,7 +61,8 @@ namespace BDB {
 
 		/** Setup default configuration  */
 		Config()
-		: addr_prefix_len(4), min_size(32), 
+		: beg(1), end(100000001),
+		  addr_prefix_len(4), min_size(32), 
 		  pool_dir(""), trans_dir(""), header_dir(""), log_dir(""),
 		  cse_func(&default_chunk_size_est), 
 		  ct_func(&default_capacity_test)

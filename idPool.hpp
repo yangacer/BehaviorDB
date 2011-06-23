@@ -13,6 +13,7 @@
 template<typename BlockType = unsigned int>
 class IDPool
 {
+protected:
 	typedef boost::dynamic_bitset<> Bitmap;
 public:
 	// Default CTOR
@@ -59,13 +60,28 @@ protected:
 private:
 	IDPool(IDPool const &cp);
 	IDPool& operator=(IDPool const &cp);
-private:
+protected:
 
 	BlockType const beg_, end_;
 	FILE*  file_;
 	Bitmap bm_;
 	bool full_alloc_;
 
+};
+
+template<typename BlockType, typename ValueType>
+class IDValPool : public IDPool<BlockType>
+{
+	typedef IDPool<BlockType> super;
+public:
+	IDValPool(BlockType beg, BlockType end);
+	~IDValPool();
+
+	BlockType Acquire(ValueType const &val);
+
+	void replay_transaction(char const* transaction_file);
+private:
+	ValueType* arr_;
 };
 
 #include "idPool.tcc"

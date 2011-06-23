@@ -1,6 +1,7 @@
 #include "bdbImpl.hpp"
 #include "poolImpl.hpp"
 #include "error.hpp"
+#include "idPool.hpp"
 
 namespace BDB {
 
@@ -9,7 +10,7 @@ namespace BDB {
 	{}
 
 	BDBImpl::BDBImpl(Config const & conf)
-	: pools_(0), log_(0)
+	: pools_(0), log_(0), global_id_(0)
 	{ init_(conf); }
 	
 	BDBImpl::~BDBImpl()

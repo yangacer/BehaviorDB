@@ -6,10 +6,14 @@
 #include "common.hpp"
 #include "addr_eval.hpp"
 
+template<typename B, typename V>
+class IDValPool;
+
 namespace BDB {
 	
 	
 	struct pool;
+	
 
 	struct BDBImpl 
 	{
@@ -68,6 +72,9 @@ namespace BDB {
 		pool* pools_;
 		FILE* log_;
 		char log_buf_[256];
+
+		IDValPool<AddrType, AddrType> *global_id_;
+
 	};
 
 } // end of namespace BDB
