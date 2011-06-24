@@ -24,12 +24,12 @@ enum ERRORNUMBER
 	/// I/O operation failure
 	SYSTEM_ERROR = 2,
 
-	/// Data is too big to be handle by BehaviorDB 
+	/// Data is too big to be handled by BehaviorDB 
 	DATA_TOO_BIG = 3,
 
-	/// Pool is on streaming
+	/// Pool is locked
 	POOL_LOCKED = 4,
-
+	
 	NON_EXIST = 5
 };
 
