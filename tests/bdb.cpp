@@ -14,12 +14,14 @@ int main()
 	// write
 	char const* data = "acer";
 	AddrType addr = bdb.put(data, 4);
-	printf("%08x\n", addr);	
+	printf("should: 00000001\n");
+	printf("result: %08x\n", addr);	
 	
 	// append include migration
 	char const *data2 = "1234567890asdfghjkl;12345678901234567890";
 	addr = bdb.put(data2, strlen(data2), addr);
-	printf("%08x\n", addr);	
+	printf("should: 00000001\n");
+	printf("result: %08x\n", addr);	
 	
 	// prepend
 	char const *data3 = "yang";
@@ -29,6 +31,12 @@ int main()
 	char const *data4 = " made";
 	addr = bdb.put(data4, 5, addr, 8);
 	
+	std::string should;
+	should = data3;
+	should += data;
+	should += data4;
+	should += data2;
+
 	// read loop
 	char buf[4];
 	std::string rec;
@@ -37,20 +45,22 @@ int main()
 		rec.append(buf, readCnt);
 		off += readCnt;
 	}
-	printf("should:\t%s%s%s%s\n", data3, data, data4, data2);
+	printf("should:\t%s\n", should.c_str());
 	printf("result:\t%s\n", rec.c_str());
 	
 	// read into string
 	rec.clear();
 	rec.reserve(off);
 	bdb.get(&rec, 1024, addr);
-	printf("should:\t%s%s%s%s\n", data3, data, data4, data2);
+	printf("should:\t%s\n", should.c_str());
 	printf("result:\t%s\n", rec.c_str());
 
 	// erase partial
 	bdb.del(addr, 13, 10);
 	bdb.get(&rec, 1024, addr);
-	printf("%s\n", rec.c_str());
+	should.erase(13, 10);
+	printf("should:\t%s\n", should.c_str());
+	printf("result:\t%s\n", rec.c_str());
 	
 	// erase all
 	bdb.del(addr);

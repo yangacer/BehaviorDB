@@ -9,7 +9,7 @@
 #include <cerrno>
 #include "boost/dynamic_bitset.hpp"
 
-/// @todo TODO: Transaction file compression.
+/// @todo TODO: Transaction file compression.(snapshot)
 template<typename BlockType = unsigned int>
 class IDPool
 {
