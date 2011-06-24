@@ -5,12 +5,13 @@ option (INSTALL_TEST "Install test program" ON)
 
 include_directories( ${PROJECT_SOURCE_DIR} /usr/local/include)
 
-#add_library(bdb pool.cpp chunk.cpp refHistory.cpp bdb.cpp utils.cpp)
+add_library(bdb chunk.cpp v_iovec.cpp poolImpl.cpp bdbImpl.cpp error.cpp bdb.cpp)
 
-add_executable (pool poolImpl.cpp ${PROJECT_SOURCE_DIR}/tests/pool.cpp chunk.cpp v_iovec.cpp)
-add_executable (bdb error.cpp bdb.cpp bdbImpl.cpp poolImpl.cpp ${PROJECT_SOURCE_DIR}/tests/bdb.cpp chunk.cpp v_iovec.cpp)
-add_executable (fixpool ${PROJECT_SOURCE_DIR}/tests/fixpool.cpp chunk.cpp)
-add_executable (idp ${PROJECT_SOURCE_DIR}/tests/idpool.cpp)
+add_executable (bdb_test ${PROJECT_SOURCE_DIR}/tests/bdb.cpp)
+target_link_libraries(bdb_test bdb)
+#add_executable (pool poolImpl.cpp ${PROJECT_SOURCE_DIR}/tests/pool.cpp chunk.cpp v_iovec.cpp)
+#add_executable (fixpool ${PROJECT_SOURCE_DIR}/tests/fixpool.cpp chunk.cpp)
+#add_executable (idp ${PROJECT_SOURCE_DIR}/tests/idpool.cpp)
 
 #set(TEST_TARGETS bdb_put put append migrate_test getstream bench iterate addreval)
 #foreach(tg ${TEST_TARGETS})
