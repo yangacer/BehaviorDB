@@ -2,6 +2,7 @@
 #include "poolImpl.hpp"
 #include "v_iovec.hpp"
 #include "boost/variant/apply_visitor.hpp"
+#include <cassert>
 
 namespace BDB {
 	
@@ -18,12 +19,6 @@ namespace BDB {
 	  //addrEval(conf.addrEval), 
 	  file_(0), idPool_(), headerPool_(conf.dirID, conf.header_dir)
 	{
-		
-		if(0 == addrEval::is_init()){
-			fprintf(stderr, "addr_eval missing\n");
-			exit(1);
-		}
-		
 
 		// create pool file
 		
@@ -69,18 +64,15 @@ namespace BDB {
 	AddrType
 	pool::write(char const* data, size_t size)
 	{
-		if(!*this) return -1;
-
+		assert(0 != *this);
+		
 		if(!idPool_.avail()){
 			// no space error
 			on_error(ADDRESS_OVERFLOW, __LINE__);
 			return -1;
 		}
-
-		if(!addrEval::capacity_test(dirID, size)){
-			on_error(DATA_TOO_BIG, __LINE__);
-			return -1;
-		}
+		
+		assert(true == addrEval::capacity_test(dirID, size));
 
 		AddrType loc_addr = idPool_.Acquire();
 		ChunkHeader header;
@@ -114,7 +106,7 @@ namespace BDB {
 	AddrType
 	pool::write(char const* data, size_t size, AddrType addr, size_t off, ChunkHeader const* header)
 	{
-		if(!*this) return -1;
+		assert(0 != *this);
 
 		if(!idPool_.isAcquired(addr)){
 			// error: do not support until bitmap idpool available
@@ -131,10 +123,7 @@ namespace BDB {
 			return -1;
 		}
 		
-		if(size + loc_header.size > addrEval::chunk_size_estimation(dirID)){
-			on_error(DATA_TOO_BIG, __LINE__);
-			return -1;
-		}
+		assert(size + loc_header.size <= addrEval::chunk_size_estimation(dirID));
 
 		off = (-1 == off) ? loc_header.size : off;
 		
@@ -186,15 +175,14 @@ namespace BDB {
 	AddrType
 	pool::write(viov* vv, size_t len)
 	{
+		assert(0 != *this);
+
 		size_t total(0);
 		for(size_t i=0; i<len; ++i){
 			total += vv[i].size;		
 		}
 		
-		if(total > addrEval::chunk_size_estimation(dirID)){
-			on_error(DATA_TOO_BIG, __LINE__);
-			return -1;
-		}
+		assert(total <= addrEval::chunk_size_estimation(dirID));
 
 		ChunkHeader header;
 		header.size = total;
@@ -236,6 +224,8 @@ namespace BDB {
 	AddrType
 	pool::replace(char const *data, size_t size, AddrType addr, ChunkHeader const *header)
 	{
+		assert(0 != *this);
+
 		if(!idPool_.isAcquired(addr)){
 			on_error(NON_EXIST, __LINE__);
 			return -1;
@@ -249,10 +239,7 @@ namespace BDB {
 			return -1;
 		}
 		
-		if(size + loc_header.size > addrEval::chunk_size_estimation(dirID)){
-			on_error(DATA_TOO_BIG, __LINE__);
-			return -1;
-		}
+		assert(size <= addrEval::chunk_size_estimation(dirID));
 
 		loc_header.size = size;
 		
@@ -279,6 +266,7 @@ namespace BDB {
 	size_t
 	pool::read(char* buffer, size_t size, AddrType addr, size_t off, ChunkHeader const* header)
 	{
+		assert(0 != *this);
 		if(!idPool_.isAcquired(addr)){
 			on_error(NON_EXIST, __LINE__);
 			return -1;
@@ -315,6 +303,7 @@ namespace BDB {
 	size_t
 	pool::read(std::string *buffer, size_t max, AddrType addr, size_t off, ChunkHeader const* header)
 	{
+		assert(0 != *this);
 		if(!buffer) return 0;
 		if(buffer->size()) buffer->clear();
 		size_t readCnt(0), total(0);
@@ -332,6 +321,8 @@ namespace BDB {
 	pool::merge_move(char const*data, size_t size, AddrType src_addr, size_t off, 
 		pool *dest_pool, ChunkHeader const* header)
 	{
+		assert(0 != *this && 0 != *dest_pool);
+
 		ChunkHeader loc_header;
 		if(header)
 			loc_header = *header;
@@ -384,6 +375,8 @@ namespace BDB {
 	size_t
 	pool::erase(AddrType addr)
 	{ 
+		assert(0 != *this);
+
 		if(idPool_.isAcquired(addr))
 			idPool_.Release(addr);
 		else {
@@ -396,6 +389,8 @@ namespace BDB {
 	size_t
 	pool::erase(AddrType addr, size_t off, size_t size)
 	{ 
+		assert(0 != *this);
+
 		if(!idPool_.isAcquired(addr)){
 			on_error(NON_EXIST, __LINE__);
 			return -1;
@@ -442,6 +437,8 @@ namespace BDB {
 	int
 	pool::head(ChunkHeader *header, AddrType addr) const
 	{ 
+		assert(0 != *this);
+
 		if(-1 == headerPool_.read(header, addr)){
 			const_cast<pool*>(this)->on_error(SYSTEM_ERROR, __LINE__);
 			return -1;
@@ -452,6 +449,8 @@ namespace BDB {
 	off_t
 	pool::seek(AddrType addr, size_t off)
 	{
+		assert(0 != *this);
+
 		off_t pos = addr;
 		pos *= addrEval::chunk_size_estimation(dirID);
 		pos += off;
@@ -465,6 +464,8 @@ namespace BDB {
 	off_t
 	pool::addr_off2tell(AddrType addr, size_t off) const
 	{
+		assert(0 != *this);
+
 		off_t pos = addr;
 		pos *= addrEval::chunk_size_estimation(dirID);
 		pos += off;
@@ -474,13 +475,18 @@ namespace BDB {
 	void
 	pool::on_error(int errcode, int line)
 	{
+		assert(0 != *this);
+
 		// TODO: lock for mutli proc/thread
 		err_.push_back(std::make_pair<int, int>(errcode, line));	
 		// unlock
 	}
 	
 	std::pair<int, int>
-	pool::get_error(){
+	pool::get_error()
+	{
+		assert(0 != *this);
+
 		std::pair<int, int> rt(0,0);
 		if(!err_.empty()){
 			rt = err_.front();

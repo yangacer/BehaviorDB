@@ -2,6 +2,7 @@
 #include "poolImpl.hpp"
 #include "error.hpp"
 #include "idPool.hpp"
+#include <cassert>
 
 namespace BDB {
 
@@ -15,8 +16,8 @@ namespace BDB {
 	
 	BDBImpl::~BDBImpl()
 	{
-		if(!pools_) return;
 		delete global_id_;
+		if(!pools_) return;
 		for(unsigned int i =0; i<addrEval::dir_count(); ++i)
 			pools_[i].~pool();
 		free(pools_);
@@ -40,7 +41,6 @@ namespace BDB {
 
 		// initial pools
 		pool::config pcfg;
-		// pcfg.addrEval = &addrEval;
 		pcfg.work_dir = conf.pool_dir;
 		pcfg.trans_dir = conf.trans_dir;
 		pcfg.header_dir = conf.header_dir;
@@ -78,7 +78,7 @@ namespace BDB {
 	AddrType
 	BDBImpl::put(char const *data, size_t size)
 	{
-		if(!*this) return -1;
+		assert( 0 != *this);
 
 		unsigned int dir = addrEval::directory(size);
 		AddrType rt(0);
@@ -112,7 +112,8 @@ namespace BDB {
 	AddrType
 	BDBImpl::put(char const* data, size_t size, AddrType addr, size_t off)
 	{
-		if(!*this) return -1;
+		assert( 0 != *this);
+
 		AddrType internal_addr;
 		if(-1 == (internal_addr = global_id_->Find(addr))){
 			return -1;	
@@ -125,7 +126,7 @@ namespace BDB {
 		ChunkHeader header;
 		pools_[dir].head(&header, loc_addr);
 		
-		if(size + header.size > addrEval::chunk_size_estimation(dir)){
+		if( size + header.size > addrEval::chunk_size_estimation(dir)){
 			
 			// migration
 			unsigned int next_dir = addrEval::directory(size + header.size); //(*MigPredictor)(addr);
@@ -169,7 +170,8 @@ namespace BDB {
 	AddrType
 	BDBImpl::update(char const *data, size_t size, AddrType addr)
 	{
-		if(!*this) return -1;
+		assert( 0 != *this);
+
 		AddrType internal_addr;
 		if(-1 == (internal_addr = global_id_->Find(addr))){
 			return -1;	
@@ -191,7 +193,7 @@ namespace BDB {
 	size_t
 	BDBImpl::get(char *output, size_t size, AddrType addr, size_t off)
 	{
-		if(!*this) return -1;
+		assert( 0 != *this);
 		
 		if(-1 == (addr = global_id_->Find(addr))){
 			return 0;	
@@ -211,7 +213,7 @@ namespace BDB {
 	size_t
 	BDBImpl::get(std::string *output, size_t max, AddrType addr, size_t off)
 	{
-		if(!*this) return -1;
+		assert( 0 != *this);
 		
 		if(-1 == (addr = global_id_->Find(addr))){
 			return 0;	
@@ -231,8 +233,8 @@ namespace BDB {
 	size_t
 	BDBImpl::del(AddrType addr)
 	{
-		if(!*this) return -1;
-
+		assert( 0 != *this);
+	
 		AddrType internal_addr;
 
 		if(-1 == (internal_addr = global_id_->Find(addr))){
@@ -253,7 +255,7 @@ namespace BDB {
 	size_t
 	BDBImpl::del(AddrType addr, size_t off, size_t size)
 	{
-		if(!*this) return -1;
+		assert( 0 != *this);
 		
 		if(-1 == (addr = global_id_->Find(addr))){
 			return 0;	
@@ -272,6 +274,7 @@ namespace BDB {
 	void
 	BDBImpl::error(int errcode, int line)
 	{
+		assert( 0 != *this);
 		if(0 == log_) return;
 		
 		//lock
@@ -288,6 +291,7 @@ namespace BDB {
 	void
 	BDBImpl::error(unsigned int dir)
 	{	
+		assert( 0 != *this);
 		if(0 == log_) return;
 
 		std::pair<int, int> err = pools_[dir].get_error();

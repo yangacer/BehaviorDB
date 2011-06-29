@@ -9,6 +9,7 @@ int main()
 	
 	Config conf;
 	
+	conf.min_size = 32;
 	BehaviorDB bdb(conf);
 
 	// write
