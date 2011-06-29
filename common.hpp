@@ -39,7 +39,7 @@ namespace BDB {
 	inline bool 
 	default_capacity_test(size_t chunk_size, size_t data_size)
 	{
-		if(chunk_size >= 10000000) return true;
+		if(chunk_size >= 10000000) return chunk_size >= data_size;
 		// reserve 1/4 chunk size
 		return (chunk_size - (chunk_size>>2)) >= data_size;
 	}
