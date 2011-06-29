@@ -4,7 +4,7 @@ template<typename B>
 IDPool<B>::IDPool()
 : beg_(0), end_(std::numeric_limits<B>::max()-1), file_(0), bm_(), full_alloc_(false)
 {
-	bm_.resize((end_- beg_)>>16, true);
+	bm_.resize(4096, true);
 }
 
 template<typename B>
@@ -12,7 +12,7 @@ IDPool<B>::IDPool(B beg)
 : beg_(beg), end_(std::numeric_limits<B>::max()-1), file_(0), bm_(), full_alloc_(false)
 {
 	assert( beg_ <= end_ );
-	bm_.resize((end_- beg_)>>16, true);
+	bm_.resize(4096, true);
 }
 
 template<typename B>

@@ -16,6 +16,7 @@ namespace BDB {
 	BDBImpl::~BDBImpl()
 	{
 		if(!pools_) return;
+		delete global_id_;
 		for(unsigned int i =0; i<addrEval.dir_count(); ++i)
 			pools_[i].~pool();
 		free(pools_);
