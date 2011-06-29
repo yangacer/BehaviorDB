@@ -28,12 +28,12 @@ namespace BDB
 			char const* work_dir;
 			char const* trans_dir;
 			char const* header_dir;
-			addr_eval<AddrType> * addrEval;
+			//addr_eval<AddrType> * addrEval;
 			
 			config()
 			: dirID(0), 
-			  work_dir(""), trans_dir(""), header_dir(""),
-			  addrEval(0)
+			  work_dir(""), trans_dir(""), header_dir("")//,
+			  //addrEval(0)
 			{}
 		};
 
@@ -118,10 +118,11 @@ namespace BDB
 		std::string work_dir;
 		std::string trans_dir;
 		
-		addr_eval<AddrType> const* addrEval;
+		// addr_eval<AddrType> const* addrEval;
 		
 		// pool file
 		FILE *file_;
+		typedef addr_eval<AddrType> addrEval;
 	public:
 		char mig_buf_[MIGBUF_SIZ];
 	private:	
@@ -129,7 +130,7 @@ namespace BDB
 		IDPool<AddrType> idPool_;
 
 		// header
-		fixed_pool<ChunkHeader, 8> headerPool_;
+		fixed_pool<ChunkHeader> headerPool_;
 	public:	
 		std::deque<std::pair<int,int> > err_;
 	};

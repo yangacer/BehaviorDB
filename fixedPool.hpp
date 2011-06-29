@@ -8,7 +8,7 @@
 
 namespace BDB {
 	
-	template<typename T, size_t Size>
+	template<typename T, size_t Size = sizeof(T)>
 	struct fixed_pool
 	{
 		typedef T value_type;

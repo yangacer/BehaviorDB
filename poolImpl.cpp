@@ -8,18 +8,22 @@ namespace BDB {
 	pool::pool()
 	: dirID(0), 
 	  work_dir(), trans_dir(),
-	  addrEval(0), file_(0), idPool_(), headerPool_()
+	  //addrEval(0), 
+	  file_(0), idPool_(), headerPool_()
 	{}
 
 	pool::pool(pool::config const &conf)
 	: dirID(conf.dirID), 
 	  work_dir(conf.work_dir), trans_dir(conf.trans_dir), 
-	  addrEval(conf.addrEval), file_(0), idPool_(), headerPool_(conf.dirID, conf.header_dir)
+	  //addrEval(conf.addrEval), 
+	  file_(0), idPool_(), headerPool_(conf.dirID, conf.header_dir)
 	{
-		if(0 == addrEval){
+		
+		if(0 == addrEval::is_init()){
 			fprintf(stderr, "addr_eval missing\n");
 			exit(1);
 		}
+		
 
 		// create pool file
 		
@@ -57,7 +61,7 @@ namespace BDB {
 	
 	pool::operator void const*() const
 	{ 
-		if(!this || !file_ || !addrEval || !idPool_)
+		if(!this || !file_ || !addrEval::is_init() || !idPool_)
 			return 0;
 		return this;
 	}
@@ -73,7 +77,7 @@ namespace BDB {
 			return -1;
 		}
 
-		if(!addrEval->capacity_test(dirID, size)){
+		if(!addrEval::capacity_test(dirID, size)){
 			on_error(DATA_TOO_BIG, __LINE__);
 			return -1;
 		}
@@ -127,7 +131,7 @@ namespace BDB {
 			return -1;
 		}
 		
-		if(size + loc_header.size > addrEval->chunk_size_estimation(dirID)){
+		if(size + loc_header.size > addrEval::chunk_size_estimation(dirID)){
 			on_error(DATA_TOO_BIG, __LINE__);
 			return -1;
 		}
@@ -187,7 +191,7 @@ namespace BDB {
 			total += vv[i].size;		
 		}
 		
-		if(total > addrEval->chunk_size_estimation(dirID)){
+		if(total > addrEval::chunk_size_estimation(dirID)){
 			on_error(DATA_TOO_BIG, __LINE__);
 			return -1;
 		}
@@ -245,7 +249,7 @@ namespace BDB {
 			return -1;
 		}
 		
-		if(size + loc_header.size > addrEval->chunk_size_estimation(dirID)){
+		if(size + loc_header.size > addrEval::chunk_size_estimation(dirID)){
 			on_error(DATA_TOO_BIG, __LINE__);
 			return -1;
 		}
@@ -449,7 +453,7 @@ namespace BDB {
 	pool::seek(AddrType addr, size_t off)
 	{
 		off_t pos = addr;
-		pos *= addrEval->chunk_size_estimation(dirID);
+		pos *= addrEval::chunk_size_estimation(dirID);
 		pos += off;
 		if(-1 == fseeko(file_, pos, SEEK_SET)){
 			return -1;
@@ -462,7 +466,7 @@ namespace BDB {
 	pool::addr_off2tell(AddrType addr, size_t off) const
 	{
 		off_t pos = addr;
-		pos *= addrEval->chunk_size_estimation(dirID);
+		pos *= addrEval::chunk_size_estimation(dirID);
 		pos += off;
 		return pos;
 	}

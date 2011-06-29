@@ -17,14 +17,14 @@ namespace BDB {
 	{
 		if(!pools_) return;
 		delete global_id_;
-		for(unsigned int i =0; i<addrEval.dir_count(); ++i)
+		for(unsigned int i =0; i<addrEval::dir_count(); ++i)
 			pools_[i].~pool();
 		free(pools_);
 	}
 	
 	BDBImpl::operator void const*() const
 	{
-		if(!this || !pools_)
+		if(!this || !addrEval::is_init() || !pools_)
 			return 0;
 		return this;
 	}
@@ -32,19 +32,20 @@ namespace BDB {
 	void
 	BDBImpl::init_(Config const & conf)
 	{
-		addrEval.set(conf.min_size).
-			set((unsigned char)conf.addr_prefix_len).
-			set(conf.cse_func).
-			set(conf.ct_func);
+		addrEval::init(
+			conf.addr_prefix_len, 
+			conf.min_size, 
+			conf.cse_func, 
+			conf.ct_func);
 
 		// initial pools
 		pool::config pcfg;
-		pcfg.addrEval = &addrEval;
+		// pcfg.addrEval = &addrEval;
 		pcfg.work_dir = conf.pool_dir;
 		pcfg.trans_dir = conf.trans_dir;
 		pcfg.header_dir = conf.header_dir;
-		pools_ = (pool*)malloc(sizeof(pool) * addrEval.dir_count());
-		for(unsigned int i =0; i<addrEval.dir_count(); ++i){
+		pools_ = (pool*)malloc(sizeof(pool) * addrEval::dir_count());
+		for(unsigned int i =0; i<addrEval::dir_count(); ++i){
 			pcfg.dirID = i;
 			new (&pools_[i]) pool(pcfg); 
 		}
@@ -79,9 +80,9 @@ namespace BDB {
 	{
 		if(!*this) return -1;
 
-		unsigned int dir = addrEval.directory(size);
+		unsigned int dir = addrEval::directory(size);
 		AddrType rt(0);
-		while(dir < addrEval.dir_count()){
+		while(dir < addrEval::dir_count()){
 			rt = pools_[dir].write(data, size);
 			if(rt != -1){ 
 				// error(dir);
@@ -96,7 +97,7 @@ namespace BDB {
 			return -1;
 		}
 
-		rt = addrEval.global_addr(dir, rt);
+		rt = addrEval::global_addr(dir, rt);
 		rt = global_id_->Acquire(rt);
 
 		if(-1 == rt){
@@ -117,17 +118,17 @@ namespace BDB {
 			return -1;	
 		}
 
-		unsigned int dir = addrEval.addr_to_dir(internal_addr);
-		AddrType loc_addr = addrEval.local_addr(internal_addr);
+		unsigned int dir = addrEval::addr_to_dir(internal_addr);
+		AddrType loc_addr = addrEval::local_addr(internal_addr);
 		AddrType rt;
 
 		ChunkHeader header;
 		pools_[dir].head(&header, loc_addr);
 		
-		if(size + header.size > addrEval.chunk_size_estimation(dir)){
+		if(size + header.size > addrEval::chunk_size_estimation(dir)){
 			
 			// migration
-			unsigned int next_dir = addrEval.directory(size + header.size); //(*MigPredictor)(addr);
+			unsigned int next_dir = addrEval::directory(size + header.size); //(*MigPredictor)(addr);
 			AddrType next_loc_addr;
 			if(-1 == off)
 				off = header.size;
@@ -141,7 +142,7 @@ namespace BDB {
 				error(next_dir);
 				return -1;	
 			}
-			rt = addrEval.global_addr(next_dir, next_loc_addr);
+			rt = addrEval::global_addr(next_dir, next_loc_addr);
 			global_id_->Update(addr, rt);
 			
 			return addr;
@@ -156,7 +157,7 @@ namespace BDB {
 			return -1;	
 		}
 		
-		rt = addrEval.global_addr(dir, loc_addr);
+		rt = addrEval::global_addr(dir, loc_addr);
 		global_id_->Update(addr, rt);
 		
 		return addr;
@@ -174,8 +175,8 @@ namespace BDB {
 			return -1;	
 		}
 
-		unsigned int dir = addrEval.addr_to_dir(internal_addr);
-		AddrType loc_addr = addrEval.local_addr(internal_addr);
+		unsigned int dir = addrEval::addr_to_dir(internal_addr);
+		AddrType loc_addr = addrEval::local_addr(internal_addr);
 		AddrType rt;
 
 		if(-1 == (loc_addr = pools_[dir].replace(data, size, loc_addr)) ){
@@ -183,7 +184,7 @@ namespace BDB {
 			return -1;	
 		}
 		
-		rt = addrEval.global_addr(dir, loc_addr);
+		rt = addrEval::global_addr(dir, loc_addr);
 		return addr;
 	}
 
@@ -197,8 +198,8 @@ namespace BDB {
 		}
 
 		size_t rt(0);
-		unsigned int dir = addrEval.addr_to_dir(addr);
-		AddrType loc_addr = addrEval.local_addr(addr);
+		unsigned int dir = addrEval::addr_to_dir(addr);
+		AddrType loc_addr = addrEval::local_addr(addr);
 		
 		if(-1 == (rt = pools_[dir].read(output, size, loc_addr, off))){
 			error(dir);
@@ -217,8 +218,8 @@ namespace BDB {
 		}
 
 		size_t rt(0);
-		unsigned int dir = addrEval.addr_to_dir(addr);
-		AddrType loc_addr = addrEval.local_addr(addr);
+		unsigned int dir = addrEval::addr_to_dir(addr);
+		AddrType loc_addr = addrEval::local_addr(addr);
 		
 		if( -1 == (rt = pools_[dir].read(output, max, loc_addr, off))){
 			error(dir);
@@ -238,8 +239,8 @@ namespace BDB {
 			return 0;	
 		}
 
-		unsigned int dir = addrEval.addr_to_dir(internal_addr);
-		AddrType loc_addr = addrEval.local_addr(internal_addr);
+		unsigned int dir = addrEval::addr_to_dir(internal_addr);
+		AddrType loc_addr = addrEval::local_addr(internal_addr);
 		
 		if(-1 == pools_[dir].erase(loc_addr)){
 			error(dir);
@@ -258,8 +259,8 @@ namespace BDB {
 			return 0;	
 		}
 
-		unsigned int dir = addrEval.addr_to_dir(addr);
-		AddrType loc_addr = addrEval.local_addr(addr);
+		unsigned int dir = addrEval::addr_to_dir(addr);
+		AddrType loc_addr = addrEval::local_addr(addr);
 
 		if(-1 == pools_[dir].erase(loc_addr, off, size)){
 			error(dir);

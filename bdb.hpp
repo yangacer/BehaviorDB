@@ -45,6 +45,9 @@ namespace BDB {
 		size_t
 		del(AddrType addr, size_t off, size_t size);
 	private:
+		BehaviorDB(BehaviorDB const& cp);
+		BehaviorDB &operator=(BehaviorDB const& cp);
+
 		BDBImpl *impl_;
 	};
 
