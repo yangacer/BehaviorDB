@@ -18,7 +18,7 @@ A pool has options of configuration as follows:
 ###External Data Format
 ####Pool file
 
-
+Non-buffering file I/O
 
 ####Parameters:
  

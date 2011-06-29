@@ -29,6 +29,9 @@ namespace BDB {
 		
 		AddrType
 		update(char const* data, size_t size, AddrType addr);
+		
+		AddrType
+		update(std::string const& data, AddrType addr);
 
 		size_t
 		get(char *output, size_t size, AddrType addr, size_t off=0);

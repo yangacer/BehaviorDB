@@ -63,7 +63,7 @@ int main()
 	printf("result:\t%s\n", rec.c_str());
 	
 	// update
-	bdb.update("replaced", 8, addr);
+	bdb.update("replaced", addr);
 	bdb.get(&rec, 1024, addr);
 	should = "replaced";
 	printf("should:\t%s\n", should.c_str());
