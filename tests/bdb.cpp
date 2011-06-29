@@ -62,6 +62,13 @@ int main()
 	printf("should:\t%s\n", should.c_str());
 	printf("result:\t%s\n", rec.c_str());
 	
+	// update
+	bdb.update("replaced", 8, addr);
+	bdb.get(&rec, 1024, addr);
+	should = "replaced";
+	printf("should:\t%s\n", should.c_str());
+	printf("result:\t%s\n", rec.c_str());
+
 	// erase all
 	bdb.del(addr);
 	size_t negtive = bdb.get(&rec, 1024, addr);

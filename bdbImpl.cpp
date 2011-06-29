@@ -163,6 +163,29 @@ namespace BDB {
 
 	}
 
+	
+	AddrType
+	BDBImpl::update(char const *data, size_t size, AddrType addr)
+	{
+		if(!*this) return -1;
+		AddrType internal_addr;
+		if(-1 == (internal_addr = global_id_->Find(addr))){
+			return -1;	
+		}
+
+		unsigned int dir = addrEval.addr_to_dir(internal_addr);
+		AddrType loc_addr = addrEval.local_addr(internal_addr);
+		AddrType rt;
+
+		if(-1 == (loc_addr = pools_[dir].replace(data, size, loc_addr)) ){
+			error(dir);
+			return -1;	
+		}
+		
+		rt = addrEval.global_addr(dir, loc_addr);
+		return addr;
+	}
+
 	size_t
 	BDBImpl::get(char *output, size_t size, AddrType addr, size_t off)
 	{

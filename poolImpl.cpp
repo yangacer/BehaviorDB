@@ -228,6 +228,49 @@ namespace BDB {
 
 		return loc_addr;
 	}
+	
+	AddrType
+	pool::replace(char const *data, size_t size, AddrType addr, ChunkHeader const *header)
+	{
+		if(!idPool_.isAcquired(addr)){
+			on_error(NON_EXIST, __LINE__);
+			return -1;
+		}
+		
+		ChunkHeader loc_header;
+		if(header)
+			loc_header = *header;
+		else if(-1 == headerPool_.read(&loc_header, addr)) {
+			on_error(SYSTEM_ERROR, __LINE__);
+			return -1;
+		}
+		
+		if(size + loc_header.size > addrEval->chunk_size_estimation(dirID)){
+			on_error(DATA_TOO_BIG, __LINE__);
+			return -1;
+		}
+
+		loc_header.size = size;
+		
+		// update header 
+		if(-1 == headerPool_.write(loc_header, addr)){
+			on_error(SYSTEM_ERROR, __LINE__);
+			return -1;
+		}
+		
+		if(-1 == seek(addr, 0)){
+			on_error(SYSTEM_ERROR, __LINE__);
+			return -1;
+		}
+		
+		if(size != fwrite(data, 1, size, file_)){
+			on_error(SYSTEM_ERROR, __LINE__);
+			return -1;
+		}
+
+		return addr;
+	}
+
 
 	size_t
 	pool::read(char* buffer, size_t size, AddrType addr, size_t off, ChunkHeader const* header)

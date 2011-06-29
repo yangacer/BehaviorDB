@@ -52,6 +52,9 @@ namespace BDB
 		
 		AddrType
 		write(viov *vv, size_t len);
+		
+		AddrType
+		replace(char const *data, size_t size, AddrType addr, ChunkHeader const *header=0);
 
 		size_t
 		read(char* buffer, size_t size, AddrType addr, size_t off=0, ChunkHeader const* header=0);

@@ -29,6 +29,10 @@ namespace BDB {
 	BehaviorDB::put(std::string const& data, AddrType addr, size_t off)
 	{ return impl_->put(data, addr, off); }
 
+	AddrType
+	BehaviorDB::update(char const* data, size_t size, AddrType addr)
+	{ return impl_->update(data, size, addr); }
+
 	size_t
 	BehaviorDB::get(char *output, size_t size, AddrType addr, size_t off)
 	{ return impl_->get(output, size, addr, off); }
