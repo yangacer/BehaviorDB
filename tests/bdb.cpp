@@ -8,7 +8,8 @@ int main()
 	using namespace BDB;
 	
 	Config conf;
-	
+	conf.root_dir = "tmp/";
+
 	conf.min_size = 32;
 	BehaviorDB bdb(conf);
 

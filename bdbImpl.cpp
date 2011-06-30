@@ -12,7 +12,10 @@ namespace BDB {
 
 	BDBImpl::BDBImpl(Config const & conf)
 	: pools_(0), log_(0), global_id_(0)
-	{ init_(conf); }
+	{
+		conf.validate();
+		init_(conf); 
+	}
 	
 	BDBImpl::~BDBImpl()
 	{
@@ -42,9 +45,10 @@ namespace BDB {
 
 		// initial pools
 		pool::config pcfg;
-		pcfg.work_dir = conf.pool_dir;
-		pcfg.trans_dir = conf.trans_dir;
-		pcfg.header_dir = conf.header_dir;
+		pcfg.work_dir = (*conf.pool_dir) ? conf.pool_dir : conf.root_dir;
+		pcfg.trans_dir =(*conf.trans_dir) ?  conf.trans_dir : conf.root_dir;
+		pcfg.header_dir = (*conf.header_dir) ? conf.header_dir : conf.root_dir;
+
 		pools_ = (pool*)malloc(sizeof(pool) * addrEval::dir_count());
 		for(unsigned int i =0; i<addrEval::dir_count(); ++i){
 			pcfg.dirID = i;
@@ -54,13 +58,13 @@ namespace BDB {
 		// init log
 		char fname[256];
 		if(conf.log_dir){
-			
-			if(strlen(conf.log_dir) > 256){
+			char const* log_dir = (*conf.log_dir) ? conf.log_dir : conf.root_dir;
+			if(strlen(log_dir) > 256){
 				fprintf(stderr, "length of pool_dir string is too long\n");
 				exit(1);
 			}
 
-			sprintf(fname, "%serror.log", conf.log_dir);
+			sprintf(fname, "%serror.log", log_dir);
 			if(0 == (log_ = fopen(fname, "ab"))){
 				fprintf(stderr, "create log file failed\n");
 				exit(1);

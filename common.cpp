@@ -4,7 +4,7 @@
 namespace BDB {
 
 	void
-	Config::validate()
+	Config::validate() const
 	{
 		using namespace std;
 		
@@ -16,8 +16,22 @@ namespace BDB {
 		
 		// min size check is delayed to runtime
 		
-		// path check is delayed till fopen
+		// path check is delayed till fopen, here we check path delimiter only
+		if(*root_dir && PATH_DELIM != root_dir[strlen(root_dir)-1])
+			throw invalid_argument("Config: non-empty root_dir should be ended with a path delimiter");
 
+		if(*pool_dir && PATH_DELIM != pool_dir[strlen(pool_dir)-1])
+			throw invalid_argument("Config: non-empty pool_dir should be ended with a path delimiter");
+
+		if(*trans_dir && PATH_DELIM != trans_dir[strlen(trans_dir)-1])
+			throw invalid_argument("Config: non-empty trans_dir should be ended with a path delimiter");
+
+		if(*header_dir && PATH_DELIM != header_dir[strlen(header_dir)-1])
+			throw invalid_argument("Config: non-empty header_dir should be ended with a path delimiter");
+
+		if(*log_dir && PATH_DELIM != log_dir[strlen(log_dir)-1])
+			throw invalid_argument("Config: non-empty log_dir should be ended with a path delimiter");
+		
 		if( (*cse_func)(0, min_size) >= (*cse_func)(1, min_size) )
 			throw invalid_argument("Config: chunk_size_est should maintain strict weak ordering of chunk size");
 		

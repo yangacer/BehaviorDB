@@ -3,7 +3,11 @@
 
 #ifdef __GNUC__ // GNU
 
+#define PATH_DELIM '/'
+
 #elif defined(_WIN32) // MSVC
+
+#define PATH_DELIM '\\'
 
 // ftello/fseeko
 #define ftello(X) _ftelli64(X)
@@ -67,8 +71,10 @@ namespace BDB {
 		  root_dir(""), pool_dir(""), trans_dir(""), header_dir(""), log_dir(""),
 		  cse_func(&default_chunk_size_est), 
 		  ct_func(&default_capacity_test)
-		{}
+		{ validate(); }
 		
+		void
+		validate() const;
 	};
 
 } // end of nemaespace BDB

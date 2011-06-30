@@ -5,6 +5,7 @@
 #include <string>
 #include <cstdio>
 #include <cstring>
+#include <stdexcept>
 
 namespace BDB {
 	
@@ -37,24 +38,22 @@ namespace BDB {
 		void
 		open(unsigned int id, char const* work_dir)
 		{
+			using namespace std;
+
 			id_ = id;
 			work_dir_ = work_dir;
 
 			char fname[256];
-			if(work_dir_.size() > 256) {
-				fprintf(stderr, "length of pool_dir string is too long\n");
-				exit(1);
-			}
+			if(work_dir_.size() > 256) 
+				throw length_error("fixed_pool: length of pool_dir string is too long");
 			
 			sprintf(fname, "%s%04x.fpo", work_dir_.c_str(), id_);
+
 			if(0 == (file_ = fopen(fname, "r+b"))){
-				if(0 == (file_ = fopen(fname, "w+b"))){
-					fprintf(stderr, "create fix pool failed\n");
-					exit(1);
-				}
+				if(0 == (file_ = fopen(fname, "w+b")))
+					throw runtime_error("fixed_pool: create fix pool failed");
 			}
 			setvbuf(file_, 0, _IONBF, 0);
-			
 
 		}
 
