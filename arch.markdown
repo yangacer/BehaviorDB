@@ -3,9 +3,18 @@
 ##Address
 
 ##Pool
-###Data Model
-
-
+###Conditions/Assumptions
+####Pool Class
+CTOR of the pool class should hold conditions as follows:
+1. file_  for storing chunks has ben initiated
+2. addr_eval<AddrType> has been initiated
+3. idPool_ for managing chunk id has been initiated
+4. headerPool_ for accessing headers has been initiated
+####Pool Member Functions
+Preconditions:
+1. Data source, file_(s) or in-mem chars is accessible.
+2. Size of data source does not greater than chunk size of destination pool.
+Postconditions and error handling are described separatly in each function.
 
 ###Configuration
 

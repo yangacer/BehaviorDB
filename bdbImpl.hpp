@@ -60,17 +60,18 @@ namespace BDB {
 		size_t
 		del(AddrType addr, size_t off, size_t size);
 
-	protected:
-
-		void
-		error(unsigned int dir);
-		
-		void
-		error(int errcode, int line);
-
 	private: // disable interfaces
 		BDBImpl(BDBImpl const& cp);
 		BDBImpl& operator=(BDBImpl const &cp);
+
+	protected:
+		// handle error triggered in pool(s)
+		void
+		error(unsigned int dir);
+
+		// handle error triggered in BDBImpl
+		void
+		error(int errcode, int line);
 	
 	private:
 		typedef addr_eval<AddrType> addrEval;

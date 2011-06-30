@@ -3,6 +3,7 @@
 #include "v_iovec.hpp"
 #include "boost/variant/apply_visitor.hpp"
 #include <cassert>
+#include <cstdio>
 
 namespace BDB {
 	
@@ -64,7 +65,7 @@ namespace BDB {
 	AddrType
 	pool::write(char const* data, size_t size)
 	{
-		assert(0 != *this);
+		assert(0 != *this && "pool is not proper initiated");
 		
 		if(!idPool_.avail()){
 			// no space error
@@ -106,7 +107,7 @@ namespace BDB {
 	AddrType
 	pool::write(char const* data, size_t size, AddrType addr, size_t off, ChunkHeader const* header)
 	{
-		assert(0 != *this);
+		assert(0 != *this && "pool is not proper initiated");
 
 		if(!idPool_.isAcquired(addr)){
 			// error: do not support until bitmap idpool available
@@ -123,7 +124,8 @@ namespace BDB {
 			return -1;
 		}
 		
-		assert(size + loc_header.size <= addrEval::chunk_size_estimation(dirID));
+		assert(size + loc_header.size <= addrEval::chunk_size_estimation(dirID) && 
+			"data exceeds chunk size");
 
 		off = (-1 == off) ? loc_header.size : off;
 		
@@ -175,14 +177,15 @@ namespace BDB {
 	AddrType
 	pool::write(viov* vv, size_t len)
 	{
-		assert(0 != *this);
+		assert(0 != *this && "pool is not proper initiated");
 
 		size_t total(0);
 		for(size_t i=0; i<len; ++i){
 			total += vv[i].size;		
 		}
 		
-		assert(total <= addrEval::chunk_size_estimation(dirID));
+		assert(total <= addrEval::chunk_size_estimation(dirID) && 
+			"data exceeds chunk size");
 
 		ChunkHeader header;
 		header.size = total;
@@ -224,7 +227,7 @@ namespace BDB {
 	AddrType
 	pool::replace(char const *data, size_t size, AddrType addr, ChunkHeader const *header)
 	{
-		assert(0 != *this);
+		assert(0 != *this && "pool is not proper initiated");
 
 		if(!idPool_.isAcquired(addr)){
 			on_error(NON_EXIST, __LINE__);
@@ -266,7 +269,7 @@ namespace BDB {
 	size_t
 	pool::read(char* buffer, size_t size, AddrType addr, size_t off, ChunkHeader const* header)
 	{
-		assert(0 != *this);
+		assert(0 != *this && "pool is not proper initiated");
 		if(!idPool_.isAcquired(addr)){
 			on_error(NON_EXIST, __LINE__);
 			return -1;
@@ -303,7 +306,7 @@ namespace BDB {
 	size_t
 	pool::read(std::string *buffer, size_t max, AddrType addr, size_t off, ChunkHeader const* header)
 	{
-		assert(0 != *this);
+		assert(0 != *this && "pool is not proper initiated");
 		if(!buffer) return 0;
 		if(buffer->size()) buffer->clear();
 		size_t readCnt(0), total(0);
@@ -321,7 +324,8 @@ namespace BDB {
 	pool::merge_move(char const*data, size_t size, AddrType src_addr, size_t off, 
 		pool *dest_pool, ChunkHeader const* header)
 	{
-		assert(0 != *this && 0 != *dest_pool);
+		assert(0 != *this && "pool is not proper initiated");
+		assert(0 != *dest_pool && "dest pool is not proper initiated");
 
 		ChunkHeader loc_header;
 		if(header)
@@ -375,7 +379,7 @@ namespace BDB {
 	size_t
 	pool::erase(AddrType addr)
 	{ 
-		assert(0 != *this);
+		assert(0 != *this && "pool is not proper initiated");
 
 		if(idPool_.isAcquired(addr))
 			idPool_.Release(addr);
@@ -389,7 +393,7 @@ namespace BDB {
 	size_t
 	pool::erase(AddrType addr, size_t off, size_t size)
 	{ 
-		assert(0 != *this);
+		assert(0 != *this && "pool is not proper initiated");
 
 		if(!idPool_.isAcquired(addr)){
 			on_error(NON_EXIST, __LINE__);
@@ -437,7 +441,7 @@ namespace BDB {
 	int
 	pool::head(ChunkHeader *header, AddrType addr) const
 	{ 
-		assert(0 != *this);
+		assert(0 != *this && "pool is not proper initiated");
 
 		if(-1 == headerPool_.read(header, addr)){
 			const_cast<pool*>(this)->on_error(SYSTEM_ERROR, __LINE__);
@@ -449,7 +453,7 @@ namespace BDB {
 	off_t
 	pool::seek(AddrType addr, size_t off)
 	{
-		assert(0 != *this);
+		assert(0 != *this && "pool is not proper initiated");
 
 		off_t pos = addr;
 		pos *= addrEval::chunk_size_estimation(dirID);
@@ -464,7 +468,7 @@ namespace BDB {
 	off_t
 	pool::addr_off2tell(AddrType addr, size_t off) const
 	{
-		assert(0 != *this);
+		assert(0 != *this && "pool is not proper initiated");
 
 		off_t pos = addr;
 		pos *= addrEval::chunk_size_estimation(dirID);
@@ -475,7 +479,7 @@ namespace BDB {
 	void
 	pool::on_error(int errcode, int line)
 	{
-		assert(0 != *this);
+		assert(0 != *this && "pool is not proper initiated");
 
 		// TODO: lock for mutli proc/thread
 		err_.push_back(std::make_pair<int, int>(errcode, line));	
@@ -485,7 +489,7 @@ namespace BDB {
 	std::pair<int, int>
 	pool::get_error()
 	{
-		assert(0 != *this);
+		assert(0 != *this && "pool is not proper initiated");
 
 		std::pair<int, int> rt(0,0);
 		if(!err_.empty()){

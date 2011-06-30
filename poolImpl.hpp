@@ -7,11 +7,9 @@
 #include "chunk.h"
 #include "idPool.hpp"
 #include <string>
-#include <cstdio>
 #include <cstdlib>
 #include <deque>
 #include <utility>
-#include <string>
 
 #define MIGBUF_SIZ 2*1024*1024
 
@@ -117,8 +115,6 @@ namespace BDB
 		unsigned int dirID;
 		std::string work_dir;
 		std::string trans_dir;
-		
-		// addr_eval<AddrType> const* addrEval;
 		
 		// pool file
 		FILE *file_;

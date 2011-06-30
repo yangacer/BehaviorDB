@@ -78,7 +78,7 @@ namespace BDB {
 	AddrType
 	BDBImpl::put(char const *data, size_t size)
 	{
-		assert( 0 != *this);
+		assert(0 != *this && "BDBImpl is not proper initiated");
 
 		unsigned int dir = addrEval::directory(size);
 		AddrType rt(0);
@@ -112,7 +112,7 @@ namespace BDB {
 	AddrType
 	BDBImpl::put(char const* data, size_t size, AddrType addr, size_t off)
 	{
-		assert( 0 != *this);
+		assert(0 != *this && "BDBImpl is not proper initiated");
 
 		AddrType internal_addr;
 		if(-1 == (internal_addr = global_id_->Find(addr))){
@@ -170,7 +170,7 @@ namespace BDB {
 	AddrType
 	BDBImpl::update(char const *data, size_t size, AddrType addr)
 	{
-		assert( 0 != *this);
+		assert(0 != *this && "BDBImpl is not proper initiated");
 
 		AddrType internal_addr;
 		if(-1 == (internal_addr = global_id_->Find(addr))){
@@ -193,7 +193,7 @@ namespace BDB {
 	size_t
 	BDBImpl::get(char *output, size_t size, AddrType addr, size_t off)
 	{
-		assert( 0 != *this);
+		assert(0 != *this && "BDBImpl is not proper initiated");
 		
 		if(-1 == (addr = global_id_->Find(addr))){
 			return 0;	
@@ -213,7 +213,7 @@ namespace BDB {
 	size_t
 	BDBImpl::get(std::string *output, size_t max, AddrType addr, size_t off)
 	{
-		assert( 0 != *this);
+		assert(0 != *this && "BDBImpl is not proper initiated");
 		
 		if(-1 == (addr = global_id_->Find(addr))){
 			return 0;	
@@ -233,7 +233,7 @@ namespace BDB {
 	size_t
 	BDBImpl::del(AddrType addr)
 	{
-		assert( 0 != *this);
+		assert(0 != *this && "BDBImpl is not proper initiated");
 	
 		AddrType internal_addr;
 
@@ -255,7 +255,7 @@ namespace BDB {
 	size_t
 	BDBImpl::del(AddrType addr, size_t off, size_t size)
 	{
-		assert( 0 != *this);
+		assert(0 != *this && "BDBImpl is not proper initiated");
 		
 		if(-1 == (addr = global_id_->Find(addr))){
 			return 0;	
@@ -274,7 +274,8 @@ namespace BDB {
 	void
 	BDBImpl::error(int errcode, int line)
 	{
-		assert( 0 != *this);
+		assert(0 != *this && "BDBImpl is not proper initiated");
+
 		if(0 == log_) return;
 		
 		//lock
@@ -291,7 +292,8 @@ namespace BDB {
 	void
 	BDBImpl::error(unsigned int dir)
 	{	
-		assert( 0 != *this);
+		assert(0 != *this && "BDBImpl is not proper initiated");
+
 		if(0 == log_) return;
 
 		std::pair<int, int> err = pools_[dir].get_error();
