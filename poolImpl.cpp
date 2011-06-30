@@ -4,6 +4,7 @@
 #include "boost/variant/apply_visitor.hpp"
 #include <cassert>
 #include <cstdio>
+#include <stdexcept>
 
 namespace BDB {
 	
@@ -20,26 +21,23 @@ namespace BDB {
 	  //addrEval(conf.addrEval), 
 	  file_(0), idPool_(), headerPool_(conf.dirID, conf.header_dir)
 	{
+		using namespace std;
 
 		// create pool file
 		
 		char fname[256];
-		if(work_dir.size() > 256) {
-			fprintf(stderr, "length of pool_dir string is too long\n");
-			exit(1);
-		}
+		if(work_dir.size() > 256) 
+			throw length_error("pool: length of pool_dir string is too long");
+		
 
 		sprintf(fname, "%s%04x.pool", work_dir.c_str(), dirID);
 		if(0 == (file_ = fopen(fname, "r+b"))){
-			if(0 == (file_ = fopen(fname, "w+b"))){
-				fprintf(stderr, "create pool failed\n");
-				exit(1);
-			}	
+			if(0 == (file_ = fopen(fname, "w+b")))
+				throw invalid_argument("pool: create pool failed");
 		}
-		if(0 != setvbuf(file_, 0, _IONBF, 0)){
-			fprintf(stderr, "setvbuf to pool file failed\n");
-			exit(1);
-		}
+
+		if(0 != setvbuf(file_, 0, _IONBF, 0))
+			throw runtime_error("pool: setvbuf to pool file failed");
 
 		// init idPool
 		sprintf(fname, "%s%04x.tran", trans_dir.c_str(), dirID);
@@ -51,13 +49,12 @@ namespace BDB {
 	
 	pool::~pool()
 	{
-		if(*this)
-			fclose(file_);
+		fclose(file_);
 	}
 	
 	pool::operator void const*() const
 	{ 
-		if(!this || !file_ || !addrEval::is_init() || !idPool_)
+		if(!this || !addrEval::is_init() || !idPool_)
 			return 0;
 		return this;
 	}

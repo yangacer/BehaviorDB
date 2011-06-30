@@ -29,7 +29,8 @@ namespace BDB {
 			return 0;
 		return this;
 	}
-
+	
+	
 	void
 	BDBImpl::init_(Config const & conf)
 	{
@@ -52,22 +53,25 @@ namespace BDB {
 
 		// init log
 		char fname[256];
-		if(strlen(conf.log_dir) > 256){
-			fprintf(stderr, "length of pool_dir string is too long\n");
-			exit(1);
+		if(conf.log_dir){
+			
+			if(strlen(conf.log_dir) > 256){
+				fprintf(stderr, "length of pool_dir string is too long\n");
+				exit(1);
+			}
+
+			sprintf(fname, "%serror.log", conf.log_dir);
+			if(0 == (log_ = fopen(fname, "ab"))){
+				fprintf(stderr, "create log file failed\n");
+				exit(1);
+
+			}
+			if(0 != setvbuf(log_, log_buf_, _IOLBF, 256)){
+				fprintf(stderr, "setvbuf to log file failed\n");
+				exit(1);
+			}
 		}
 
-		sprintf(fname, "%serror.log", conf.log_dir);
-		if(0 == (log_ = fopen(fname, "ab"))){
-			fprintf(stderr, "create log file failed\n");
-			exit(1);
-
-		}
-		if(0 != setvbuf(log_, log_buf_, _IOLBF, 256)){
-			fprintf(stderr, "setvbuf to log file failed\n");
-			exit(1);
-		}
-		
 		// init IDValPool
 		global_id_ = new IDValPool<AddrType, AddrType>(conf.beg, conf.end);
 		sprintf(fname, "%sglobal_id.trans", conf.root_dir);

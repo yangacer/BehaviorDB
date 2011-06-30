@@ -5,7 +5,7 @@ option (INSTALL_TEST "Install test program" ON)
 
 include_directories( ${PROJECT_SOURCE_DIR} /usr/local/include)
 
-add_library(bdb chunk.cpp v_iovec.cpp poolImpl.cpp bdbImpl.cpp error.cpp bdb.cpp)
+add_library(bdb common.cpp chunk.cpp v_iovec.cpp poolImpl.cpp bdbImpl.cpp error.cpp bdb.cpp)
 
 add_executable (bdb_test ${PROJECT_SOURCE_DIR}/tests/bdb.cpp)
 target_link_libraries(bdb_test bdb)

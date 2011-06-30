@@ -23,7 +23,7 @@ namespace BDB {
 		~BDBImpl();
 		
 		operator void const*() const;
-
+		
 		void
 		init_(Config const & conf);
 
