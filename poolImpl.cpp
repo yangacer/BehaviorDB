@@ -5,9 +5,12 @@
 #include <cassert>
 #include <cstdio>
 #include <stdexcept>
+#include <limits>
 
 namespace BDB {
 	
+	size_t pool::npos = std::numeric_limits<size_t>::max();
+
 	pool::pool()
 	: dirID(0), 
 	  work_dir(), trans_dir(),
@@ -24,7 +27,6 @@ namespace BDB {
 		using namespace std;
 
 		// create pool file
-		
 		char fname[256];
 		if(work_dir.size() > 256) 
 			throw length_error("pool: length of pool_dir string is too long");
@@ -43,7 +45,6 @@ namespace BDB {
 		sprintf(fname, "%s%04x.tran", trans_dir.c_str(), dirID);
 		idPool_.replay_transaction(fname);
 		idPool_.init_transaction(fname);
-		
 		
 	}
 	
@@ -84,6 +85,7 @@ namespace BDB {
 		}
 		
 		if(-1 == seek(loc_addr)){
+			idPool_.Release(loc_addr);
 			on_error(SYSTEM_ERROR, __LINE__);
 			return -1;
 		}
@@ -99,8 +101,7 @@ namespace BDB {
 
 	}
 	
-	// TODO
-	// off=-1 represent an append write
+	// off == npos represents an append write
 	AddrType
 	pool::write(char const* data, size_t size, AddrType addr, size_t off, ChunkHeader const* header)
 	{
@@ -123,8 +124,11 @@ namespace BDB {
 		
 		assert(size + loc_header.size <= addrEval::chunk_size_estimation(dirID) && 
 			"data exceeds chunk size");
+		
+		assert((off == npos || off <= loc_header.size) && 
+			"invalid offset for put");
 
-		off = (-1 == off) ? loc_header.size : off;
+		off = (npos == off) ? loc_header.size : off;
 		
 		// data need to be moved can not larger than move buffer
 		size_t moved = loc_header.size - off;
@@ -156,14 +160,19 @@ namespace BDB {
 			return -1;
 		}
 
+		size_t partial(0);
 		// write new data
-		if(size != fwrite(data, 1, size, file_)){
+		if(size != (partial = fwrite(data, 1, size, file_))){
+			if(partial) // intermediate state
+				idPool_.Release(addr);
 			on_error(SYSTEM_ERROR, __LINE__);
 			return -1;
 		}
 
 		// write buffered  moved data
-		if(moved && moved != fwrite(mig_buf_, 1, moved, file_)){
+		if(moved && moved != (partial = fwrite(mig_buf_, 1, moved, file_))){
+			if(partial) // intermediate state
+				idPool_.Release(addr);
 			on_error(SYSTEM_ERROR, __LINE__);
 			return -1;
 		}
@@ -191,11 +200,13 @@ namespace BDB {
 		AddrType loc_addr = idPool_.Acquire();
 		
 		if(-1 == headerPool_.write(header, loc_addr)){
+			idPool_.Release(loc_addr);
 			on_error(SYSTEM_ERROR, __LINE__);
 			return -1;
 		}
 		
 		if( -1 == seek(loc_addr) ){
+			idPool_.Release(loc_addr);
 			on_error(SYSTEM_ERROR, __LINE__);
 			return -1;
 		}
@@ -245,16 +256,19 @@ namespace BDB {
 		
 		// update header 
 		if(-1 == headerPool_.write(loc_header, addr)){
+			idPool_.Release(addr);
 			on_error(SYSTEM_ERROR, __LINE__);
 			return -1;
 		}
 		
 		if(-1 == seek(addr, 0)){
+			idPool_.Release(addr);
 			on_error(SYSTEM_ERROR, __LINE__);
 			return -1;
 		}
 		
 		if(size != fwrite(data, 1, size, file_)){
+			idPool_.Release(addr);
 			on_error(SYSTEM_ERROR, __LINE__);
 			return -1;
 		}
@@ -400,6 +414,7 @@ namespace BDB {
 		ChunkHeader header;
 		headerPool_.read(&header, addr);
 		
+		// TODO exception(error) ?
 		if(off > header.size) return header.size;
 	
 

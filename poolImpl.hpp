@@ -46,7 +46,7 @@ namespace BDB
 		
 		// off=-1 represent an append write
 		AddrType
-		write(char const* data, size_t size, AddrType addr, size_t off=-1, ChunkHeader const* header=0);
+		write(char const* data, size_t size, AddrType addr, size_t off=npos, ChunkHeader const* header=0);
 		
 		AddrType
 		write(viov *vv, size_t len);
@@ -129,6 +129,7 @@ namespace BDB
 		fixed_pool<ChunkHeader> headerPool_;
 	public:	
 		std::deque<std::pair<int,int> > err_;
+		static size_t npos;
 	};
 } // end of namespace BDB
 
