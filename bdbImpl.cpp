@@ -2,6 +2,7 @@
 #include "poolImpl.hpp"
 #include "error.hpp"
 #include "idPool.hpp"
+#include "addr_iter.hpp"
 #include <cassert>
 
 namespace BDB {
@@ -123,9 +124,9 @@ namespace BDB {
 		assert(0 != *this && "BDBImpl is not proper initiated");
 
 		AddrType internal_addr;
-		if(-1 == (internal_addr = global_id_->Find(addr))){
-			return -1;	
-		}
+		if( !global_id_->isAcquired(addr) )
+			return -1;
+		internal_addr = global_id_->Find(addr);
 
 		unsigned int dir = addrEval::addr_to_dir(internal_addr);
 		AddrType loc_addr = addrEval::local_addr(internal_addr);
@@ -181,9 +182,9 @@ namespace BDB {
 		assert(0 != *this && "BDBImpl is not proper initiated");
 
 		AddrType internal_addr;
-		if(-1 == (internal_addr = global_id_->Find(addr))){
-			return -1;	
-		}
+		if( !global_id_->isAcquired(addr) )
+			return -1;
+		internal_addr = global_id_->Find(addr);
 
 		unsigned int dir = addrEval::addr_to_dir(internal_addr);
 		AddrType loc_addr = addrEval::local_addr(internal_addr);
@@ -203,9 +204,9 @@ namespace BDB {
 	{
 		assert(0 != *this && "BDBImpl is not proper initiated");
 		
-		if(-1 == (addr = global_id_->Find(addr))){
-			return 0;	
-		}
+		if( !global_id_->isAcquired(addr) )
+			return 0;
+		addr = global_id_->Find(addr);
 
 		size_t rt(0);
 		unsigned int dir = addrEval::addr_to_dir(addr);
@@ -223,9 +224,10 @@ namespace BDB {
 	{
 		assert(0 != *this && "BDBImpl is not proper initiated");
 		
-		if(-1 == (addr = global_id_->Find(addr))){
-			return 0;	
-		}
+		if( !global_id_->isAcquired(addr) )
+			return 0;
+		addr = global_id_->Find(addr);
+
 
 		size_t rt(0);
 		unsigned int dir = addrEval::addr_to_dir(addr);
@@ -244,10 +246,10 @@ namespace BDB {
 		assert(0 != *this && "BDBImpl is not proper initiated");
 	
 		AddrType internal_addr;
-
-		if(-1 == (internal_addr = global_id_->Find(addr))){
-			return 0;	
-		}
+		
+		if( !global_id_->isAcquired(addr) )
+			return -1;
+		internal_addr = global_id_->Find(addr);
 
 		unsigned int dir = addrEval::addr_to_dir(internal_addr);
 		AddrType loc_addr = addrEval::local_addr(internal_addr);
@@ -257,7 +259,7 @@ namespace BDB {
 			return -1;	
 		}
 		global_id_->Release(addr);
-		return addr;
+		return 0;
 	}
 
 	size_t
@@ -265,20 +267,39 @@ namespace BDB {
 	{
 		assert(0 != *this && "BDBImpl is not proper initiated");
 		
-		if(-1 == (addr = global_id_->Find(addr))){
-			return 0;	
-		}
+	
+		if( !global_id_->isAcquired(addr) )
+			return -1;
+		addr = global_id_->Find(addr);
+	
 
 		unsigned int dir = addrEval::addr_to_dir(addr);
 		AddrType loc_addr = addrEval::local_addr(addr);
-
-		if(-1 == pools_[dir].erase(loc_addr, off, size)){
+		size_t nsize;
+		if(-1 == (nsize = pools_[dir].erase(loc_addr, off, size))){
 			error(dir);
 			return -1;
 		}
-		return addr;
+		return nsize;
 	}
 	
+	AddrIterator
+	BDBImpl::begin() const
+	{
+		assert(0 != *this && "BDBImpl is not proper initiated");
+		AddrType first_used = global_id_->begin();
+		first_used = global_id_->next_used(first_used);
+		
+		return AddrIterator(*this, first_used);
+	}
+
+	AddrIterator
+	BDBImpl::end() const
+	{
+		assert(0 != *this && "BDBImpl is not proper initiated");
+		return AddrIterator(*this, global_id_->end());	
+	}
+
 	void
 	BDBImpl::error(int errcode, int line)
 	{

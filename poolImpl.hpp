@@ -129,7 +129,6 @@ namespace BDB
 		fixed_pool<ChunkHeader> headerPool_;
 	public:	
 		std::deque<std::pair<int,int> > err_;
-		static size_t npos;
 	};
 } // end of namespace BDB
 

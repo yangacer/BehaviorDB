@@ -1,37 +1,15 @@
 project (BehaviorDB)
 cmake_minimum_required(VERSION 2.8)
+include (CTest)
+set (CTEST_PROJECT_NAME "BehaviorDB-Testing")
 
 option (INSTALL_TEST "Install test program" ON)
 
 include_directories( ${PROJECT_SOURCE_DIR} /usr/local/include)
 
-add_library(bdb common.cpp chunk.cpp v_iovec.cpp poolImpl.cpp bdbImpl.cpp error.cpp bdb.cpp)
+add_library(bdb common.cpp chunk.cpp v_iovec.cpp poolImpl.cpp addr_iter.cpp bdbImpl.cpp error.cpp bdb.cpp)
 
 add_executable (bdb_test ${PROJECT_SOURCE_DIR}/tests/bdb.cpp)
 target_link_libraries(bdb_test bdb)
-#add_executable (pool poolImpl.cpp ${PROJECT_SOURCE_DIR}/tests/pool.cpp chunk.cpp v_iovec.cpp)
-#add_executable (fixpool ${PROJECT_SOURCE_DIR}/tests/fixpool.cpp chunk.cpp)
-#add_executable (idp ${PROJECT_SOURCE_DIR}/tests/idpool.cpp)
 
-#set(TEST_TARGETS bdb_put put append migrate_test getstream bench iterate addreval)
-#foreach(tg ${TEST_TARGETS})
-#	add_executable (${tg} ${PROJECT_SOURCE_DIR}/tests/${tg}.cpp)
-#	target_link_libraries(${tg} bdb)
-#endforeach(tg)
-
-#set(MY_TARGETS bdb)
-#set(HEADERS bdb.h)
-
-
-#if(INSTALL_TEST)
-#	set(DPFILES clean.sh)	
-#	set(MY_TARGETS ${MY_TARGETS} ${TEST_TARGETS})
-#endif()
-
-#install (TARGETS ${MY_TARGETS}
-#		LIBRARY DESTINATION lib
-#		ARCHIVE DESTINATION lib
-#		RUNTIME DESTINATION .)
-
-#install (FILES ${DPFILES} DESTINATION .)
-#install (FILES ${HEADERS} DESTINATION include)
+add_test (basic_op bdb_test)

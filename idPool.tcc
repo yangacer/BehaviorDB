@@ -76,8 +76,8 @@ template<typename B>
 int
 IDPool<B>::Release(B const &id)
 {
-	if(!*this) return -1;
-
+	assert(0 != *this);
+	
 	if(id - beg_ >= bm_.size())
 		return -1;
 	
@@ -95,8 +95,22 @@ template<typename B>
 bool 
 IDPool<B>::avail() const
 { 
-	if(!*this) return false;
-	return bm_.any(); 
+	assert(0 != *this);
+	return bm_.any();
+}
+
+template<typename B>
+B
+IDPool<B>::next_used(B curID) const
+{
+	assert(0 != *this);
+	if(curID >= end_ ) return end_;
+	while(curID != end_){
+		if(false == bm_[curID - beg_])
+			return curID;
+		++curID;	
+	}
+	return curID;
 }
 
 template<typename B>
@@ -222,9 +236,8 @@ B IDValPool<B,V>::Acquire(V const &val)
 template<typename B, typename V>
 V IDValPool<B,V>::Find(B const & id) const
 {
-	return isAcquired(id) ? 
-		arr_[ id - super::beg_ ] : 
-		-1;
+	assert(true == isAcquired(id) && "IDValPool: Test isAcquired before Find!");
+	return arr_[ id - super::beg_ ];
 }
 
 

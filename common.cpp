@@ -1,7 +1,10 @@
 #include "common.hpp"
 #include <stdexcept>
+#include <limits>
 
 namespace BDB {
+	
+	const size_t npos(std::numeric_limits<size_t>::max());
 
 	void
 	Config::validate() const

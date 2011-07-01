@@ -5,11 +5,9 @@
 #include <cassert>
 #include <cstdio>
 #include <stdexcept>
-#include <limits>
 
 namespace BDB {
 	
-	size_t pool::npos = std::numeric_limits<size_t>::max();
 
 	pool::pool()
 	: dirID(0), 
@@ -109,7 +107,8 @@ namespace BDB {
 	pool::write(char const* data, size_t size, AddrType addr, size_t off, ChunkHeader const* header)
 	{
 		assert(0 != *this && "pool is not proper initiated");
-
+		
+		// TODO allow now!
 		if(!idPool_.isAcquired(addr)){
 			// error: do not support until bitmap idpool available
 			on_error(NON_EXIST, __LINE__);

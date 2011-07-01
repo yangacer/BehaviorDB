@@ -7,6 +7,7 @@
 #include <cstring>
 #include <cstdio>
 #include <cerrno>
+#include <cassert>
 #include "boost/dynamic_bitset.hpp"
 
 /// @todo TODO: Transaction file compression.(snapshot)
@@ -45,6 +46,8 @@ public:
 
 	bool avail() const;
 	
+	BlockType next_used(BlockType curID) const;
+
 	size_t size() const;
 	
 	size_t max_size() const;
@@ -53,6 +56,12 @@ public:
 	
 	void init_transaction(char const* transaction_file) throw(std::runtime_error);
 	
+	BlockType begin() const
+	{ return beg_; }
+
+	BlockType end() const
+	{ return end_; }
+
 protected:
 	
 	bool extend();

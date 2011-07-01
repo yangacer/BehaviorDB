@@ -53,6 +53,8 @@ namespace BDB {
 	BehaviorDB::del(AddrType addr, size_t off, size_t size)
 	{ return impl_->del(addr, off, size); }
 
+	
+	
 
 } // end of namespace BDB
 

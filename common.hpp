@@ -77,6 +77,8 @@ namespace BDB {
 		validate() const;
 	};
 
+	extern const size_t npos;
+
 } // end of nemaespace BDB
 
 #endif // end of header

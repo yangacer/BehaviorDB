@@ -13,10 +13,11 @@ namespace BDB {
 	
 	
 	struct pool;
-	
+	struct AddrIterator;	
 
 	struct BDBImpl 
 	{
+		friend struct AddrIterator;
 
 		BDBImpl();
 	        BDBImpl(Config const & conf);
@@ -59,6 +60,12 @@ namespace BDB {
 
 		size_t
 		del(AddrType addr, size_t off, size_t size);
+
+		AddrIterator
+		begin() const;
+
+		AddrIterator
+		end() const;
 
 	private: // disable interfaces
 		BDBImpl(BDBImpl const& cp);

@@ -50,7 +50,7 @@ namespace BDB {
 
 		BDBImpl *impl_;
 	};
-
+	
 } // end of namespace BDB
 
 #endif
