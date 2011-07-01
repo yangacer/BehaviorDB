@@ -50,8 +50,11 @@ namespace BDB {
 			sprintf(fname, "%s%04x.fpo", work_dir_.c_str(), id_);
 
 			if(0 == (file_ = fopen(fname, "r+b"))){
-				if(0 == (file_ = fopen(fname, "w+b")))
-					throw runtime_error("fixed_pool: create fix pool failed");
+				if(0 == (file_ = fopen(fname, "w+b"))){
+					string msg("fixed_pool: Unable to create fix pool ");
+					msg += fname;
+					throw invalid_argument(msg.c_str());
+				}
 			}
 			setvbuf(file_, 0, _IONBF, 0);
 

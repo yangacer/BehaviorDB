@@ -34,8 +34,11 @@ namespace BDB {
 
 		sprintf(fname, "%s%04x.pool", work_dir.c_str(), dirID);
 		if(0 == (file_ = fopen(fname, "r+b"))){
-			if(0 == (file_ = fopen(fname, "w+b")))
-				throw invalid_argument("pool: create pool failed");
+			if(0 == (file_ = fopen(fname, "w+b"))){
+				string msg("pool: Unable to create pool file ");
+				msg += fname;
+				throw invalid_argument(msg.c_str());
+			}
 		}
 
 		if(0 != setvbuf(file_, 0, _IONBF, 0))
