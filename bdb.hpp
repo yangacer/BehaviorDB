@@ -7,6 +7,7 @@
 namespace BDB {
 	
 	struct BDBImpl;
+	struct AddrIterator;
 
 	struct BehaviorDB
 	{
@@ -44,6 +45,13 @@ namespace BDB {
 
 		size_t
 		del(AddrType addr, size_t off, size_t size);
+
+		AddrIterator
+		begin() const;
+
+		AddrIterator
+		end() const;
+
 	private:
 		BehaviorDB(BehaviorDB const& cp);
 		BehaviorDB &operator=(BehaviorDB const& cp);

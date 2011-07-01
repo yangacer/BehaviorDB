@@ -45,7 +45,7 @@ namespace BDB {
 		if( !bdb_->global_id_->isAcquired(cur_) )
 			throw std::out_of_range("AddrIterator: Iterator is invalided");
 
-		return bdb_->global_id_->Find(cur_);
+		return cur_;
 	}
 
 	bool

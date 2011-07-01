@@ -1,5 +1,6 @@
 #include "bdb.hpp"
 #include "bdbImpl.hpp"
+#include "addr_iter.hpp"
 
 namespace BDB {
 	
@@ -53,7 +54,13 @@ namespace BDB {
 	BehaviorDB::del(AddrType addr, size_t off, size_t size)
 	{ return impl_->del(addr, off, size); }
 
-	
+	AddrIterator
+	BehaviorDB::begin() const
+	{ return impl_->begin(); }
+
+	AddrIterator
+	BehaviorDB::end() const
+	{ return impl_->end(); }
 	
 
 } // end of namespace BDB

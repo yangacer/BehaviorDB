@@ -1,7 +1,9 @@
 #include "bdb.hpp"
+#include "addr_iter.hpp"
 #include <cstdio>
 #include <cstring>
 #include <string>
+#include <exception>
 
 int main()
 {
@@ -75,5 +77,35 @@ int main()
 	bdb.del(addr);
 	size_t negtive = bdb.get(&rec, 1024, addr);
 	printf("%d\n", negtive == 0);
+
+	// put new data for test iterator
+	AddrType addrs[3];
+	addrs[0] = bdb.put("acer", 4); // should be placed in 0000.pool
+	addrs[1] = bdb.put("123456789012345678901234567890", 30); // should be placed in 0001.pool
+	addrs[2] = bdb.put("123456789012345678901234567890123456789012345678901234567890", 60); // should be placed in 0002.pool
+	
+	AddrIterator iter = bdb.begin();
+	int i=0;
+	while(iter != bdb.end()){
+		printf("should: %08x\n", addrs[i]);
+		printf("result: %08x\n", *iter);
+		++iter;	
+		++i;
+	}
+	
+	// interleave accesing will invalid an iterator
+	// an out_of_range exception will be through
+	iter = bdb.begin();
+	bdb.del(addrs[0]);
+	try{
+		*iter;
+	}catch(std::exception const &e){
+		printf("exception: %s\n", e.what());	
+	}
+	
+	// erase all again
+	bdb.del(addrs[1]);
+	bdb.del(addrs[2]);
+
 	return 0;	
 }
