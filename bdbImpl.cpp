@@ -301,6 +301,16 @@ namespace BDB {
 	}
 
 	void
+	BDBImpl::mem_stat(MemStat *ms) const
+	{
+		// TODO variant<this, pool, IDPool, IDValPool> stat
+		ms->gid_mem_size = global_id_->block_size();
+		//for(int i=0; i<addrEval::dir_count(); ++i)
+		//	ms->pool_mem_size;
+
+	}
+	
+	void
 	BDBImpl::error(int errcode, int line)
 	{
 		assert(0 != *this && "BDBImpl is not proper initiated");

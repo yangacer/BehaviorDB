@@ -77,6 +77,13 @@ namespace BDB {
 		validate() const;
 	};
 
+	struct MemStat
+	{
+		size_t gid_mem_size;
+		size_t pool_mem_size;
+		size_t io_buf_size;
+	};
+
 	extern const size_t npos;
 
 } // end of nemaespace BDB

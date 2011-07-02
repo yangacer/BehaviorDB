@@ -62,6 +62,8 @@ namespace BDB {
 	BehaviorDB::end() const
 	{ return impl_->end(); }
 	
-
+	void
+	BehaviorDB::mem_stat(MemStat *ms) const
+	{ impl_->mem_stat(ms); }
 } // end of namespace BDB
 

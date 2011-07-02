@@ -50,7 +50,7 @@ IDPool<B>::Acquire()
 {
 	if(!*this) return -1;
 
-	Bitmap::size_type rt;
+	B rt;
 	
 	// extend bitmap
 	if(Bitmap::npos == (rt = bm_.find_first())){
@@ -62,10 +62,8 @@ IDPool<B>::Acquire()
 		}
 	}
 	
-	if(0 > fprintf(file_, "+%lu\n", rt) && errno){
-		fprintf(stderr, "idPool: %s\n", strerror(errno));
-		exit(1);
-	}
+	if(0 > fprintf(file_, "+%lu\n", rt) && errno)
+		throw std::runtime_error("IDPool(Acquire): write transaction failure");
 
 	bm_[rt] = false;
 	
@@ -81,10 +79,8 @@ IDPool<B>::Release(B const &id)
 	if(id - beg_ >= bm_.size())
 		return -1;
 	
-	if(0 > fprintf(file_, "-%lu\n", id - beg_) && errno){
-		fprintf(stderr,"%s\n", strerror(errno));
-		exit(1);
-	}
+	if(0 > fprintf(file_, "-%lu\n", id - beg_) && errno)
+		throw std::runtime_error("IDPool(Release): write transaction failure");
 
 	bm_[id - beg_] = true;
 	return 0;
@@ -120,6 +116,11 @@ IDPool<B>::size() const
 
 template<typename B>
 size_t
+IDPool<B>::block_size() const
+{ return bm_.num_blocks() * sizeof(B); }
+
+template<typename B>
+size_t
 IDPool<B>::max_size() const
 { 
 	if(full_alloc_)	
@@ -131,6 +132,8 @@ template<typename B>
 void 
 IDPool<B>::replay_transaction(char const* transaction_file)
 {
+	assert(0 != transaction_file);
+	
 	FILE *tfile = fopen(transaction_file, "rb");
 
 	if(0 == tfile){ // no transaction files for replaying
@@ -165,16 +168,14 @@ void
 IDPool<B>::init_transaction(char const* transaction_file) throw(std::runtime_error)
 {
 	
-	if(0 == (file_ = fopen(transaction_file,"ab"))){
-		fprintf(stderr, "Fail to open %s; system(%s)\n", transaction_file, strerror(errno));
-		throw std::runtime_error("Fail to open transaction file");
-	}
+	assert(0 != transaction_file);
+
+	if(0 == (file_ = fopen(transaction_file,"ab")))
+		throw std::runtime_error("IDPool: Fail to open transaction file");
 	
-	if(0 != setvbuf(file_, (char*)0, _IONBF, 0)){
-		fprintf(stderr, "Fail to set zero buffer on %s;system(%s)\n", transaction_file, strerror(errno));
-		throw std::runtime_error("Fail to set zero buffer on transaction_file");
-	}
 	
+	if(0 != setvbuf(file_, (char*)0, _IONBF, 0))
+		throw std::runtime_error("IDPool: Fail to set zero buffer on transaction_file");
 
 }
 
@@ -198,6 +199,8 @@ template<typename B, typename V>
 IDValPool<B,V>::IDValPool(B beg, B end)
 : super(beg, end), arr_(0)
 {
+	assert(end >= beg);
+
 	arr_ = new V[end - beg];
 	if(!arr_) throw std::bad_alloc();
 }
@@ -213,17 +216,16 @@ B IDValPool<B,V>::Acquire(V const &val)
 {
 	if(!*this) return -1;
 
-	typename super::Bitmap::size_type rt;
+	B rt;
 	
 	// extend bitmap
 	if(super::Bitmap::npos == (rt = super::bm_.find_first())){
 		return -1;
 	}
 	
-	if(0 > fprintf(super::file_, "+%lu\t%lu\n", rt, val) && errno){
-		fprintf(stderr, "idPool: %s\n", strerror(errno));
-		exit(1);
-	}
+	if(0 > fprintf(super::file_, "+%lu\t%lu\n", rt, val) && errno)
+		throw std::runtime_error("IDValPool(Acquire): write transaction failure");
+	
 
 	super::bm_[rt] = false;
 	arr_[rt] = val;
@@ -244,12 +246,10 @@ V IDValPool<B,V>::Find(B const & id) const
 template<typename B, typename V>
 void IDValPool<B,V>::Update(B const& id, V const& val)
 {
-	if(!isAcquired(id)) return;
+	assert(true == isAcquired(id) && "IDValPool: Test isAcquired before Update!");
 	
-	if(0 > fprintf(super::file_, "+%lu\t%lu\n", id - super::beg_, val) && errno){
-		fprintf(stderr, "idPool: %s\n", strerror(errno));
-		exit(1);
-	}
+	if(0 > fprintf(super::file_, "+%lu\t%lu\n", id - super::beg_, val) && errno)
+		throw std::runtime_error("IDValPool(Update): write transaction failure");
 	
 	arr_[id - super::beg_] = val;
 
@@ -258,6 +258,8 @@ void IDValPool<B,V>::Update(B const& id, V const& val)
 template<typename B, typename V>
 void IDValPool<B,V>::replay_transaction(char const* transaction_file)
 {
+	assert(0 != transaction_file);
+
 	FILE *tfile = fopen(transaction_file, "rb");
 
 	if(0 == tfile) // no transaction files for replaying
@@ -284,4 +286,7 @@ void IDValPool<B,V>::replay_transaction(char const* transaction_file)
 	
 }
 
+template<typename B, typename V>
+size_t IDValPool<B, V>::block_size() const
+{ return super::block_size() + sizeof(V) * super::max_size(); }
 

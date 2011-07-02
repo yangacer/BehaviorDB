@@ -50,6 +50,8 @@ public:
 
 	size_t size() const;
 	
+	size_t block_size() const;
+
 	size_t max_size() const;
 	
 	void replay_transaction(char const* transaction_file);
@@ -93,6 +95,8 @@ public:
 	void Update(BlockType const& id, ValueType const &val);
 
 	void replay_transaction(char const* transaction_file);
+
+	size_t block_size() const;
 private:
 	ValueType* arr_;
 };

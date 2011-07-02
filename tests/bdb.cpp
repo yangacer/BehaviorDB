@@ -18,12 +18,16 @@ int main()
 	// write
 	char const* data = "acer";
 	AddrType addr = bdb.put(data, 4);
+	printf("\n==== write 4 bytes ====\n");
+	printf("write \"%s\"\n", data);
 	printf("should: 00000001\n");
 	printf("result: %08x\n", addr);	
 	
 	// append include migration
 	char const *data2 = "1234567890asdfghjkl;12345678901234567890";
 	addr = bdb.put(data2, strlen(data2), addr);
+	printf("\n==== append 40 bytes ====\n");
+	printf("append \"%s\" after \"%s\"\n", data2, data);
 	printf("should: 00000001\n");
 	printf("result: %08x\n", addr);	
 	
@@ -49,6 +53,8 @@ int main()
 		rec.append(buf, readCnt);
 		off += readCnt;
 	}
+	printf("\n==== insertion then read====\n");
+	printf("prepend \"yang\" at 0, insert \" made\" at 8, and read result into a c-string\n");
 	printf("should:\t%s\n", should.c_str());
 	printf("result:\t%s\n", rec.c_str());
 	
@@ -56,27 +62,32 @@ int main()
 	rec.clear();
 	rec.reserve(off);
 	bdb.get(&rec, 1024, addr);
+	printf("\n==== read data into a std::string ====\n");
 	printf("should:\t%s\n", should.c_str());
 	printf("result:\t%s\n", rec.c_str());
 
 	// erase partial
-	bdb.del(addr, 13, 10);
+	size_t nsize = bdb.del(addr, 13, 10);
 	bdb.get(&rec, 1024, addr);
 	should.erase(13, 10);
-	printf("should:\t%s\n", should.c_str());
-	printf("result:\t%s\n", rec.c_str());
+	printf("\n==== del data betwen (13, 23] ====\n");
+	printf("should:\t%s\t%d\n", should.c_str(), should.size());
+	printf("result:\t%s\t%d\n", rec.c_str(), nsize);
 	
 	// update
 	bdb.update("replaced", addr);
 	bdb.get(&rec, 1024, addr);
 	should = "replaced";
+	printf("\n==== replace data with \"replaced\" ====\n");
 	printf("should:\t%s\n", should.c_str());
 	printf("result:\t%s\n", rec.c_str());
 
 	// erase all
 	bdb.del(addr);
 	size_t negtive = bdb.get(&rec, 1024, addr);
-	printf("%d\n", negtive == 0);
+	printf("\n==== del whole data ====\n");
+	printf("should: 0\n");
+	printf("result: %d\n", negtive);
 
 	// put new data for test iterator
 	AddrType addrs[3];
@@ -86,6 +97,7 @@ int main()
 	
 	AddrIterator iter = bdb.begin();
 	int i=0;
+	printf("\n==== iterating all data ==== \n");
 	while(iter != bdb.end()){
 		printf("should: %08x\n", addrs[i]);
 		printf("result: %08x\n", *iter);
@@ -106,6 +118,9 @@ int main()
 	// erase all again
 	bdb.del(addrs[1]);
 	bdb.del(addrs[2]);
-
+	
+	MemStat ms;
+	bdb.mem_stat(&ms);
+	printf("gid memory usage: %lu\n", ms.gid_mem_size);
 	return 0;	
 }
