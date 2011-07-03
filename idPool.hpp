@@ -10,28 +10,44 @@
 #include <cassert>
 #include "boost/dynamic_bitset.hpp"
 
-/// @todo TODO: Transaction file compression.(snapshot)
+/// @todo TODO: Transaction file compression (snapshot).
+/// @todo TODO: Make IDPool self-constructable (configuration object?).
 template<typename BlockType = unsigned int>
 class IDPool
 {
 protected:
 	typedef boost::dynamic_bitset<> Bitmap;
 public:
-	// Default CTOR
-	// beg: 0 
-	// end: numeric_limits<BlockType>::max() - 1
-	// storage: dynamic bitmap
-	// partial allocation
+	/** Default constructor
+	 * @desc Construct a IDPool that manages numerical ID.
+	 * @post A IDPool that its storage is a partially allocated 
+	 * dynamic bitmap. ID range of this IDPool is <br/>
+	 * (0,  numeric_limits<BlockType>::max() - 1]. 
+	 * @throw std::bad_alloc
+	 */
 	IDPool();
 	
-	// beg: user-defined (< numric_limits<BlockType>::max())
-	// end: numric_limits<BlockType>::max()
-	// storage: dynamic bitmap
-	// partial allocation
+	/** Constructor for being given begin 
+	 * @desc Construct a IDPool that manages numerical ID.
+	 * @param beg user-defined ID begin number 
+	 * @pre beg < numric_limits<BlockType>::max()
+	 * @post A IDPool that its storage is a partially allocated 
+	 * dynamic bitmap. ID range of this IDPool is <br/>
+	 * (beg,  numeric_limits<BlockType>::max() - 1]. 
+	 * @throw std::bad_alloc
+	 */
 	IDPool(BlockType beg);
 
-	// beg: user-defined (< numric_limits<BlockType>::max())
-	// end: user-defined (< numric_limits<BlockType>::max())
+	/** Constructor for being given begin and end
+	 * @desc Construct a IDPool that manages numerical ID.
+	 * @param beg user-defined ID begin number 
+	 * @param end user-defined ID end number 
+	 * @pre beg <= end
+	 * @post A IDPool that its storage is a partially allocated 
+	 * dynamic bitmap. ID range of this IDPool is <br/>
+	 * (beg, end]. 
+	 * @throw std::bad_alloc
+	 */	
 	IDPool(BlockType beg, BlockType end);
 	
 	~IDPool();
