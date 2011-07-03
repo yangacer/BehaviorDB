@@ -19,7 +19,6 @@ namespace BDB {
 	{
 		friend struct AddrIterator;
 
-		BDBImpl();
 	        BDBImpl(Config const & conf);
 		~BDBImpl();
 		

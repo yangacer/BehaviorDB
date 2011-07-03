@@ -18,10 +18,11 @@ class IDPool
 protected:
 	typedef boost::dynamic_bitset<> Bitmap;
 public:
+
 	/** Default constructor
 	 * @desc Construct a IDPool that manages numerical ID.
 	 * @post A IDPool that its storage is a partially allocated 
-	 * dynamic bitmap. ID range of this IDPool is <br/>
+	 * dynamic bitmap. Legal ID range of this IDPool is <br/>
 	 * (0,  numeric_limits<BlockType>::max() - 1]. 
 	 * @throw std::bad_alloc
 	 */
@@ -32,11 +33,11 @@ public:
 	 * @param beg user-defined ID begin number 
 	 * @pre beg < numric_limits<BlockType>::max()
 	 * @post A IDPool that its storage is a partially allocated 
-	 * dynamic bitmap. ID range of this IDPool is <br/>
+	 * dynamic bitmap. Legal ID range of this IDPool is <br/>
 	 * (beg,  numeric_limits<BlockType>::max() - 1]. 
 	 * @throw std::bad_alloc
 	 */
-	IDPool(BlockType beg);
+	IDPool(char const* trans_file, BlockType beg);
 
 	/** Constructor for being given begin and end
 	 * @desc Construct a IDPool that manages numerical ID.
@@ -44,11 +45,11 @@ public:
 	 * @param end user-defined ID end number 
 	 * @pre beg <= end
 	 * @post A IDPool that its storage is a partially allocated 
-	 * dynamic bitmap. ID range of this IDPool is <br/>
+	 * dynamic bitmap. Legal ID range of this IDPool is <br/>
 	 * (beg, end]. 
 	 * @throw std::bad_alloc
 	 */	
-	IDPool(BlockType beg, BlockType end);
+	IDPool(char const* trans_file, BlockType beg, BlockType end);
 	
 	~IDPool();
 
@@ -66,13 +67,13 @@ public:
 
 	size_t size() const;
 	
-	size_t block_size() const;
+	// size_t block_size() const;
 
-	size_t max_size() const;
+	// size_t max_size() const;
 	
 	void replay_transaction(char const* transaction_file);
 	
-	void init_transaction(char const* transaction_file) throw(std::runtime_error);
+	void init_transaction(char const* transaction_file);
 	
 	BlockType begin() const
 	{ return beg_; }
@@ -83,7 +84,8 @@ public:
 protected:
 	
 	bool extend();
-	
+	IDPool(BlockType beg, BlockType end);
+
 private:
 	IDPool(IDPool const &cp);
 	IDPool& operator=(IDPool const &cp);
@@ -101,7 +103,7 @@ class IDValPool : public IDPool<BlockType>
 {
 	typedef IDPool<BlockType> super;
 public:
-	IDValPool(BlockType beg, BlockType end);
+	IDValPool(char const* trans_file, BlockType beg, BlockType end);
 	~IDValPool();
 
 	BlockType Acquire(ValueType const &val);
@@ -112,7 +114,7 @@ public:
 
 	void replay_transaction(char const* transaction_file);
 
-	size_t block_size() const;
+	// size_t block_size() const;
 private:
 	ValueType* arr_;
 };

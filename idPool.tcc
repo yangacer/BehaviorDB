@@ -2,25 +2,35 @@
 
 template<typename B>
 IDPool<B>::IDPool()
-: beg_(0), end_(std::numeric_limits<B>::max()-1), file_(0), bm_(), full_alloc_(false)
+: beg_(0), end_(0), file_(0), bm_(), full_alloc_(false)
 {
-	bm_.resize(4096, true);
+	// bm_.resize(4096, true);
 }
 
 template<typename B>
-IDPool<B>::IDPool(B beg)
+IDPool<B>::IDPool(char const* tfile, B beg)
 : beg_(beg), end_(std::numeric_limits<B>::max()-1), file_(0), bm_(), full_alloc_(false)
 {
+	assert( 0 != tfile );
 	assert( beg_ <= end_ );
+	
 	bm_.resize(4096, true);
+	
+	replay_transaction(tfile);
+	init_transaction(tfile);
 }
 
 template<typename B>
-IDPool<B>::IDPool(B beg, B end)
+IDPool<B>::IDPool(char const* tfile, B beg, B end)
 : beg_(beg), end_(end), file_(0), bm_(), full_alloc_(true)
 {
+	assert(0 != tfile);
 	assert( beg_ <= end_ );	
+
 	bm_.resize(end_- beg_, true);
+	
+	replay_transaction(tfile);
+	init_transaction(tfile);
 }
 
 template<typename B>
@@ -113,7 +123,7 @@ template<typename B>
 size_t
 IDPool<B>::size() const
 { return bm_.size(); }
-
+/*
 template<typename B>
 size_t
 IDPool<B>::block_size() const
@@ -127,21 +137,19 @@ IDPool<B>::max_size() const
 		return end_ - beg_; 
 	return bm_.max_size() - beg_;
 }
-
+*/
 template<typename B>
 void 
 IDPool<B>::replay_transaction(char const* transaction_file)
 {
 	assert(0 != transaction_file);
-	
+
+	assert(0 == file_ && "disallow replay when file_ has been initiated");
+
 	FILE *tfile = fopen(transaction_file, "rb");
 
-	if(0 == tfile){ // no transaction files for replaying
-		//fprintf(stderr, "No transaction replay at %s\n", transaction_file);
-		errno = 0;
+	if(0 == tfile) // no transaction files for replaying
 		return;
-	}
-	
 
 	char line[21] = {0};		
 	B id;
@@ -165,7 +173,7 @@ IDPool<B>::replay_transaction(char const* transaction_file)
 
 template<typename B>
 void 
-IDPool<B>::init_transaction(char const* transaction_file) throw(std::runtime_error)
+IDPool<B>::init_transaction(char const* transaction_file)
 {
 	
 	assert(0 != transaction_file);
@@ -192,17 +200,25 @@ bool IDPool<B>::extend()
 	return true;
 }
 
+template<typename B>
+IDPool<B>::IDPool(B beg, B end)
+: beg_(beg), end_(end)
+{
+	assert(end >= beg);
+	bm_.resize(end_- beg_, true);
+}
 
 // ------------ IDValPool Impl ----------------
 
 template<typename B, typename V>
-IDValPool<B,V>::IDValPool(B beg, B end)
+IDValPool<B,V>::IDValPool(char const* tfile, B beg, B end)
 : super(beg, end), arr_(0)
 {
-	assert(end >= beg);
-
 	arr_ = new V[end - beg];
 	if(!arr_) throw std::bad_alloc();
+
+	replay_transaction(tfile);
+	super::init_transaction(tfile);
 }
 
 template<typename B, typename V>
@@ -259,6 +275,7 @@ template<typename B, typename V>
 void IDValPool<B,V>::replay_transaction(char const* transaction_file)
 {
 	assert(0 != transaction_file);
+	assert(0 == super::file_ && "disallow replay when file_ has been initiated");
 
 	FILE *tfile = fopen(transaction_file, "rb");
 
@@ -275,7 +292,7 @@ void IDValPool<B,V>::replay_transaction(char const* transaction_file)
 		sscanf(line + 1, "%lu\t%lu", &id, &val);
 		if('+' == line[0]){
 			if(super::bm_.size() <= id)
-				throw std::runtime_error("ID in trans file does not fit into idPool");
+				throw std::runtime_error("IDValPool: ID in trans file does not fit into idPool");
 			super::bm_[id] = false;
 			arr_[id] = val;
 		}else if('-' == line[0]){
@@ -286,7 +303,8 @@ void IDValPool<B,V>::replay_transaction(char const* transaction_file)
 	
 }
 
+/*
 template<typename B, typename V>
 size_t IDValPool<B, V>::block_size() const
-{ return super::block_size() + sizeof(V) * super::max_size(); }
-
+{ return (super::block_size())>>20 + sizeof(V) * (super::max_size()>>20); }
+*/

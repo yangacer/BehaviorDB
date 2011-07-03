@@ -42,10 +42,12 @@ namespace BDB {
 		if(0 != setvbuf(file_, 0, _IONBF, 0))
 			throw runtime_error("pool: setvbuf to pool file failed");
 
-		// init idPool
+		// setup idPool
 		sprintf(fname, "%s%04x.tran", trans_dir.c_str(), dirID);
-		idPool_.replay_transaction(fname);
-		idPool_.init_transaction(fname);
+		new (&idPool_) IDPool<AddrType>(fname, 0);
+
+		// idPool_.replay_transaction(fname);
+		// idPool_.init_transaction(fname);
 		
 	}
 	

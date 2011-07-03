@@ -7,10 +7,6 @@
 
 namespace BDB {
 
-	BDBImpl::BDBImpl()
-	: pools_(0), log_(0), global_id_(0)
-	{}
-
 	BDBImpl::BDBImpl(Config const & conf)
 	: pools_(0), log_(0), global_id_(0)
 	{
@@ -78,10 +74,10 @@ namespace BDB {
 		}
 
 		// init IDValPool
-		global_id_ = new IDValPool<AddrType, AddrType>(conf.beg, conf.end);
 		sprintf(fname, "%sglobal_id.trans", conf.root_dir);
-		global_id_->replay_transaction(fname);
-		global_id_->init_transaction(fname);
+		global_id_ = new IDValPool<AddrType, AddrType>(fname, conf.beg, conf.end);
+		//global_id_->replay_transaction(fname);
+		//global_id_->init_transaction(fname);
 	}
 	
 	AddrType
@@ -304,7 +300,7 @@ namespace BDB {
 	BDBImpl::mem_stat(MemStat *ms) const
 	{
 		// TODO variant<this, pool, IDPool, IDValPool> stat
-		ms->gid_mem_size = global_id_->block_size();
+		//ms->gid_mem_size = global_id_->block_size();
 		//for(int i=0; i<addrEval::dir_count(); ++i)
 		//	ms->pool_mem_size;
 
