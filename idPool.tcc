@@ -37,7 +37,7 @@ IDPool<B>::IDPool(char const* tfile, B beg, B end)
 
 template<typename B>
 IDPool<B>::~IDPool()
-{ if(*this) fclose(file_); }
+{ if(file_) fclose(file_); }
 
 template<typename B>
 IDPool<B>::operator void const*() const
@@ -270,10 +270,13 @@ void IDValPool<B,V>::replay_transaction(char const* transaction_file)
 	char line[21] = {0};		
 	B id; 
 	V val;
+	std::stringstream cvt;
 	while(fgets(line, 20, tfile)){
 		line[strlen(line)-1] = 0;
-		//id = strtoul(&line[1], 0, 10);
-		sscanf(line + 1, "%lu\t%lu", &id, &val);
+		cvt.clear();
+		cvt.str(line +1);
+		cvt>>id;
+		cvt>>val;
 		if('+' == line[0]){
 			if(super::bm_.size() <= id)
 				throw std::runtime_error("IDValPool: ID in trans file does not fit into idPool");

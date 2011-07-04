@@ -8,6 +8,7 @@
 #include <cstdio>
 #include <cerrno>
 #include <cassert>
+#include <sstream>
 #include "boost/dynamic_bitset.hpp"
 
 /// @todo TODO: Transaction file compression (snapshot).
