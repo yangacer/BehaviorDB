@@ -11,7 +11,6 @@
 #include "boost/dynamic_bitset.hpp"
 
 /// @todo TODO: Transaction file compression (snapshot).
-/// @todo TODO: Make IDPool self-constructable (configuration object?).
 template<typename BlockType = unsigned int>
 class IDPool
 {
@@ -21,8 +20,9 @@ public:
 
 	/** Default constructor
 	 * @desc Construct a IDPool that manages numerical ID.
-	 * @post A IDPool that its storage is a partially allocated 
-	 * dynamic bitmap. Legal ID range of this IDPool is <br/>
+	 * @post An IDPool without associated transaction file.
+	 * Clients can invoke init_transaction menually. Legal
+	 * ID range of this IDPool is
 	 * (0,  numeric_limits<BlockType>::max() - 1]. 
 	 * @throw std::bad_alloc
 	 */
@@ -30,10 +30,11 @@ public:
 	
 	/** Constructor for being given begin 
 	 * @desc Construct a IDPool that manages numerical ID.
+	 * @param trans_file name of a transaction file
 	 * @param beg user-defined ID begin number 
 	 * @pre beg < numric_limits<BlockType>::max()
 	 * @post A IDPool that its storage is a partially allocated 
-	 * dynamic bitmap. Legal ID range of this IDPool is <br/>
+	 * dynamic bitmap. Legal ID range of this IDPool is
 	 * (beg,  numeric_limits<BlockType>::max() - 1]. 
 	 * @throw std::bad_alloc
 	 */
@@ -41,11 +42,12 @@ public:
 
 	/** Constructor for being given begin and end
 	 * @desc Construct a IDPool that manages numerical ID.
+	 * @param trans_file name of a transaction file
 	 * @param beg user-defined ID begin number 
 	 * @param end user-defined ID end number 
 	 * @pre beg <= end
 	 * @post A IDPool that its storage is a partially allocated 
-	 * dynamic bitmap. Legal ID range of this IDPool is <br/>
+	 * dynamic bitmap. Legal ID range of this IDPool is
 	 * (beg, end]. 
 	 * @throw std::bad_alloc
 	 */	
@@ -55,25 +57,44 @@ public:
 
 	operator void const*() const;
 	
-	bool isAcquired(BlockType const& id) const;
+	/** Test if an ID already exists in an IDPool
+	 *  @param id
+	 */
+	bool 
+	isAcquired(BlockType const& id) const;
 
-	BlockType Acquire();
+	/** Acquire an ID from a IDPool.
+	 * @throw A write transaction error of type 
+	 * std::runtime_error.
+	 */
+	BlockType 
+	Acquire();
 	
-	int Release(BlockType const &id);
+	/** Release an ID
+	 *  @throw A write transaction error of type
+	 *  std::runtime_error
+	 */
+	int 
+	Release(BlockType const &id);
 
-	bool avail() const;
+	bool 
+	avail() const;
 	
-	BlockType next_used(BlockType curID) const;
+	/** Find the first acquired ID from curID which is included
+	 * @param curID Current ID
+	 * @remark The curID will be tested also.
+	 */
+	BlockType 
+	next_used(BlockType curID) const;
 
-	size_t size() const;
+	size_t 
+	size() const;
 	
-	// size_t block_size() const;
-
-	// size_t max_size() const;
+	void 
+	replay_transaction(char const* transaction_file);
 	
-	void replay_transaction(char const* transaction_file);
-	
-	void init_transaction(char const* transaction_file);
+	void 
+	init_transaction(char const* transaction_file);
 	
 	BlockType begin() const
 	{ return beg_; }
@@ -83,7 +104,7 @@ public:
 
 protected:
 	
-	bool extend();
+	void extend();
 	IDPool(BlockType beg, BlockType end);
 
 private:

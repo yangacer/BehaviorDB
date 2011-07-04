@@ -13,7 +13,8 @@ IDPool<B>::IDPool(char const* tfile, B beg)
 {
 	assert( 0 != tfile );
 	assert( beg_ <= end_ );
-	
+	assert((B)-1 > end_);
+
 	bm_.resize(4096, true);
 	
 	replay_transaction(tfile);
@@ -26,6 +27,7 @@ IDPool<B>::IDPool(char const* tfile, B beg, B end)
 {
 	assert(0 != tfile);
 	assert( beg_ <= end_ );	
+	assert((B)-1 > end_);
 
 	bm_.resize(end_- beg_, true);
 	
@@ -58,17 +60,19 @@ template<typename B>
 B
 IDPool<B>::Acquire()
 {
-	if(!*this) return -1;
+	assert(0 != *this);
 
 	B rt;
 	
 	// extend bitmap
 	if(Bitmap::npos == (rt = bm_.find_first())){
-		if(!full_alloc_ && 
-			!extend() && 
-			Bitmap::npos == (rt = bm_.find_first()) )
-		{
-			return -1;
+		if(!full_alloc_ ) {
+			try {
+				extend();  
+			}catch( std::bad_alloc const &e){
+				return -1;	
+			}
+			rt = bm_.find_first();
 		}
 	}
 	
@@ -123,21 +127,7 @@ template<typename B>
 size_t
 IDPool<B>::size() const
 { return bm_.size(); }
-/*
-template<typename B>
-size_t
-IDPool<B>::block_size() const
-{ return bm_.num_blocks() * sizeof(B); }
 
-template<typename B>
-size_t
-IDPool<B>::max_size() const
-{ 
-	if(full_alloc_)	
-		return end_ - beg_; 
-	return bm_.max_size() - beg_;
-}
-*/
 template<typename B>
 void 
 IDPool<B>::replay_transaction(char const* transaction_file)
@@ -188,16 +178,15 @@ IDPool<B>::init_transaction(char const* transaction_file)
 }
 
 template<typename B>
-bool IDPool<B>::extend()
+void IDPool<B>::extend()
 { 
 	Bitmap::size_type size = bm_.size();
 	size = (size<<1) -  (size>>1);
-	if( size < bm_.size() || size >= end_ - beg_){
-		bm_.resize(end_ - beg_, true);
-		return false;
-	}
+
+	if( size < bm_.size() || size >= end_ - beg_)
+		return;
+
 	bm_.resize(size, true); 
-	return true;
 }
 
 template<typename B>
@@ -234,21 +223,16 @@ B IDValPool<B,V>::Acquire(V const &val)
 
 	B rt;
 	
-	// extend bitmap
-	if(super::Bitmap::npos == (rt = super::bm_.find_first())){
+	if( super::Bitmap::npos == (rt = super::bm_.find_first()) )
 		return -1;
-	}
 	
 	if(0 > fprintf(super::file_, "+%lu\t%lu\n", rt, val) && errno)
 		throw std::runtime_error("IDValPool(Acquire): write transaction failure");
-	
 
 	super::bm_[rt] = false;
 	arr_[rt] = val;
 
 	return 	super::beg_ + rt;
-
-
 }
 
 template<typename B, typename V>
