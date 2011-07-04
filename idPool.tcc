@@ -277,6 +277,7 @@ void IDValPool<B,V>::replay_transaction(char const* transaction_file)
 		cvt.str(line +1);
 		cvt>>id;
 		cvt>>val;
+		assert(0 != cvt && "IDValPool: Read id-val pair failed");
 		if('+' == line[0]){
 			if(super::bm_.size() <= id)
 				throw std::runtime_error("IDValPool: ID in trans file does not fit into idPool");
