@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <cstring>
 #include <stdexcept>
+#include <cassert>
 
 namespace BDB {
 	
@@ -81,6 +82,7 @@ namespace BDB {
 			loc_addr *= Size;
 			if(-1 == fseeko(file_, loc_addr, SEEK_SET))
 				return -1;
+			assert(loc_addr == ftello(file_));
 			file_<<val;
 			if(ferror(file_)) return -1;
 			return 0;

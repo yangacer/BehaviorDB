@@ -130,8 +130,18 @@ public:
 
 	BlockType Acquire(ValueType const &val);
 	
+	/** Find value by ID
+	 * @param id
+	 * @pre id exists in an IDValPool (Test it by isAcquire())
+	 * @return Associated value
+	 */
 	ValueType Find(BlockType const &id) const;
-		
+	
+	/** Update value by ID
+	 * @param id
+	 * @param val
+	 * @pre id exists in an IDValPool (Test it by isAcquire())
+	 */
 	void Update(BlockType const& id, ValueType const &val);
 
 	void replay_transaction(char const* transaction_file);
