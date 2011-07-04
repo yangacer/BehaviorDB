@@ -18,4 +18,4 @@ add_test (basic_op bdb_test)
 install (TARGETS bdb LIBRARY DESTINATION lib
 		ARCHIVE DESTINATION lib)
 
-install (FILES bdb.hpp common.hpp DESTINATION include/bdb)
+install (FILES bdb.hpp common.hpp addr_iter.hpp DESTINATION include/bdb)
