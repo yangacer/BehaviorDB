@@ -126,7 +126,7 @@ namespace BDB
 		IDPool<AddrType> idPool_;
 
 		// header
-		fixed_pool<ChunkHeader> headerPool_;
+		fixed_pool<ChunkHeader, 8> headerPool_;
 	public:	
 		std::deque<std::pair<int,int> > err_;
 	};
