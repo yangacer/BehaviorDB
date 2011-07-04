@@ -69,7 +69,8 @@ namespace BDB {
 			loc_addr *= Size;
 			if(-1 == fseeko(file_, loc_addr, SEEK_SET))
 				return -1;
-			file_>>*val;
+			if( 0 == file_>>*val)
+				return -1;
 			if(ferror(file_)) return -1;
 			return 0;
 		}
@@ -83,7 +84,7 @@ namespace BDB {
 			if(-1 == fseeko(file_, loc_addr, SEEK_SET))
 				return -1;
 			assert(loc_addr == ftello(file_));
-			file_<<val;
+			if( 0 == file_<<val ) return -1;
 			if(ferror(file_)) return -1;
 			return 0;
 		}
