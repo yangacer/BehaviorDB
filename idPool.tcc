@@ -248,6 +248,8 @@ void IDValPool<B,V>::Update(B const& id, V const& val)
 {
 	assert(true == isAcquired(id) && "IDValPool: Test isAcquired before Update!");
 	
+	if(val == Find(id)) return;
+
 	if(0 > fprintf(super::file_, "+%lu\t%lu\n", id - super::beg_, val) && errno)
 		throw std::runtime_error("IDValPool(Update): write transaction failure");
 	
