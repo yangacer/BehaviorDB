@@ -98,14 +98,14 @@ int main()
 	AddrIterator iter = bdb.begin();
 	int i=0;
 	printf("\n==== iterating all data ==== \n");
-	/*
+	
 	while(iter != bdb.end()){
 		printf("should: %08x\n", addrs[i]);
 		printf("result: %08x\n", *iter);
 		++iter;	
 		++i;
 	}
-	*/
+	
 	// interleave accesing will invalid an iterator
 	// an out_of_range exception will be through
 	iter = bdb.begin();
