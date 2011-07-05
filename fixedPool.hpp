@@ -10,7 +10,7 @@
 
 namespace BDB {
 	
-	template<typename T, size_t Size = sizeof(T)>
+	template<typename T, size_t TextSize>
 	struct fixed_pool
 	{
 		typedef T value_type;
@@ -66,7 +66,7 @@ namespace BDB {
 			if(!*this) return -1;
 
 			off_t loc_addr = addr;
-			loc_addr *= Size;
+			loc_addr *= TextSize;
 			if(-1 == fseeko(file_, loc_addr, SEEK_SET))
 				return -1;
 			if( 0 == file_>>*val)
@@ -80,10 +80,10 @@ namespace BDB {
 			if(!*this) return -1;
 
 			off_t loc_addr = addr;
-			loc_addr *= Size;
+			loc_addr *= TextSize;
 			if(-1 == fseeko(file_, loc_addr, SEEK_SET))
 				return -1;
-			assert(loc_addr == ftello(file_));
+			//assert(loc_addr == ftello(file_));
 			if( 0 == file_<<val ) return -1;
 			if(ferror(file_)) return -1;
 			return 0;

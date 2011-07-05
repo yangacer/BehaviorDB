@@ -191,7 +191,7 @@ void IDPool<B>::extend()
 
 template<typename B>
 IDPool<B>::IDPool(B beg, B end)
-: beg_(beg), end_(end)
+: beg_(beg), end_(end), file_(0), bm_(), full_alloc_(true)
 {
 	assert(end >= beg);
 	bm_.resize(end_- beg_, true);

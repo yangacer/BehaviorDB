@@ -53,7 +53,7 @@ namespace BDB {
 		}
 
 		// init log
-		char fname[256];
+		char fname[256] = {};
 		if(conf.log_dir){
 			char const* log_dir = (*conf.log_dir) ? conf.log_dir : conf.root_dir;
 			if(strlen(log_dir) > 256){

@@ -3,13 +3,14 @@
 
 #include <string>
 #include "common.hpp"
+#include "export.hpp"
 
 namespace BDB {
 	
 	struct BDBImpl;
 	struct AddrIterator;
 
-	struct BehaviorDB
+	struct BDB_EXPORT BehaviorDB
 	{
 	        BehaviorDB(Config const & conf);
 		~BehaviorDB();
