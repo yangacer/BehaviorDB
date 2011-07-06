@@ -4,6 +4,7 @@
 #include <cstring>
 #include <string>
 #include <exception>
+#include <cassert>
 
 int main()
 {
@@ -18,11 +19,28 @@ int main()
 	// write
 	char const* data = "acer";
 	AddrType addr = bdb.put(data, 4);
-	printf("\n==== write 4 bytes ====\n");
+	AddrType addr2 = bdb.put(data, 4);
+	printf("\n==== write 4 bytes to two chunks ====\n");
 	printf("write \"%s\"\n", data);
 	printf("should: 00000001\n");
 	printf("result: %08x\n", addr);	
+	printf("write \"%s\"\n", data);
+	printf("should: 00000002\n");
+	printf("result: %08x\n", addr2);	
+
+	// read
+	char read[5] = {};
+	char read2[5] = {};
+	assert(0 < bdb.get(read, 4, addr));
+	assert(0 < bdb.get(read2,4, addr2)); 
+	printf("\n==== read 4 bytes from two chunks ====\n");
+	printf("should: %s\n", data);
+	printf("result: %s\n", read);
+	printf("should: %s\n", data);
+	printf("result: %s\n", read2);
 	
+	bdb.del(addr2);
+
 	// append include migration
 	char const *data2 = "1234567890asdfghjkl;12345678901234567890";
 	addr = bdb.put(data2, strlen(data2), addr);
