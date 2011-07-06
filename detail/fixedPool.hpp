@@ -69,7 +69,7 @@ namespace BDB {
 					throw invalid_argument(msg.c_str());
 				}
 			}
-			setvbuf(file_, 0, _IONBF, 0);
+			setvbuf(file_, fbuf_, _IOFBF, 4096);
 
 		}
 		
@@ -97,6 +97,7 @@ namespace BDB {
 				return -1;
 			if( 0 == file_<<val ) return -1;
 			if(ferror(file_)) return -1;
+			fflush(file_);
 			return 0;
 		}
 	
@@ -108,7 +109,8 @@ namespace BDB {
 	private:
 		unsigned int id_;
 		std::string work_dir_;
-		FILE* file_;		
+		FILE* file_;
+		char fbuf_[4096];
 	};
 }
 

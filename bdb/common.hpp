@@ -98,6 +98,9 @@ namespace BDB {
 		  ct_func(&default_capacity_test)
 		{ validate(); }
 		
+		/** @brief Validate configuration
+		 *  @throw invalid_argument
+		 */
 		void
 		validate() const;
 	};
