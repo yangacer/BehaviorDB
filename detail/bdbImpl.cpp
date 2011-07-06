@@ -3,6 +3,7 @@
 #include "error.hpp"
 #include "idPool.hpp"
 #include "addr_iter.hpp"
+#include "stat.hpp"
 #include <cassert>
 
 namespace BDB {
@@ -299,11 +300,9 @@ namespace BDB {
 	void
 	BDBImpl::mem_stat(MemStat *ms) const
 	{
-		// TODO variant<this, pool, IDPool, IDValPool> stat
-		//ms->gid_mem_size = global_id_->block_size();
-		//for(int i=0; i<addrEval::dir_count(); ++i)
-		//	ms->pool_mem_size;
-
+		if(!ms) return;
+		bdbStater bstat(ms);
+		bstat(this);
 	}
 	
 	void

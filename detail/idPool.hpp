@@ -10,7 +10,7 @@
 #include <cassert>
 #include <sstream>
 #include "boost/dynamic_bitset.hpp"
-
+#include "common.hpp"
 
 /// @todo TODO: Transaction file compression (snapshot).
 
@@ -19,6 +19,8 @@
 template<typename BlockType = unsigned int>
 class IDPool
 {
+	friend struct bdbStater;
+
 protected:
 	typedef boost::dynamic_bitset<> Bitmap;
 public:
@@ -106,6 +108,9 @@ public:
 
 	BlockType end() const
 	{ return end_; }
+	
+	size_t
+	num_blocks() const;
 
 protected:
 	
@@ -129,6 +134,7 @@ protected:
 template<typename BlockType, typename ValueType>
 class IDValPool : public IDPool<BlockType>
 {
+	friend struct bdbStater;
 	typedef IDPool<BlockType> super;
 public:
 	IDValPool(char const* trans_file, BlockType beg, BlockType end);

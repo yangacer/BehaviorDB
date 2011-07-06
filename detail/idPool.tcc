@@ -175,6 +175,11 @@ IDPool<B>::init_transaction(char const* transaction_file)
 
 }
 
+
+template<typename B>
+size_t IDPool<B>::num_blocks() const
+{ return bm_.num_blocks(); }
+
 template<typename B>
 void IDPool<B>::extend()
 { 

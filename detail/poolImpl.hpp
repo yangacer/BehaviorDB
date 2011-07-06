@@ -5,7 +5,6 @@
 #include "addr_eval.hpp"
 #include "fixedPool.hpp"
 #include "chunk.h"
-#include "idPool.hpp"
 #include <string>
 #include <cstdlib>
 #include <deque>
@@ -13,13 +12,17 @@
 
 #define MIGBUF_SIZ 2*1024*1024
 
+template<typename T> 
+struct IDPool;
+
 namespace BDB
 {
 	
 	struct viov;
-
 	struct pool
 	{
+		friend struct bdbStater;
+
 		struct config
 		{
 			unsigned int dirID;
@@ -123,7 +126,7 @@ namespace BDB
 		char mig_buf_[MIGBUF_SIZ];
 	private:	
 		// id file
-		IDPool<AddrType> idPool_;
+		IDPool<AddrType> *idPool_;
 
 		// header
 		fixed_pool<ChunkHeader, 8> headerPool_;

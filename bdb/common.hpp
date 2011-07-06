@@ -19,12 +19,13 @@
 
 #endif
 
-// TODO make sure this is OK in win
+/// TODO make sure this is OK in win
 #include <stddef.h>
+#include <stdint.h>
 
 namespace BDB {
 	
-	typedef unsigned int AddrType;
+	typedef uint32_t AddrType;
 	typedef size_t (*Chunk_size_est)(unsigned int dir, size_t min_size);
 
 	// Decide how many fragmentation is acceptiable for initial data insertion
@@ -107,9 +108,10 @@ namespace BDB {
 
 	struct MemStat
 	{
-		size_t gid_mem_size;
-		size_t pool_mem_size;
-		size_t io_buf_size;
+		unsigned long long gid_mem_size;
+		unsigned long long pool_mem_size;
+		MemStat():gid_mem_size(0), pool_mem_size(0)
+		{}
 	};
 
 	extern const size_t npos;

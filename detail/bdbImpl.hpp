@@ -11,12 +11,12 @@ class IDValPool;
 
 namespace BDB {
 	
-	
 	struct pool;
 	struct AddrIterator;	
 
 	struct BDBImpl 
 	{
+		friend struct bdbStater;
 		friend struct AddrIterator;
 
 	        BDBImpl(Config const & conf);

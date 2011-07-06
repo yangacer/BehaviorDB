@@ -1,5 +1,6 @@
 #include "error.hpp"
 #include "poolImpl.hpp"
+#include "idPool.hpp"
 #include "v_iovec.hpp"
 #include "boost/variant/apply_visitor.hpp"
 #include <cassert>
@@ -13,14 +14,14 @@ namespace BDB {
 	: dirID(0), 
 	  work_dir(), trans_dir(),
 	  //addrEval(0), 
-	  file_(0), idPool_(), headerPool_()
+	  file_(0), idPool_(0), headerPool_()
 	{}
 
 	pool::pool(pool::config const &conf)
 	: dirID(conf.dirID), 
 	  work_dir(conf.work_dir), trans_dir(conf.trans_dir), 
 	  //addrEval(conf.addrEval), 
-	  file_(0), idPool_(), headerPool_(conf.dirID, conf.header_dir)
+	  file_(0), idPool_(0), headerPool_(conf.dirID, conf.header_dir)
 	{
 		using namespace std;
 
@@ -44,15 +45,14 @@ namespace BDB {
 
 		// setup idPool
 		sprintf(fname, "%s%04x.tran", trans_dir.c_str(), dirID);
-		new (&idPool_) IDPool<AddrType>(fname, 0);
+		idPool_ = new IDPool<AddrType>(fname, 0);
 
-		// idPool_.replay_transaction(fname);
-		// idPool_.init_transaction(fname);
 		
 	}
 	
 	pool::~pool()
 	{
+		delete idPool_;
 		fclose(file_);
 	}
 	
@@ -68,7 +68,7 @@ namespace BDB {
 	{
 		assert(0 != *this && "pool is not proper initiated");
 		
-		if(!idPool_.avail()){
+		if(!idPool_->avail()){
 			// no space error
 			on_error(ADDRESS_OVERFLOW, __LINE__);
 			return -1;
@@ -76,26 +76,26 @@ namespace BDB {
 		
 		assert(true == addrEval::capacity_test(dirID, size));
 
-		AddrType loc_addr = idPool_.Acquire();
+		AddrType loc_addr = idPool_->Acquire();
 		ChunkHeader header;
 		header.size = size;
 		
 		if(-1 == headerPool_.write(header, loc_addr)){
 			// write failure
-			idPool_.Release(loc_addr);
+			idPool_->Release(loc_addr);
 			on_error(SYSTEM_ERROR, __LINE__);
 			return -1;
 		}
 		
 		if(-1 == seek(loc_addr)){
-			idPool_.Release(loc_addr);
+			idPool_->Release(loc_addr);
 			on_error(SYSTEM_ERROR, __LINE__);
 			return -1;
 		}
 
 		if(size != fwrite(data, 1, size, file_)){
 			// write failure
-			idPool_.Release(loc_addr);
+			idPool_->Release(loc_addr);
 			on_error(SYSTEM_ERROR, __LINE__);
 			return -1;
 		}
@@ -111,7 +111,7 @@ namespace BDB {
 		assert(0 != *this && "pool is not proper initiated");
 		
 		// TODO allow now!
-		if(!idPool_.isAcquired(addr)){
+		if(!idPool_->isAcquired(addr)){
 			// error: do not support until bitmap idpool available
 			on_error(NON_EXIST, __LINE__);
 			return -1;
@@ -168,7 +168,7 @@ namespace BDB {
 		// write new data
 		if(size != (partial = fwrite(data, 1, size, file_))){
 			if(partial) // intermediate state
-				idPool_.Release(addr);
+				idPool_->Release(addr);
 			on_error(SYSTEM_ERROR, __LINE__);
 			return -1;
 		}
@@ -176,7 +176,7 @@ namespace BDB {
 		// write buffered  moved data
 		if(moved && moved != (partial = fwrite(mig_buf_, 1, moved, file_))){
 			if(partial) // intermediate state
-				idPool_.Release(addr);
+				idPool_->Release(addr);
 			on_error(SYSTEM_ERROR, __LINE__);
 			return -1;
 		}
@@ -201,16 +201,16 @@ namespace BDB {
 		header.size = total;
 		
 
-		AddrType loc_addr = idPool_.Acquire();
+		AddrType loc_addr = idPool_->Acquire();
 		
 		if(-1 == headerPool_.write(header, loc_addr)){
-			idPool_.Release(loc_addr);
+			idPool_->Release(loc_addr);
 			on_error(SYSTEM_ERROR, __LINE__);
 			return -1;
 		}
 		
 		if( -1 == seek(loc_addr) ){
-			idPool_.Release(loc_addr);
+			idPool_->Release(loc_addr);
 			on_error(SYSTEM_ERROR, __LINE__);
 			return -1;
 		}
@@ -226,7 +226,7 @@ namespace BDB {
 			if( vv[i].size && 
 			    0 == boost::apply_visitor(wv, vv[i].data)){
 				// error handle
-				idPool_.Release(loc_addr);
+				idPool_->Release(loc_addr);
 				on_error(SYSTEM_ERROR, __LINE__);
 				return -1;
 			}
@@ -241,7 +241,7 @@ namespace BDB {
 	{
 		assert(0 != *this && "pool is not proper initiated");
 
-		if(!idPool_.isAcquired(addr)){
+		if(!idPool_->isAcquired(addr)){
 			on_error(NON_EXIST, __LINE__);
 			return -1;
 		}
@@ -260,19 +260,19 @@ namespace BDB {
 		
 		// update header 
 		if(-1 == headerPool_.write(loc_header, addr)){
-			idPool_.Release(addr);
+			idPool_->Release(addr);
 			on_error(SYSTEM_ERROR, __LINE__);
 			return -1;
 		}
 		
 		if(-1 == seek(addr, 0)){
-			idPool_.Release(addr);
+			idPool_->Release(addr);
 			on_error(SYSTEM_ERROR, __LINE__);
 			return -1;
 		}
 		
 		if(size != fwrite(data, 1, size, file_)){
-			idPool_.Release(addr);
+			idPool_->Release(addr);
 			on_error(SYSTEM_ERROR, __LINE__);
 			return -1;
 		}
@@ -285,7 +285,7 @@ namespace BDB {
 	pool::read(char* buffer, size_t size, AddrType addr, size_t off, ChunkHeader const* header)
 	{
 		assert(0 != *this && "pool is not proper initiated");
-		if(!idPool_.isAcquired(addr)){
+		if(!idPool_->isAcquired(addr)){
 			on_error(NON_EXIST, __LINE__);
 			return -1;
 		}
@@ -387,7 +387,7 @@ namespace BDB {
 			return -1;
 		}
 
-		idPool_.Release(src_addr);
+		idPool_->Release(src_addr);
 		return loc_addr;
 	}
 
@@ -396,8 +396,8 @@ namespace BDB {
 	{ 
 		assert(0 != *this && "pool is not proper initiated");
 
-		if(idPool_.isAcquired(addr))
-			idPool_.Release(addr);
+		if(idPool_->isAcquired(addr))
+			idPool_->Release(addr);
 		else {
 			on_error(NON_EXIST, __LINE__);
 			return -1;
@@ -410,7 +410,7 @@ namespace BDB {
 	{ 
 		assert(0 != *this && "pool is not proper initiated");
 
-		if(!idPool_.isAcquired(addr)){
+		if(!idPool_->isAcquired(addr)){
 			on_error(NON_EXIST, __LINE__);
 			return -1;
 		}

@@ -140,6 +140,7 @@ int main()
 	
 	MemStat ms;
 	bdb.mem_stat(&ms);
-	//printf("gid memory usage: %lu\n", ms.gid_mem_size);
+	printf("gid memory usage: %4uMB\n", ms.gid_mem_size>>20);
+	printf("pool memory usage: %4uMB\n", ms.pool_mem_size>>20);
 	return 0;	
 }
