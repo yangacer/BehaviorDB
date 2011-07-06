@@ -114,6 +114,7 @@ namespace BDB {
 	};
 
 	extern const size_t npos;
+	extern char const* VERSION;
 
 } // end of nemaespace BDB
 

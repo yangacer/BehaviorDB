@@ -4,6 +4,7 @@ cmake_minimum_required(VERSION 2.8)
 #include (CTest)
 #set (CTEST_PROJECT_NAME "BehaviorDB-Testing")
 
+
 add_subdirectory( detail )
 
 include_directories( ${PROJECT_SOURCE_DIR}/bdb)

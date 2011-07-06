@@ -1,10 +1,12 @@
 #include "common.hpp"
+#include "version.hpp"
 #include <stdexcept>
 #include <limits>
 
 namespace BDB {
 	
 	const size_t npos(std::numeric_limits<size_t>::max());
+	char const* VERSION("bdb-"BDB_VERSION_);
 
 	void
 	Config::validate() const

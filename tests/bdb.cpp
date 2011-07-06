@@ -10,6 +10,9 @@ int main()
 {
 	using namespace BDB;
 	
+	printf("==== BehaviorDB Testing ====\n");
+	printf("version: %s\n", BDB::VERSION);
+
 	Config conf;
 	conf.root_dir = "tmp/";
 
@@ -31,8 +34,9 @@ int main()
 	// read
 	char read[5] = {};
 	char read2[5] = {};
-	assert(0 < bdb.get(read, 4, addr));
-	assert(0 < bdb.get(read2,4, addr2)); 
+	
+	bdb.get(read, 4, addr);	
+	bdb.get(read2,4, addr2);
 	printf("\n==== read 4 bytes from two chunks ====\n");
 	printf("should: %s\n", data);
 	printf("result: %s\n", read);

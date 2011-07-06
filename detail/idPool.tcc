@@ -69,7 +69,7 @@ IDPool<B>::Acquire()
 		if(!full_alloc_ ) {
 			try {
 				extend();  
-			}catch( std::bad_alloc const &e){
+			}catch(...){
 				return -1;	
 			}
 			rt = bm_.find_first();

@@ -1,12 +1,11 @@
-#ifndef BDB_EXPORT_H_
-#define BDB_EXPORT_H_
+#ifndef BDB_BDB_EXPORT_H_
+#define BDB_BDB_EXPORT_H_
 
 #include "version.hpp"
-#pragma message ("Exporter invoked")
 
 #ifdef __GNUC__
-#define EXPORT_SPEC  //__attribute__ ((visibility("default")))
-#define IMPORT_SPEC  //__attribute__ ((visibility("hidden")))
+#define EXPORT_SPEC  __attribute__ ((visibility("default")))
+#define IMPORT_SPEC  __attribute__ ((visibility("hidden")))
 #endif 
 
 #ifdef _WIN32
@@ -19,19 +18,19 @@
 #endif
 
 #ifdef BDB_MAKE_DLL
-#pragma message ("Create shared yaks lib with version "BDB_VERSION_ )
-#define BDB_EXPORT EXPORT_SPEC //__declspec(dllexport)
+#pragma message ("Create shared bdb lib with version "BDB_VERSION_ )
+#define BDB_EXPORT EXPORT_SPEC
 #endif
 
 #ifdef BDB_STATIC
-#pragma message ("Create static yaks lib with version "BDB_VERSION_)
+#pragma message ("Create static bdb lib with version "BDB_VERSION_)
 #define BDB_EXPORT 
 #endif
 
 
 #ifdef BDB_DLL
 #pragma message ("Link with shared yaks lib " BDB_VERSION_ "(dll required)")
-#define BDB_EXPORT IMPORT_SPEC //__declspec(dllimport)
+#define BDB_EXPORT IMPORT_SPEC 
 #elif !defined(BDB_STATIC) && !defined(BDB_MAKE_DLL) 
 #pragma message ("You must define BDB_DLL when compile your code with dll version yaks lib.")
 #pragma message ("If you are using a static version, just ignore this warning.")

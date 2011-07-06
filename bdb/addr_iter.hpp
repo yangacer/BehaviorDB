@@ -1,12 +1,14 @@
 #ifndef _ADDR_ITER_HPP
 #define _ADDR_ITER_HPP
+
+#include "export.hpp"
 #include "common.hpp"
 
 namespace BDB {
 
 	struct BDBImpl;
-
-	struct AddrIterator 
+	
+	struct BDB_EXPORT AddrIterator 
 	{
 		friend struct BDBImpl;
 

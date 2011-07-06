@@ -1,9 +1,7 @@
 
-option(BUILD_SHARED_BDB "Build shared library" OFF)
+option(BUILD_SHARED_LIB "Build shared library" OFF)
 
-set(LIB_TYPE STATIC)
-
-if(BUILD_SHARED_BDB)
+if(BUILD_SHARED_LIB)
 	set(LIB_TYPE SHARED)
 	add_definitions (-DBDB_MAKE_DLL)
 else()
@@ -11,7 +9,7 @@ else()
 	add_definitions (-DBDB_STATIC)
 endif()
 
-include_directories( ${PROJECT_SOURCE_DIR}/bdb /usr/local/include )
+include_directories( ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/bdb /usr/local/include )
 
 add_library( bdb ${LIB_TYPE}
 	common.cpp chunk.cpp 

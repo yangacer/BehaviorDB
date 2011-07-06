@@ -2,8 +2,8 @@
 #define _BDB_HPP
 
 #include <string>
-#include "common.hpp"
 #include "export.hpp"
+#include "common.hpp"
 
 namespace BDB {
 	
