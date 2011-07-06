@@ -60,7 +60,7 @@ template<typename B>
 B
 IDPool<B>::Acquire()
 {
-	assert(0 != *this);
+	assert(0 != this);
 
 	B rt;
 	
@@ -88,7 +88,7 @@ template<typename B>
 int
 IDPool<B>::Release(B const &id)
 {
-	assert(0 != *this);
+	assert(0 != this);
 	
 	if(id - beg_ >= bm_.size())
 		return -1;
@@ -105,7 +105,6 @@ template<typename B>
 bool 
 IDPool<B>::avail() const
 { 
-	assert(0 != *this);
 	return bm_.any();
 }
 
@@ -113,7 +112,6 @@ template<typename B>
 B
 IDPool<B>::next_used(B curID) const
 {
-	assert(0 != *this);
 	if(curID >= end_ ) return end_;
 	while(curID != end_){
 		if(false == bm_[curID - beg_])
@@ -293,8 +291,3 @@ void IDValPool<B,V>::replay_transaction(char const* transaction_file)
 	
 }
 
-/*
-template<typename B, typename V>
-size_t IDValPool<B, V>::block_size() const
-{ return (super::block_size())>>20 + sizeof(V) * (super::max_size()>>20); }
-*/

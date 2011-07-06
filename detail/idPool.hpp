@@ -11,7 +11,11 @@
 #include <sstream>
 #include "boost/dynamic_bitset.hpp"
 
+
 /// @todo TODO: Transaction file compression (snapshot).
+
+/** @brief Integer ID manager within bitmap storage.
+ */
 template<typename BlockType = unsigned int>
 class IDPool
 {
@@ -120,6 +124,8 @@ protected:
 
 };
 
+/** @brief Extend IDPool<B> for associating a value with a ID.
+ */
 template<typename BlockType, typename ValueType>
 class IDValPool : public IDPool<BlockType>
 {
@@ -127,7 +133,11 @@ class IDValPool : public IDPool<BlockType>
 public:
 	IDValPool(char const* trans_file, BlockType beg, BlockType end);
 	~IDValPool();
-
+	
+	/** Acquire an ID and associate a value with the ID
+	 * @param val
+	 * @return ID
+	 */
 	BlockType Acquire(ValueType const &val);
 	
 	/** Find value by ID

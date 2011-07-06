@@ -10,6 +10,10 @@
 
 namespace BDB {
 	
+	/** @brief Fixed size data pool
+	 *  @tparam T data type
+	 *  @tparam TextSize Size of "serializaed" data
+	 */
 	template<typename T, size_t TextSize>
 	struct fixed_pool
 	{
@@ -35,7 +39,15 @@ namespace BDB {
 			if(!file_) return 0;
 			return this;
 		}
-
+		
+		/** Open pool file
+		 * @param id 		 
+		 * @param work_dir
+		 * @throw length_error For overflowed pathname
+		 * @throw invalid_argument For invalid pathname
+		 * @remark If id is 1, then this object will be 
+		 * associated with a file "0001.fpo".
+		 */
 		void
 		open(unsigned int id, char const* work_dir)
 		{
@@ -60,7 +72,7 @@ namespace BDB {
 			setvbuf(file_, 0, _IONBF, 0);
 
 		}
-
+		
 		int read(T* val, AddrType addr) const
 		{
 			if(!*this) return -1;
@@ -83,12 +95,11 @@ namespace BDB {
 			loc_addr *= TextSize;
 			if(-1 == fseeko(file_, loc_addr, SEEK_SET))
 				return -1;
-			//assert(loc_addr == ftello(file_));
 			if( 0 == file_<<val ) return -1;
 			if(ferror(file_)) return -1;
 			return 0;
 		}
-		
+	
 		std::string
 		dir() const 
 		{
