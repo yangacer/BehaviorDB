@@ -4,10 +4,10 @@
 #include "common.hpp"
 
 template <typename T>
-struct IDPool;
+class IDPool;
 
 template <typename T, typename U>
-struct IDValPool;
+class IDValPool;
 
 namespace BDB {
 

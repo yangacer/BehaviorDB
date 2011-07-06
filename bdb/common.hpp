@@ -21,11 +21,10 @@
 
 /// TODO make sure this is OK in win
 #include <stddef.h>
-#include <stdint.h>
 
 namespace BDB {
 	
-	typedef uint32_t AddrType;
+	typedef unsigned int AddrType;
 	typedef size_t (*Chunk_size_est)(unsigned int dir, size_t min_size);
 
 	// Decide how many fragmentation is acceptiable for initial data insertion

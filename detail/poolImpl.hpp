@@ -13,7 +13,7 @@
 #define MIGBUF_SIZ 2*1024*1024
 
 template<typename T> 
-struct IDPool;
+class IDPool;
 
 namespace BDB
 {

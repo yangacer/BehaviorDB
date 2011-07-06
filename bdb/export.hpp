@@ -2,6 +2,7 @@
 #define BDB_EXPORT_H_
 
 #include "version.hpp"
+#pragma message ("Exporter invoked")
 
 #ifdef __GNUC__
 #define EXPORT_SPEC  //__attribute__ ((visibility("default")))
