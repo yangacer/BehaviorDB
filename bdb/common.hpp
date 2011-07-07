@@ -104,16 +104,24 @@ namespace BDB {
 		void
 		validate() const;
 	};
-
+	
+	/// Memory Statistic
 	struct MemStat
 	{
+		/// global ID table byte size
 		unsigned long long gid_mem_size;
+
+		/// pool byte size
 		unsigned long long pool_mem_size;
+
 		MemStat():gid_mem_size(0), pool_mem_size(0)
 		{}
 	};
-
+	
+	/// Not a Position
 	extern const size_t npos;
+
+	/// Version information
 	extern char const* VERSION;
 
 } // end of nemaespace BDB

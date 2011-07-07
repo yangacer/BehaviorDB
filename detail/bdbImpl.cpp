@@ -5,6 +5,7 @@
 #include "addr_iter.hpp"
 #include "stat.hpp"
 #include <cassert>
+#include <stdexcept>
 
 namespace BDB {
 
@@ -57,28 +58,20 @@ namespace BDB {
 		char fname[256] = {};
 		if(conf.log_dir){
 			char const* log_dir = (*conf.log_dir) ? conf.log_dir : conf.root_dir;
-			if(strlen(log_dir) > 256){
-				fprintf(stderr, "length of pool_dir string is too long\n");
-				exit(1);
-			}
+			if(strlen(log_dir) > 256)
+				throw std::length_error("length of pool_dir string is too long\n");
 
 			sprintf(fname, "%serror.log", log_dir);
-			if(0 == (log_ = fopen(fname, "ab"))){
-				fprintf(stderr, "create log file failed\n");
-				exit(1);
-
-			}
-			if(0 != setvbuf(log_, log_buf_, _IOLBF, 256)){
-				fprintf(stderr, "setvbuf to log file failed\n");
-				exit(1);
-			}
+			if(0 == (log_ = fopen(fname, "ab")))
+				throw std::runtime_error("create log file failed\n");
+		
+			if(0 != setvbuf(log_, log_buf_, _IOLBF, 256))
+				throw std::runtime_error("setvbuf to log file failed\n");
 		}
 
 		// init IDValPool
 		sprintf(fname, "%sglobal_id.trans", conf.root_dir);
 		global_id_ = new IDValPool<AddrType, AddrType>(fname, conf.beg, conf.end);
-		//global_id_->replay_transaction(fname);
-		//global_id_->init_transaction(fname);
 	}
 	
 	AddrType
@@ -90,11 +83,7 @@ namespace BDB {
 		AddrType rt(0);
 		while(dir < addrEval::dir_count()){
 			rt = pools_[dir].write(data, size);
-			if(rt != -1){ 
-				// error(dir);
-				// return -1;
-				break;
-			}
+			if(rt != -1)	break;
 			dir++;
 		}
 		
