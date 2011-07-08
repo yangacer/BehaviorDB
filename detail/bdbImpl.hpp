@@ -66,7 +66,7 @@ namespace BDB {
 		AddrIterator
 		end() const;
 		
-		void mem_stat(MemStat* ms) const;
+		void stat(Stat* s) const;
 
 	private: // disable interfaces
 		BDBImpl(BDBImpl const& cp);

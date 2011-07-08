@@ -94,6 +94,9 @@ public:
 	BlockType 
 	next_used(BlockType curID) const;
 
+	BlockType
+	max_used() const;
+
 	size_t 
 	size() const;
 	
@@ -111,7 +114,7 @@ public:
 	
 	size_t
 	num_blocks() const;
-
+	
 protected:
 	
 	void extend();
@@ -126,7 +129,7 @@ protected:
 	FILE*  file_;
 	Bitmap bm_;
 	bool full_alloc_;
-
+	BlockType max_used_;
 };
 
 /** @brief Extend IDPool<B> for associating a value with a ID.

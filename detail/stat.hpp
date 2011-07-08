@@ -16,7 +16,7 @@ namespace BDB {
 
 	struct bdbStater 
 	{
-		bdbStater(MemStat *ms);
+		bdbStater(Stat *s);
 
 		unsigned long long 
 		operator()(BDBImpl const* bdb) const;
@@ -30,7 +30,7 @@ namespace BDB {
 		unsigned long long 
 		operator()( IDValPool<AddrType, AddrType> const *idvp) const;
 
-		MemStat *ms;
+		Stat *s;
 	};
 
 } // end of namespace BDB

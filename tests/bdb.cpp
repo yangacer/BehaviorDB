@@ -142,9 +142,9 @@ int main()
 	bdb.del(addrs[1]);
 	bdb.del(addrs[2]);
 	
-	MemStat ms;
-	bdb.mem_stat(&ms);
-	printf("gid memory usage: %4uMB\n", ms.gid_mem_size>>20);
-	printf("pool memory usage: %4uMB\n", ms.pool_mem_size>>20);
+	Stat stat;
+	bdb.stat(&stat);
+	printf("gid memory usage: %4uMB\n", stat.gid_mem_size>>20);
+	printf("pool memory usage: %4uMB\n", stat.pool_mem_size>>20);
 	return 0;	
 }

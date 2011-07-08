@@ -77,7 +77,7 @@ namespace BDB {
 		AddrIterator
 		end() const;
 		
-		void mem_stat(MemStat * ms) const;
+		void stat(Stat * ms) const;
 
 	private:
 		BehaviorDB(BehaviorDB const& cp);

@@ -2,14 +2,15 @@
 
 template<typename B>
 IDPool<B>::IDPool()
-: beg_(0), end_(0), file_(0), bm_(), full_alloc_(false)
+: beg_(0), end_(0), file_(0), bm_(), full_alloc_(false), max_used_(0)
 {
 	// bm_.resize(4096, true);
 }
 
 template<typename B>
 IDPool<B>::IDPool(char const* tfile, B beg)
-: beg_(beg), end_(std::numeric_limits<B>::max()-1), file_(0), bm_(), full_alloc_(false)
+: beg_(beg), end_(std::numeric_limits<B>::max()-1), 
+file_(0), bm_(), full_alloc_(false), max_used_(0)
 {
 	assert( 0 != tfile );
 	assert( beg_ <= end_ );
@@ -23,7 +24,7 @@ IDPool<B>::IDPool(char const* tfile, B beg)
 
 template<typename B>
 IDPool<B>::IDPool(char const* tfile, B beg, B end)
-: beg_(beg), end_(end), file_(0), bm_(), full_alloc_(true)
+: beg_(beg), end_(end), file_(0), bm_(), full_alloc_(true), max_used_(0)
 {
 	assert(0 != tfile);
 	assert( beg_ <= end_ );	
@@ -33,6 +34,14 @@ IDPool<B>::IDPool(char const* tfile, B beg, B end)
 	
 	replay_transaction(tfile);
 	init_transaction(tfile);
+}
+
+template<typename B>
+IDPool<B>::IDPool(B beg, B end)
+: beg_(beg), end_(end), file_(0), bm_(), full_alloc_(true), max_used_(0)
+{
+	assert(end >= beg);
+	bm_.resize(end_- beg_, true);
 }
 
 template<typename B>
@@ -80,7 +89,9 @@ IDPool<B>::Acquire()
 		throw std::runtime_error("IDPool(Acquire): write transaction failure");
 
 	bm_[rt] = false;
-	
+
+	if(beg_ + rt > max_used_) max_used_ = beg_ + rt;
+
 	return 	beg_ + rt;
 }
 	
@@ -122,6 +133,11 @@ IDPool<B>::next_used(B curID) const
 }
 
 template<typename B>
+B
+IDPool<B>::max_used() const
+{ return max_used_; }
+
+template<typename B>
 size_t
 IDPool<B>::size() const
 { return bm_.size(); }
@@ -152,6 +168,7 @@ IDPool<B>::replay_transaction(char const* transaction_file)
 					extend();
 			}
 			bm_[id] = false;
+			if(max_used_ < id) max_used_ = id;
 		}else if('-' == line[0]){
 			bm_[id] = true;
 		}
@@ -192,14 +209,6 @@ void IDPool<B>::extend()
 	bm_.resize(size, true); 
 }
 
-template<typename B>
-IDPool<B>::IDPool(B beg, B end)
-: beg_(beg), end_(end), file_(0), bm_(), full_alloc_(true)
-{
-	assert(end >= beg);
-	bm_.resize(end_- beg_, true);
-}
-
 // ------------ IDValPool Impl ----------------
 
 template<typename B, typename V>
@@ -233,6 +242,10 @@ B IDValPool<B,V>::Acquire(V const &val)
 		throw std::runtime_error("IDValPool(Acquire): write transaction failure");
 
 	super::bm_[rt] = false;
+
+	if(super::beg_ + rt > super::max_used_)
+		super::max_used_ = super::beg_ + rt;
+
 	arr_[rt] = val;
 
 	return 	super::beg_ + rt;
@@ -287,6 +300,8 @@ void IDValPool<B,V>::replay_transaction(char const* transaction_file)
 				throw std::runtime_error("IDValPool: ID in trans file does not fit into idPool");
 			super::bm_[id] = false;
 			arr_[id] = val;
+			if(id > super::max_used_)
+				super::max_used_ = id;
 		}else if('-' == line[0]){
 			super::bm_[id] = true;
 		}

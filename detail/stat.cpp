@@ -4,8 +4,8 @@
 #include "idPool.hpp"
 namespace BDB {
 	
-	bdbStater::bdbStater(MemStat *ms)
-	: ms(ms)
+	bdbStater::bdbStater(Stat *s)
+	: s(s)
 	{}
 
 	unsigned long long 
@@ -13,11 +13,11 @@ namespace BDB {
 	{
 		unsigned long long rt(0);
 
-		rt = ms->gid_mem_size = (*this)(bdb->global_id_);
+		rt = s->gid_mem_size = (*this)(bdb->global_id_);
 		for(size_t i=0;i<addr_eval<AddrType>::dir_count();++i){
-			ms->pool_mem_size += (*this)(bdb->pools_ + i);
+			s->pool_mem_size += (*this)(bdb->pools_ + i);
 		}
-		rt += ms->pool_mem_size;
+		rt += s->pool_mem_size;
 		return rt;
 	}
 

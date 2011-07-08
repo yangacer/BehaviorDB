@@ -105,8 +105,8 @@ namespace BDB {
 		validate() const;
 	};
 	
-	/// Memory Statistic
-	struct MemStat
+	/// Memory/Disk Statistic
+	struct Stat
 	{
 		/// global ID table byte size
 		unsigned long long gid_mem_size;
@@ -114,7 +114,7 @@ namespace BDB {
 		/// pool byte size
 		unsigned long long pool_mem_size;
 
-		MemStat():gid_mem_size(0), pool_mem_size(0)
+		Stat():gid_mem_size(0), pool_mem_size(0)
 		{}
 	};
 	

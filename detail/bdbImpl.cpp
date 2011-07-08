@@ -287,10 +287,10 @@ namespace BDB {
 	}
 
 	void
-	BDBImpl::mem_stat(MemStat *ms) const
+	BDBImpl::stat(Stat *s) const
 	{
-		if(!ms) return;
-		bdbStater bstat(ms);
+		if(!s) return;
+		bdbStater bstat(s);
 		bstat(this);
 	}
 	

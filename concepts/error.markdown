@@ -43,7 +43,7 @@ According to write(2) man pages. Errors may occur after writing are listed as fo
 	<td>[EINVAL]</td>
 	<td>The pointer associated with d was negative. </td>
 	<td>Init file pointer in CTOR with 0.</td>
-	<td>Operation is aborted. Error state that can be recover via reconstruct a BehaviorDB with different configurations.<td/>
+	<td>Error state that can be recover via reconstruct a BehaviorDB with different configurations.<td/>
 	<td>Yes</td>
 </tr>
 
@@ -58,7 +58,7 @@ According to write(2) man pages. Errors may occur after writing are listed as fo
 <tr>
 	<td>[EDQUOT]</td>
 	<td>The user’s quota of disk blocks on the file system containing the file has been exhausted.</td>
-	<td>Check after every write. No throw. Set <storng>BehaviorDB::nospace</strong> flag.</td>
+	<td>Check after every write. No throw. Set <strong>BehaviorDB::nospace</strong> flag.</td>
 	<td>Operation is aborted. Error-safe state.</td>
 	<td>No</td>
 </tr>
@@ -94,4 +94,41 @@ According to write(2) man pages. Errors may occur after writing are listed as fo
 <del>[EPIPE]            An attempt is made to write to a socket of type SOCK_STREAM that is not connected to a peer socket.</del></br>
 <del>[EAGAIN]           The file was marked for non‐blocking I/O, and no data could be written immediately.</del></br>
 <del>[EROFS]            An attempt was made to write over a disk label area at the beginning of a slice. Use disklabel(8) -W to enable writing on the disk label area.<del>
+
+##Seek Failure
+
+According to lseek man pages. Errors may occur after writing are listed as follows
+(deleted errors are notconsidered by BehaviorDB).
+
+<table>
+<thead>
+	<tr>
+		<th>Error</th>
+		<th>Desc</th>
+		<th>Handling</th>
+		<th>Postcondition</th>
+		<th>Impl</th>
+	</tr>
+</thead>
+<tbody>
+<tr>
+	<td>[EBADF]</td>
+	<td>The stream argument is not a seekable stream.</td>
+	<td>Check fopen immediately. Throw <strong>std::runtime_error</strong> if fopen is failed.</td>
+	<td>Error state that can be recover via reconstruct a BehaviorDB with different configurations.</td>
+	<td>Yes</td>
+</tr>
+<tr>
+	<td>[EOVERFLOW]</td>
+	<td>The resulting file offset would be a value which cannot be represented correctly in an object of type off_t for fseeko() and ftello() or long for fseek() and ftell().<.td>
+	<td>Prevent by Config::validate().</td>
+	<td>Error state that can be recover via reconstruct a BehaviorDB with different configurations.</td>
+	<td>Yes</td>
+</tr>
+</tbody>
+</table>
+
+<del>[EINVAL]	The whence argument is invalid or the resulting file position indicator would be set to a negative value.</del>
+<del>[ESPIPE]           The file descriptor underlying stream is associated with a pipe or FIFO or file‐position indicator value is unspecified (see ungetc(3)).</del>
+
 
