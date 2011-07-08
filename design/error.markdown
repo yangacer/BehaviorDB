@@ -18,7 +18,7 @@ According to write(2) man pages. Errors may occur after writing are listed as fo
 <tr>
 	<td>[EBADF]</td>
 	<td>The d argument is not a valid descriptor open forwriting.</td>
-	<td>Check fopen immediately. Throw __std::runtime_error__ if fopen is failed.</td>
+	<td>Check fopen immediately. Throw <strong>std::runtime_error</strong> if fopen is failed.</td>
 	<td>Error state that can be recover via reconstruct a BehaviorDB with different configurations.</td>
 	<td>Yes</td>
 </tr>
@@ -26,7 +26,7 @@ According to write(2) man pages. Errors may occur after writing are listed as fo
 <tr>
 	<td>[EFBIG]</td>
 	<td>An attempt was made to write a file that exceeds the process’s file size limit or the maximum file size.</td>
-	<td>Check after every write. Throw __BDB::E_EPMFS__ (Exceed Process Maximum File Size) if this errno is set.</td>
+	<td>Check after every write. Throw <strong>BDB::E_EPMFS</strong> (Exceed Process Maximum File Size) if this errno is set.</td>
 	<td>Program termination if the exception is not handled by clients.</td>
 	<td>No</td>
 </tr>
@@ -34,7 +34,7 @@ According to write(2) man pages. Errors may occur after writing are listed as fo
 <tr>
 	<td>[EFAULT]</td>
 	<td>Part of iov or data to be written to the file points outside the process’s allocated address space.</td>
-	<td>Check after every write. Throw __BDB::E_ROPAD__ (Read Out of Process Address) if this errno is set.</td>
+	<td>Check after every write. Throw <strong>BDB::E_ROPAD</strong> (Read Out of Process Address) if this errno is set.</td>
 	<td>Program termination if the exception is not handled by clients.</td>
 	<td>No</td>
 </tr>
@@ -50,7 +50,7 @@ According to write(2) man pages. Errors may occur after writing are listed as fo
 <tr>
 	<td>[ENOSPC]</td>
 	<td>There is no free space remaining on the file system containing the file.</td>
-	<td>Check after every write. No throw. Set BehaviorDB::nospace flag.</td>
+	<td>Check after every write. No throw. Set <strong>BehaviorDB::nospace</strong> flag.</td>
 	<td>Operation is aborted. Error-safe state.</td>
 	<td>No</td>
 </tr>
@@ -58,7 +58,7 @@ According to write(2) man pages. Errors may occur after writing are listed as fo
 <tr>
 	<td>[EDQUOT]</td>
 	<td>The user’s quota of disk blocks on the file system containing the file has been exhausted.</td>
-	<td>Check after every write. No throw. Set BehaviorDB::nospace flag.</td>
+	<td>Check after every write. No throw. Set <storng>BehaviorDB::nospace</strong> flag.</td>
 	<td>Operation is aborted. Error-safe state.</td>
 	<td>No</td>
 </tr>
