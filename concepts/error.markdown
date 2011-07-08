@@ -90,10 +90,13 @@ According to write(2) man pages. Errors may occur after writing are listed as fo
 
 </table>
 
-<del>[EPIPE]            An attempt is made to write to a pipe that is not open for reading by any process.</del></br>
-<del>[EPIPE]            An attempt is made to write to a socket of type SOCK_STREAM that is not connected to a peer socket.</del></br>
-<del>[EAGAIN]           The file was marked for non‐blocking I/O, and no data could be written immediately.</del></br>
-<del>[EROFS]            An attempt was made to write over a disk label area at the beginning of a slice. Use disklabel(8) -W to enable writing on the disk label area.<del>
+<del>[EPIPE]            An attempt is made to write to a pipe that is not open for reading by any process.</del>
+
+<del>[EPIPE]            An attempt is made to write to a socket of type SOCK_STREAM that is not connected to a peer socket.</del>
+
+<del>[EAGAIN]           The file was marked for non‐blocking I/O, and no data could be written immediately.</del>
+
+<del>[EROFS]            An attempt was made to write over a disk label area at the beginning of a slice. Use disklabel(8) -W to enable writing on the disk label area.</del>
 
 ##Seek Failure
 
@@ -121,14 +124,15 @@ According to lseek man pages. Errors may occur after writing are listed as follo
 <tr>
 	<td>[EOVERFLOW]</td>
 	<td>The resulting file offset would be a value which cannot be represented correctly in an object of type off_t for fseeko() and ftello() or long for fseek() and ftell().<.td>
-	<td>Prevent by Config::validate().</td>
-	<td>Error state that can be recover via reconstruct a BehaviorDB with different configurations.</td>
+	<td>Check the errno after every seek. No throw.</td>
+	<td>Operation is aborted. Error-safe.</td>
 	<td>Yes</td>
 </tr>
 </tbody>
 </table>
 
 <del>[EINVAL]	The whence argument is invalid or the resulting file position indicator would be set to a negative value.</del>
-<del>[ESPIPE]           The file descriptor underlying stream is associated with a pipe or FIFO or file‐position indicator value is unspecified (see ungetc(3)).</del>
+
+<del>[ESPIPE]	The file descriptor underlying stream is associated with a pipe or FIFO or file‐position indicator value is unspecified (see ungetc(3)).</del>
 
 

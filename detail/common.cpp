@@ -19,8 +19,6 @@ namespace BDB {
 		if(addr_prefix_len >= (sizeof(AddrType)<<3))
 			throw invalid_argument("Config: addr_prefix_len should be less than 8*sizeof(AddrType)");
 		
-		// min size check is delayed to runtime
-		
 		// path check is delayed till fopen, here we check path delimiter only
 		if(*root_dir && PATH_DELIM != root_dir[strlen(root_dir)-1])
 			throw invalid_argument("Config: non-empty root_dir should be ended with a path delimiter");
@@ -45,5 +43,7 @@ namespace BDB {
 			if( (*ct_func)( (*cse_func)(0, min_size), i ) ) match = true;
 		}
 		if(!match) throw invalid_argument("Config: capacity_test should hold be true for some data size");
+
+		
 	}
 } // end of namespace BDB
