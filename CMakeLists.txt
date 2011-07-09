@@ -8,6 +8,9 @@ include_directories( ${PROJECT_SOURCE_DIR}/bdb)
 add_executable (bdb_test ${PROJECT_SOURCE_DIR}/tests/bdb.cpp)
 target_link_libraries(bdb_test bdb)
 
+add_executable (bdb_put ${PROJECT_SOURCE_DIR}/tests/put.cpp)
+target_link_libraries(bdb_put bdb)
+
 include (CTest)
 set (CTEST_PROJECT_NAME "BehaviorDB-Testing")
 add_test (basic_op bdb_test)

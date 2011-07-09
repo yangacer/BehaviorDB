@@ -84,8 +84,9 @@ IDPool<B>::Acquire()
 			rt = bm_.find_first();
 		}
 	}
-	
-	if(0 > fprintf(file_, "+%lu\n", rt) && errno)
+	std::stringstream ss;
+	ss<<"+"<<rt<<"\n";
+	if(ss.str().size() !=  fwrite(ss.str().c_str(), 1, ss.str().size(), file_))
 		throw std::runtime_error("IDPool(Acquire): write transaction failure");
 
 	bm_[rt] = false;
@@ -103,8 +104,10 @@ IDPool<B>::Release(B const &id)
 	
 	if(id - beg_ >= bm_.size())
 		return -1;
-	
-	if(0 > fprintf(file_, "-%lu\n", id - beg_) && errno)
+
+	std::stringstream ss;
+	ss<<"-"<<(id-beg_)<<"\n";
+	if(ss.str().size() != fwrite(ss.str().c_str(), 1, ss.str().size(), file_))
 		throw std::runtime_error("IDPool(Release): write transaction failure");
 
 	bm_[id - beg_] = true;
@@ -237,8 +240,11 @@ B IDValPool<B,V>::Acquire(V const &val)
 	
 	if( super::Bitmap::npos == (rt = super::bm_.find_first()) )
 		return -1;
-	
-	if(0 > fprintf(super::file_, "+%lu\t%lu\n", rt, val) && errno)
+
+	std::stringstream ss;
+	ss<<"+"<<rt<<"\t"<<val<<"\n";
+
+	if(ss.str().size() !=  fwrite(ss.str().c_str(), 1, ss.str().size(), super::file_))
 		throw std::runtime_error("IDValPool(Acquire): write transaction failure");
 
 	super::bm_[rt] = false;
@@ -254,7 +260,7 @@ B IDValPool<B,V>::Acquire(V const &val)
 template<typename B, typename V>
 V IDValPool<B,V>::Find(B const & id) const
 {
-	assert(true == isAcquired(id) && "IDValPool: Test isAcquired before Find!");
+	assert(true == super::isAcquired(id) && "IDValPool: Test isAcquired before Find!");
 	return arr_[ id - super::beg_ ];
 }
 
@@ -262,11 +268,14 @@ V IDValPool<B,V>::Find(B const & id) const
 template<typename B, typename V>
 void IDValPool<B,V>::Update(B const& id, V const& val)
 {
-	assert(true == isAcquired(id) && "IDValPool: Test isAcquired before Update!");
+	assert(true == super::isAcquired(id) && "IDValPool: Test isAcquired before Update!");
 	
 	if(val == Find(id)) return;
+	
+	std::stringstream ss;
+	ss<<"+"<<(id - super::beg_)<<"\t"<<val<<"\n";
 
-	if(0 > fprintf(super::file_, "+%lu\t%lu\n", id - super::beg_, val) && errno)
+	if(ss.str().size() != fwrite(ss.str().c_str(), 1, ss.str().size(), super::file_))
 		throw std::runtime_error("IDValPool(Update): write transaction failure");
 	
 	arr_[id - super::beg_] = val;

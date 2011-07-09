@@ -124,7 +124,7 @@ According to lseek man pages. Errors may occur after writing are listed as follo
 <tr>
 	<td>[EOVERFLOW]</td>
 	<td>The resulting file offset would be a value which cannot be represented correctly in an object of type off_t for fseeko() and ftello() or long for fseek() and ftell().<.td>
-	<td>Check the errno after every seek. No throw.</td>
+	<td>Check return value of fseek immediately. No throw.</td>
 	<td>Operation is aborted. Error-safe.</td>
 	<td>Yes</td>
 </tr>
