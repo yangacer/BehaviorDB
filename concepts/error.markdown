@@ -100,7 +100,7 @@ According to write(2) man pages. Errors may occur after writing are listed as fo
 
 ##Seek Failure
 
-According to lseek man pages. Errors may occur after writing are listed as follows
+According to lseek man pages. Errors may occur after seeking are listed as follows
 (deleted errors are notconsidered by BehaviorDB).
 
 <table>
