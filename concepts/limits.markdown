@@ -32,6 +32,19 @@ This file dose not require seek.
 
 If we assume a chunk of a pool file is of size C bytes, then a pool file can store 2^63/C objects at most.
 
-##Combined
+##Combine Memory and Disk
 
-[to be added]
+As described in previous sections, we can see that the memory limitations are lower bounds of a BDB, hence we analyze what capacity a BDB can offer within its default configuration.
+
+###Capacity of Default Configuration
+
+4bits prefix length: This implies 2^4 = 16 pools and each pool can have 2^(32-4) = 2^28 chunks at most. 
+
+Chunk size and pool file: With a default cse function and a default min_size which is 32bytes; if we number pool as i = 0, 1, 2, ..., 15, then each pool manages chunks of size 32*(2^i) bytes. Note that a pool file is of size 2^63 bytes at most. Thus, a pool i can contain 2^63 / 32*(2^i) = 2^(63 - 5 - i) = 2^(58-i) chunks and remain __seekable__. Since the max i is 15, we can store 2^28 chunks and seek to any of them safely.
+
+Table of pool #, chunk size, and maximum size of pool file. [to be added]
+
+100,000,000 ~ 1G size large Global ID table: Consider that bits correspond to chunks have to be kept in a bitmap. There are near 1G bits, or write 125M  bytes which are required by idPool_s.
+
+
+
