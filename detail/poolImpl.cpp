@@ -62,7 +62,7 @@ namespace BDB {
 			return 0;
 		return this;
 	}
-
+	
 	AddrType
 	pool::write(char const* data, size_t size)
 	{

@@ -1,3 +1,5 @@
+#include <cstdio>
+#include <limits>
 
 namespace BDB {
 
@@ -122,6 +124,6 @@ namespace BDB {
 	T
 	addr_eval<T>::local_addr(T global_addr)
 	{ return loc_addr_mask & global_addr; }
-
+	
 
 } // end of namespace BDB

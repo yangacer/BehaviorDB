@@ -18,6 +18,7 @@ int main()
 
 	conf.min_size = 32;
 	BehaviorDB bdb(conf);
+	
 
 	// write
 	char const* data = "acer";

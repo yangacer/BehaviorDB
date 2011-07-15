@@ -19,10 +19,14 @@ namespace BDB
 {
 	
 	struct viov;
+
+	/// pool manager
+	//! \callgraph
 	struct pool
 	{
 		friend struct bdbStater;
-
+		
+		/// pool configuration
 		struct config
 		{
 			unsigned int dirID;
@@ -43,7 +47,12 @@ namespace BDB
 		~pool();
 		
 		operator void const*() const;
-
+		
+		/** @brief Write new data
+		 *  @param data
+		 *  @param size
+		 *  @return Address
+		 */
 		AddrType
 		write(char const* data, size_t size);
 		

@@ -1,3 +1,4 @@
+#include "common.hpp"
 #include "addr_eval.hpp"
 #include <iostream>
 #include <cstdio>
@@ -11,8 +12,8 @@ int main()
 	//addr_eval<unsigned int> ae(4, 256);
 	
 	typedef addr_eval<unsigned int> ae;
-	ae::init(4, 256);
-
+	ae::init(4, 32);
+	//ae::evaluate(100000000);
 	printf("directory count: %u\n", ae::dir_count());
 
 	unsigned int i =0;

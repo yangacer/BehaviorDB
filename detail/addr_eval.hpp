@@ -56,7 +56,7 @@ namespace BDB {
 
 		static addr_t 
 		local_addr(addr_t global_addr);
-
+		
 	private:
 		static unsigned char dir_prefix_len_;
 		static size_t min_size_;

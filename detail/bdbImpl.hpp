@@ -27,6 +27,11 @@ namespace BDB {
 		void
 		init_(Config const & conf);
 
+		/** @brief Put data
+		 *  @param data
+		 *  @param size
+		 *  @return Global address
+		 */
 		AddrType
 		put(char const *data, size_t size);
 
