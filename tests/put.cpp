@@ -1,6 +1,8 @@
 #include "bdb.hpp"
 #include <iostream>
 #include <iomanip>
+#include <vector>
+#include <cstdio>
 
 void usage()
 {
@@ -19,7 +21,19 @@ int main(int argc, char** argv)
 	BehaviorDB bdb(conf);
 	
 	char const* data = "acer";
-	AddrType addr = bdb.put(data, 4);
+	vector<AddrType> addrs;
+	for(int i=0;i<10000;++i){
+		addrs.push_back(bdb.put(data, 4));
+		if(-1 == addrs[i]){
+			cerr<<"put failure"<<endl;
+			break;
+		}
+		printf("%08x\n", addrs[i]);
+	}
 	
+	for(int i=0;i<10000;++i){
+		bdb.del(addrs[i]);
+	}
+
 	return 0;
 }
