@@ -68,11 +68,13 @@ namespace BDB {
 	{
 		assert(0 != *this && "pool is not proper initiated");
 		
+		/** bug: this should be checked after idPool_->extend()
 		if(!idPool_->avail()){
 			// no space error
 			on_error(ADDRESS_OVERFLOW, __LINE__);
 			return -1;
 		}
+		*/
 		
 		assert(true == addrEval::capacity_test(dirID, size));
 
