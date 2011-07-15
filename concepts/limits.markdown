@@ -40,11 +40,19 @@ As described in previous sections, we can see that the memory limitations are lo
 
 4bits prefix length: This implies 2^4 = 16 pools and each pool can have 2^(32-4) = 2^28 chunks at most. 
 
-Chunk size and pool file: With a default cse function and a default min_size which is 32bytes; if we number pool as i = 0, 1, 2, ..., 15, then each pool manages chunks of size 32*(2^i) bytes. Note that a pool file is of size 2^63 bytes at most. Thus, a pool i can contain 2^63 / 32*(2^i) = 2^(63 - 5 - i) = 2^(58-i) chunks and remain __seekable__. Since the max i is 15, we can store 2^28 chunks and seek to any of them safely.
+Chunk size and pool file: With a default cse function and a default min_size which is 32bytes; if we number pool as i = 0, 1, 2, ..., 15, then each pool manages chunks of size 32 * (2^i) bytes. Note that a pool file is of size 2^63 bytes at most. Thus, a pool i can contain 2^63 / 32*(2^i) = 2^(63 - 5 - i) = 2^(58-i) chunks and remain __seekable__. Since the max i is 15, we can store 2^28 chunks and seek to any of them safely.
+Besides, we can generalize the calculation as 2^(63 - (k+2^A)) where 2^k is a min_size and A is the length of prefixes.
 
 Table of pool #, chunk size, and maximum size of pool file. [to be added]
 
 100,000,000 ~ 1G size large Global ID table: Consider that bits correspond to chunks have to be kept in a bitmap. There are near 1G bits, or write 125M  bytes which are required by idPool_s.
 
+###Customize Configuration
+
+As one can see, the main limitation comes from size of available memory. Therefore we derive a relation between size of the global ID table and capacity of BDB as follows:
+
+Assume size of the global ID table is T, memory required by BDB is 2*(T/8) + 4T = 4.25T (bytes). Then, we assume a cse function is a linear function which can be written as f(i) = a(2^i) + b, where x is sequence numbers of pools. 
+
+e.g. Let T = 4G, we need 17G bytes main memory for storing IDs.
 
 
