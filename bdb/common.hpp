@@ -113,8 +113,10 @@ namespace BDB {
 
 		/// pool byte size
 		unsigned long long pool_mem_size;
+			
+		unsigned long long disk_size;
 
-		Stat():gid_mem_size(0), pool_mem_size(0)
+		Stat():gid_mem_size(0), pool_mem_size(0), disk_size(0)
 		{}
 	};
 	

@@ -18,16 +18,16 @@ namespace BDB {
 	{
 		bdbStater(Stat *s);
 
-		unsigned long long 
+		void
 		operator()(BDBImpl const* bdb) const;
 		
-		unsigned long long 
+		void
 		operator()(pool const *pool) const;
 		
-		unsigned long long 
+		void
 		operator()( IDPool<AddrType> const *idp) const;
 
-		unsigned long long 
+		void
 		operator()( IDValPool<AddrType, AddrType> const *idvp) const;
 
 		Stat *s;

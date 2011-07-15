@@ -43,7 +43,7 @@ namespace BDB {
 				"you should use iter = bdb.begin().");
 
 		if( !bdb_->global_id_->isAcquired(cur_) )
-			throw std::out_of_range("AddrIterator: Iterator is invalided");
+			throw std::out_of_range("AddrIterator: Iterator is invalid");
 
 		return cur_;
 	}

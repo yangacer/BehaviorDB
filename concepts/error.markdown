@@ -66,7 +66,7 @@ According to write(2) man pages. Errors may occur after writing are listed as fo
 <tr>
 	<td>[EIO]</td>
 	<td>An I/O error occurred while reading from or writing to the file system.</td>
-	<td>Check after every write. No throw.</td>
+	<td>Install interrupt handler for aborting on-going writing.</td>
 	<td>Operation is aborted. Error-safe state.</td>
 	<td>No</td>
 </tr>

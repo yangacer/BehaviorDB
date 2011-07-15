@@ -5,6 +5,19 @@
 #include <string>
 #include <exception>
 #include <cassert>
+#include <cmath>
+
+void print_in_proper_unit(unsigned long long size)
+{	
+	char const * units = " KMGT";
+	unsigned int i=0;
+	while(size > 1024){
+		size>>=10;	
+		++i;
+	}
+	printf("%u", size);
+	printf("%cB", units[i]);
+}
 
 int main()
 {
@@ -145,7 +158,16 @@ int main()
 	
 	Stat stat;
 	bdb.stat(&stat);
-	printf("gid memory usage: %4uMB\n", stat.gid_mem_size>>20);
-	printf("pool memory usage: %4uMB\n", stat.pool_mem_size>>20);
+	printf("gid memory usage: ");
+	print_in_proper_unit(stat.gid_mem_size);
+	printf("\n");
+
+	printf("pool memory usage: ");
+	print_in_proper_unit(stat.pool_mem_size);
+	printf("\n");
+
+	printf("disk size: ");
+	print_in_proper_unit(stat.disk_size);
+	printf("\n");
 	return 0;	
 }

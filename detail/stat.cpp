@@ -8,35 +8,40 @@ namespace BDB {
 	: s(s)
 	{}
 
-	unsigned long long 
+	void
 	bdbStater::operator()(BDBImpl const* bdb) const
 	{
-		unsigned long long rt(0);
 
-		rt = s->gid_mem_size = (*this)(bdb->global_id_);
+		(*this)(bdb->global_id_);
+		
 		for(size_t i=0;i<addr_eval<AddrType>::dir_count();++i){
-			s->pool_mem_size += (*this)(bdb->pools_ + i);
+			(*this)(bdb->pools_ + i);
 		}
-		rt += s->pool_mem_size;
-		return rt;
 	}
 
-	unsigned long long 
+	void
 	bdbStater::operator()(pool const *pool) const
 	{
-		return (*this)(pool->idPool_) + MIGBUF_SIZ;
+		(*this)(pool->idPool_);
+
+		s->disk_size += 
+			pool->idPool_->max_used() * 
+			pool::addrEval::chunk_size_estimation(pool->dirID);
+
+		s->pool_mem_size += MIGBUF_SIZ;
 	}
 	
-	unsigned long long 
+	void
 	bdbStater::operator()(IDPool<AddrType> const *idp) const
 	{
-		return sizeof(AddrType) * idp->num_blocks();		
+		s->pool_mem_size += sizeof(AddrType) * idp->num_blocks(); 
 	}
 
-	unsigned long long 
+	void
 	bdbStater::operator()(IDValPool<AddrType, AddrType> const *idvp) const
 	{
-		return 	sizeof(AddrType) * idvp->size() + 
+		s->gid_mem_size += 
+			sizeof(AddrType) * idvp->size() + 
 			sizeof(AddrType) * idvp->num_blocks();
 	}
 
