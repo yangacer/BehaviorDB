@@ -80,25 +80,31 @@ namespace BDB {
 		assert(0 != *this && "BDBImpl is not proper initiated");
 
 		unsigned int dir = addrEval::directory(size);
-		AddrType rt(0);
+		AddrType rt(0), loc_addr(0);
 		while(dir < addrEval::dir_count()){
-			rt = pools_[dir].write(data, size);
-			if(rt != -1)	break;
+			loc_addr = pools_[dir].write(data, size);
+			if(loc_addr != -1)	break;
 			dir++;
 		}
 		
-		if(-1 == rt){
+		if(-1 == loc_addr){
 			error(dir-1);
 			return -1;
 		}
 
-		rt = addrEval::global_addr(dir, rt);
+		rt = addrEval::global_addr(dir, loc_addr);
 		rt = global_id_->Acquire(rt);
 
 		if(-1 == rt){
+			global_id_->Release(rt);
 			error(ADDRESS_OVERFLOW, __LINE__);
+			if(-1 == pools_[dir-1].erase(loc_addr)){
+				error(dir-1);
+			}
 			return -1;
 		}
+		
+		global_id_->Commit(rt);
 
 		return rt;
 	}
@@ -140,7 +146,7 @@ namespace BDB {
 			}
 			rt = addrEval::global_addr(next_dir, next_loc_addr);
 			global_id_->Update(addr, rt);
-			
+			global_id_->Commit(addr);
 			return addr;
 		}
 
@@ -155,10 +161,9 @@ namespace BDB {
 		
 		rt = addrEval::global_addr(dir, loc_addr);
 		global_id_->Update(addr, rt);
+		global_id_->Commit(addr);
 		
 		return addr;
-
-
 	}
 
 	
@@ -245,6 +250,7 @@ namespace BDB {
 			return -1;	
 		}
 		global_id_->Release(addr);
+		global_id_->Commit(addr);
 		return 0;
 	}
 

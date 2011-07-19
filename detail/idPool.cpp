@@ -128,12 +128,12 @@ namespace BDB {
 				return -1;	
 			}
 		}
-
+		/*
 		std::stringstream ss;
 		ss<<"+"<<rt<<"\n";
 		if(-1 == write(ss.str().c_str(), ss.str().size()))
 			return -1;
-		
+		*/
 		bm_[rt] = false;
 
 		if(beg_ + rt > max_used_) max_used_ = beg_ + rt;
@@ -149,13 +149,23 @@ namespace BDB {
 		
 		if(id - beg_ >= bm_.size())
 			return -1;
-
+		/*
 		std::stringstream ss;
 		ss<<"-"<<(id-beg_)<<"\n";
 		if(-1 == write(ss.str().c_str(), ss.str().size()))
 			return -1;
+		*/
 		bm_[id - beg_] = true;
 		return 0;
+	}
+
+	int
+	IDPool::Commit(AddrType const& id)
+	{
+		std::stringstream ss;
+		char symbol = bm_[id-beg_] ? '-' : '+';
+		ss<<symbol<<(id-beg_)<<"\n";
+		return write(ss.str().c_str(), ss.str().size());
 	}
 
 	AddrType
@@ -279,13 +289,13 @@ namespace BDB {
 			// *ec = make_error_code(bdb_errc::id_pool::bitmap_full);
 			return -1;
 		}
-
+		/*
 		std::stringstream ss;
 		ss<<"+"<<rt<<"\t"<<val<<"\n";
 
 		if(-1 == write(ss.str().c_str(), ss.str().size()))
 			return -1;
-
+		*/
 		super::bm_[rt] = false;
 
 		if(super::beg_ + rt > super::max_used_)
@@ -295,7 +305,17 @@ namespace BDB {
 
 		return 	super::beg_ + rt;
 	}
+	
+	int IDValPool::Commit(AddrType const& id)
+	{
+		AddrType off = id - begin();
+		if(super::bm_[off]) 
+			return super::Commit(id);
 
+		std::stringstream ss;
+		ss<<"+"<<(off)<<"\t"<<arr_[off]<<"\n";
+		return write(ss.str().c_str(), ss.str().size());
+	}
 	
 	AddrType IDValPool::Find(AddrType const & id) const
 	{
@@ -311,12 +331,13 @@ namespace BDB {
 		
 		if(val == Find(id)) return;
 		
+		/*
 		std::stringstream ss;
 		ss<<"+"<<(id - super::beg_)<<"\t"<<val<<"\n";
 
 		if(ss.str().size() != fwrite(ss.str().c_str(), 1, ss.str().size(), super::file_))
 			throw std::runtime_error("IDValPool(Update): write transaction failure");
-		
+		*/
 		arr_[id - super::beg_] = val;
 
 	}

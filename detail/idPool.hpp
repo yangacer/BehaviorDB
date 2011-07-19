@@ -71,13 +71,16 @@ namespace BDB {
 		 */
 		AddrType 
 		Acquire();
-		
+
 		/** Release an ID
 		 *  @throw A write transaction error of type
 		 *  std::runtime_error
 		 */
 		int 
 		Release(AddrType const &id);
+
+		int
+		Commit(AddrType const&id);
 
 		//bool 
 		//avail() const;
@@ -149,6 +152,8 @@ namespace BDB {
 		 */
 		AddrType Acquire(AddrType const &val);
 		
+		int Commit(AddrType const &id);
+
 		/** Find value by ID
 		 * @param id
 		 * @pre id exists in an IDValPool (Test it by isAcquire())
