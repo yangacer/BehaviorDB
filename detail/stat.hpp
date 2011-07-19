@@ -3,14 +3,11 @@
 
 #include "common.hpp"
 
-template <typename T>
-class IDPool;
-
-template <typename T, typename U>
-class IDValPool;
 
 namespace BDB {
 
+	class IDPool;
+	class IDValPool;
 	struct BDBImpl;
 	struct pool;
 
@@ -25,10 +22,10 @@ namespace BDB {
 		operator()(pool const *pool) const;
 		
 		void
-		operator()( IDPool<AddrType> const *idp) const;
+		operator()( IDPool const *idp) const;
 
 		void
-		operator()( IDValPool<AddrType, AddrType> const *idvp) const;
+		operator()( IDValPool const *idvp) const;
 
 		Stat *s;
 	};

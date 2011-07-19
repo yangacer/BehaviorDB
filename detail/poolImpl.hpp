@@ -12,13 +12,12 @@
 
 #define MIGBUF_SIZ 2*1024*1024
 
-template<typename T> 
-class IDPool;
 
 namespace BDB
 {
 	
 	struct viov;
+	class IDPool;
 
 	/// pool manager
 	//! \callgraph
@@ -135,7 +134,7 @@ namespace BDB
 		char mig_buf_[MIGBUF_SIZ];
 	private:	
 		// id file
-		IDPool<AddrType> *idPool_;
+		IDPool *idPool_;
 
 		// header
 		fixed_pool<ChunkHeader, 8> headerPool_;

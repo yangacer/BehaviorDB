@@ -6,11 +6,10 @@
 #include "common.hpp"
 #include "addr_eval.hpp"
 
-template<typename B, typename V>
-class IDValPool;
 
 namespace BDB {
 	
+	class IDValPool;
 	struct pool;
 	struct AddrIterator;	
 
@@ -93,7 +92,7 @@ namespace BDB {
 		FILE* log_;
 		char log_buf_[256];
 
-		IDValPool<AddrType, AddrType> *global_id_;
+		IDValPool *global_id_;
 
 	};
 

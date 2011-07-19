@@ -45,7 +45,7 @@ namespace BDB {
 
 		// setup idPool
 		sprintf(fname, "%s%04x.tran", trans_dir.c_str(), dirID);
-		idPool_ = new IDPool<AddrType>(fname, 0);
+		idPool_ = new IDPool(fname, 0);
 
 		
 	}

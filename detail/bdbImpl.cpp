@@ -71,7 +71,7 @@ namespace BDB {
 
 		// init IDValPool
 		sprintf(fname, "%sglobal_id.trans", conf.root_dir);
-		global_id_ = new IDValPool<AddrType, AddrType>(fname, conf.beg, conf.end);
+		global_id_ = new IDValPool(fname, conf.beg, conf.end);
 	}
 	
 	AddrType

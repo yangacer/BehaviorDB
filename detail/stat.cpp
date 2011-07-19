@@ -32,13 +32,13 @@ namespace BDB {
 	}
 	
 	void
-	bdbStater::operator()(IDPool<AddrType> const *idp) const
+	bdbStater::operator()(IDPool const *idp) const
 	{
 		s->pool_mem_size += sizeof(AddrType) * idp->num_blocks(); 
 	}
 
 	void
-	bdbStater::operator()(IDValPool<AddrType, AddrType> const *idvp) const
+	bdbStater::operator()(IDValPool const *idvp) const
 	{
 		s->gid_mem_size += 
 			sizeof(AddrType) * idvp->size() + 
