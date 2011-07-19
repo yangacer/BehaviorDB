@@ -25,7 +25,7 @@ namespace BDB {
 		(*this)(pool->idPool_);
 
 		s->disk_size += 
-			pool->idPool_->max_used() * 
+			pool->idPool_->max_used()* 
 			pool::addrEval::chunk_size_estimation(pool->dirID);
 
 		s->pool_mem_size += MIGBUF_SIZ;

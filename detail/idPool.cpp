@@ -136,7 +136,7 @@ namespace BDB {
 		*/
 		bm_[rt] = false;
 
-		if(beg_ + rt > max_used_) max_used_ = beg_ + rt;
+		if(rt >= max_used_) max_used_ = rt + 1;
 
 		return 	beg_ + rt;
 	}
@@ -204,21 +204,21 @@ namespace BDB {
 			return;
 
 		char line[21] = {0};		
-		AddrType id;
+		AddrType off;
 		while(fgets(line, 20, tfile)){
 			line[strlen(line)-1] = 0;
-			id = strtoul(&line[1], 0, 10);
+			off = strtoul(&line[1], 0, 10);
 			if('+' == line[0]){
-				if(bm_.size() <= id){ 
+				if(bm_.size() <= off){ 
 					if(full_alloc_)
 						throw std::runtime_error("ID in trans file does not fit into idPool");
 					else	
 						extend();
 				}
-				bm_[id] = false;
-				if(max_used_ < id) max_used_ = id;
+				bm_[off] = false;
+				if(max_used_ <= off) max_used_ = off+1;
 			}else if('-' == line[0]){
-				bm_[id] = true;
+				bm_[off] = true;
 			}
 		}
 		fclose(tfile);
@@ -298,8 +298,8 @@ namespace BDB {
 		*/
 		super::bm_[rt] = false;
 
-		if(super::beg_ + rt > super::max_used_)
-			super::max_used_ = super::beg_ + rt;
+		if(rt >= super::max_used_)
+			super::max_used_ = 1 + rt;
 
 		arr_[rt] = val;
 
@@ -355,24 +355,24 @@ namespace BDB {
 		
 
 		char line[21] = {0};		
-		AddrType id; 
+		AddrType off; 
 		AddrType val;
 		std::stringstream cvt;
 		while(fgets(line, 20, tfile)){
 			line[strlen(line)-1] = 0;
 			cvt.clear();
 			cvt.str(line +1);
-			cvt>>id;
+			cvt>>off;
 			if('+' == line[0]){
 				cvt>>val;
-				if(super::bm_.size() <= id)
+				if(super::bm_.size() <= off)
 					throw std::runtime_error("IDValPool: ID in trans file does not fit into idPool");
-				super::bm_[id] = false;
-				arr_[id] = val;
-				if(id > super::max_used_)
-					super::max_used_ = id;
+				super::bm_[off] = false;
+				arr_[off] = val;
+				if(off >= super::max_used_)
+					super::max_used_ = off+1;
 			}else if('-' == line[0]){
-				super::bm_[id] = true;
+				super::bm_[off] = true;
 			}
 			assert(0 != cvt && "IDValPool: Read id-val pair failed");
 		}

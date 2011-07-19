@@ -91,7 +91,8 @@ namespace BDB {
 		 */
 		AddrType 
 		next_used(AddrType curID) const;
-
+		
+		/** The maximum count of used IDs */
 		AddrType
 		max_used() const;
 

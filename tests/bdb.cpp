@@ -16,7 +16,7 @@ void print_in_proper_unit(unsigned long long size)
 		++i;
 	}
 	printf("%u", size);
-	printf("%cB", units[i]);
+	printf(" %cB", units[i]);
 }
 
 int main()
