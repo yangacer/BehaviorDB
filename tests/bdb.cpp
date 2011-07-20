@@ -19,15 +19,23 @@ void print_in_proper_unit(unsigned long long size)
 	printf(" %cB", units[i]);
 }
 
-int main()
+void usage()
+{
+	printf("./bdb work_dir/\n");
+	exit(1);
+}
+
+int main(int argc, char** argv)
 {
 	using namespace BDB;
 	
+	if(argc < 2) usage();
+
 	printf("==== BehaviorDB Testing ====\n");
 	printf("version: %s\n", BDB::VERSION);
 
 	Config conf;
-	conf.root_dir = "tmp/";
+	conf.root_dir = argv[1];
 
 	conf.min_size = 32;
 	BehaviorDB bdb(conf);
