@@ -80,6 +80,10 @@ namespace BDB {
 		assert(0 != *this && "BDBImpl is not proper initiated");
 
 		unsigned int dir = addrEval::directory(size);
+		if((unsigned int)-1 == dir){
+			error(DATA_TOO_BIG, __LINE__);
+			return -1;
+		}
 		AddrType rt(0), loc_addr(0);
 		while(dir < addrEval::dir_count()){
 			loc_addr = pools_[dir].write(data, size);
@@ -131,6 +135,10 @@ namespace BDB {
 			
 			// migration
 			unsigned int next_dir = addrEval::directory(size + header.size); //(*MigPredictor)(addr);
+			if((unsigned int)-1 == next_dir){
+				error(DATA_TOO_BIG, __LINE__);
+				return -1;
+			}
 			AddrType next_loc_addr;
 			if(-1 == off)
 				off = header.size;
