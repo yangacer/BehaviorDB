@@ -18,7 +18,9 @@ namespace BDB  {
 		/// Pool is locked
 		POOL_LOCKED = 4,
 		
-		NON_EXIST = 5
+		NON_EXIST = 5,
+
+		ROLLBACK_FAILURE
 	};
 
 	struct error_num_to_str
@@ -28,7 +30,7 @@ namespace BDB  {
 			return buf[error_num];
 		}
 	private:
-		static char buf[6][40];
+		static char buf[7][40];
 	};
 } // end of namespace BDB
 

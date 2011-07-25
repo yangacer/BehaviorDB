@@ -26,6 +26,7 @@ namespace BDB {
 		void
 		init_(Config const & conf);
 
+
 		/** @brief Put data
 		 *  @param data
 		 *  @param size
@@ -35,16 +36,19 @@ namespace BDB {
 		put(char const *data, size_t size);
 
 		AddrType
-		put(char const *data, size_t size, AddrType addr, size_t off=-1);
-		
+		put(char const *data, size_t size, AddrType addr, size_t off=npos);
+			
 		AddrType
 		put(std::string const& data)
 		{ return put(data.data(), data.size()); }
 		
 		AddrType
-		put(std::string const& data, AddrType addr, size_t off=-1)
+		put(std::string const& data, AddrType addr, size_t off=npos)
 		{ return put(data.data(), data.size(), addr, off); }
 		
+		AddrType
+		preserve(size_t preserve_size, char const *data=0, size_t size=0);
+
 		AddrType
 		update(char const *data, size_t size, AddrType addr);
 		
