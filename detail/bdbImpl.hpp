@@ -93,9 +93,11 @@ namespace BDB {
 		typedef addr_eval<AddrType> addrEval;
 
 		pool* pools_;
-		FILE* log_;
-		char log_buf_[256];
-
+		FILE* err_log_;
+		char err_log_buf_[256];
+		
+		FILE* acc_log_;
+		char acc_log_buf_[256];
 		IDValPool *global_id_;
 
 	};

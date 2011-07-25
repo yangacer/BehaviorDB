@@ -10,7 +10,7 @@
 namespace BDB {
 
 	BDBImpl::BDBImpl(Config const & conf)
-	: pools_(0), log_(0), global_id_(0)
+	: pools_(0), err_log_(0), acc_log_(0), global_id_(0)
 	{
 		conf.validate();
 		init_(conf); 
@@ -19,6 +19,10 @@ namespace BDB {
 	BDBImpl::~BDBImpl()
 	{
 		delete global_id_;
+
+		if(acc_log_) fclose(acc_log_);
+		if(err_log_) fclose(err_log_);
+
 		if(!pools_) return;
 		for(unsigned int i =0; i<addrEval::dir_count(); ++i)
 			pools_[i].~pool();
@@ -54,7 +58,7 @@ namespace BDB {
 			new (&pools_[i]) pool(pcfg); 
 		}
 
-		// init log
+		// init logs
 		char fname[256] = {};
 		if(conf.log_dir){
 			char const* log_dir = (*conf.log_dir) ? conf.log_dir : conf.root_dir;
@@ -62,10 +66,17 @@ namespace BDB {
 				throw std::length_error("length of pool_dir string is too long\n");
 
 			sprintf(fname, "%serror.log", log_dir);
-			if(0 == (log_ = fopen(fname, "ab")))
-				throw std::runtime_error("create log file failed\n");
+			if(0 == (err_log_ = fopen(fname, "ab")))
+				throw std::runtime_error("create error log file failed\n");
 		
-			if(0 != setvbuf(log_, log_buf_, _IOLBF, 256))
+			if(0 != setvbuf(err_log_, err_log_buf_, _IOLBF, 256))
+				throw std::runtime_error("setvbuf to log file failed\n");
+			
+			sprintf(fname, "%saccess.log", log_dir);
+			if(0 == (acc_log_ = fopen(fname, "ab")))
+				throw std::runtime_error("create access log file failed\n");
+		
+			if(0 != setvbuf(acc_log_, acc_log_buf_, _IOLBF, 256))
 				throw std::runtime_error("setvbuf to log file failed\n");
 		}
 
@@ -109,6 +120,8 @@ namespace BDB {
 		}
 		
 		global_id_->Commit(rt);
+		
+		fprintf(acc_log_, "%-12s\t%08x\n", "put", size);
 
 		return rt;
 	}
@@ -155,6 +168,7 @@ namespace BDB {
 			rt = addrEval::global_addr(next_dir, next_loc_addr);
 			global_id_->Update(addr, rt);
 			global_id_->Commit(addr);
+			fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", "insert", size, addr, off);
 			return addr;
 		}
 
@@ -171,6 +185,8 @@ namespace BDB {
 		global_id_->Update(addr, rt);
 		global_id_->Commit(addr);
 		
+		fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", "insert", size, addr, off);
+
 		return addr;
 	}
 
@@ -207,7 +223,7 @@ namespace BDB {
 		}
 		
 		global_id_->Commit(rt);
-
+		fprintf(acc_log_, "%-12s\t%08x\t%08x\n", "preserve", preserve_size, size);
 		return rt;
 	
 	}
@@ -232,6 +248,7 @@ namespace BDB {
 		}
 		
 		rt = addrEval::global_addr(dir, loc_addr);
+		fprintf(acc_log_, "%-12s\t%08x\t%08x\n", "update", size, addr);
 		return addr;
 	}
 
@@ -252,6 +269,7 @@ namespace BDB {
 			error(dir);
 			return 0;
 		}
+		fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", "get", size, addr, off);
 		return rt;
 	}
 	
@@ -273,6 +291,7 @@ namespace BDB {
 			error(dir);
 			return 0;
 		}
+		fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", "string_get", max, addr, off);
 		return rt;
 	}
 
@@ -296,6 +315,7 @@ namespace BDB {
 		}
 		global_id_->Release(addr);
 		global_id_->Commit(addr);
+		fprintf(acc_log_, "%-12s\t%08x\n", "del", addr);
 		return 0;
 	}
 
@@ -317,6 +337,7 @@ namespace BDB {
 			error(dir);
 			return -1;
 		}
+		fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", "partial_del", addr, off, size);
 		return nsize;
 	}
 	
@@ -350,15 +371,15 @@ namespace BDB {
 	{
 		assert(0 != *this && "BDBImpl is not proper initiated");
 
-		if(0 == log_) return;
+		if(0 == err_log_) return;
 		
 		//lock
 		
-		if(0 == ftello(log_)){ // write column names
-			fprintf(log_, "Pool ID\tLine\tMessage\n");
+		if(0 == ftello(err_log_)){ // write column names
+			fprintf(err_log_, "Pool ID\tLine\tMessage\n");
 		}
 		
-		fprintf(log_, "None    \t%d\t%s\n", line, error_num_to_str()(errcode));
+		fprintf(acc_log_, "None    \t%d\t%s\n", line, error_num_to_str()(errcode));
 		
 		//unlock
 	}
@@ -368,7 +389,7 @@ namespace BDB {
 	{	
 		assert(0 != *this && "BDBImpl is not proper initiated");
 
-		if(0 == log_) return;
+		if(0 == err_log_) return;
 
 		std::pair<int, int> err = pools_[dir].get_error();
 		
@@ -376,12 +397,12 @@ namespace BDB {
 
 		// TODO lock log
 		
-		if(0 == ftello(log_)){ // write column names
-			fprintf(log_, "Pool_ID  Line Message\n");
+		if(0 == ftello(err_log_)){ // write column names
+			fprintf(err_log_, "Pool_ID  Line Message\n");
 		}
 
 		while(1){
-			fprintf(log_, "%08x %4d %s\n", dir, err.second, error_num_to_str()(err.first));
+			fprintf(err_log_, "%08x %4d %s\n", dir, err.second, error_num_to_str()(err.first));
 			err = pools_[dir].get_error();
 			if(err.first == 0) break;
 		}
