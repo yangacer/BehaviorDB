@@ -15,6 +15,10 @@ namespace BDB {
 	{ if(!*impl_) return 0; return this; }
 	
 	AddrType
+	BehaviorDB::preserve(size_t preserve_size, char const* data, size_t size)
+	{ return impl_->preserve(preserve_size, data, size); }
+
+	AddrType
 	BehaviorDB::put(char const *data, size_t size)
 	{ return impl_->put(data, size); }
 

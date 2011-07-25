@@ -174,7 +174,44 @@ namespace BDB {
 		return addr;
 	}
 
+	AddrType
+	BDBImpl::preserve(size_t preserve_size, char const *data, size_t size)
+	{
+		assert(0 != *this && "BDBImpl is not proper initiated");
+		assert(preserve_size > size && 
+			"preserve size should be greater than size");
+
+		unsigned int dir = addrEval::directory(preserve_size);
+		AddrType rt(0), loc_addr(0);
+		while(dir < addrEval::dir_count()){
+			loc_addr = pools_[dir].write(data, size);
+			if(loc_addr != -1)	break;
+			dir++;
+		}
+		
+		if(-1 == loc_addr){
+			error(dir-1);
+			return -1;
+		}
+
+		rt = addrEval::global_addr(dir, loc_addr);
+		rt = global_id_->Acquire(rt);
+
+		if(-1 == rt){
+			global_id_->Release(rt);
+			error(ADDRESS_OVERFLOW, __LINE__);
+			if(-1 == pools_[dir-1].erase(loc_addr)){
+				error(dir-1);
+			}
+			return -1;
+		}
+		
+		global_id_->Commit(rt);
+
+		return rt;
 	
+	}
+
 	AddrType
 	BDBImpl::update(char const *data, size_t size, AddrType addr)
 	{

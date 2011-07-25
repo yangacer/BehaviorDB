@@ -158,30 +158,51 @@ namespace BDB {
 		size_t partial(0);
 		// write new data
 		if(size != (partial = fwrite(data, 1, size, file_))){
-			if(partial) // intermediate state
-				idPool_->Release(addr);
-			if(-1 == idPool_->Commit(addr)){
+			if(!partial){ // no data written
+				// abort directly	
 				on_error(SYSTEM_ERROR, __LINE__);
 				return -1;
 			}
-			on_error(SYSTEM_ERROR, __LINE__);
-			return -1;
+			// rollback to previous state
+			clearerr(file_);
+			if(-1 == seek(addr, off)){
+				on_error(ROLLBACK_FAILURE, __LINE__);
+				return -1;
+			}			
+			if( partial != fwrite(mig_buf_, 1, partial, file_)){
+				// rollback failed, leave broken data alone
+				on_error(ROLLBACK_FAILURE, __LINE__);
+				return -1;
+			}
 		}
 
-		// write buffered  moved data
+		// write buffered data
 		if(moved && moved != (partial = fwrite(mig_buf_, 1, moved, file_))){
-			if(partial) // intermediate state
-				idPool_->Release(addr);
-			if(-1 == idPool_->Commit(addr)){
-				on_error(SYSTEM_ERROR, __LINE__);
+			// rollback to previous state
+			clearerr(file_);
+			if(-1 == seek(addr, off)){
+				on_error(ROLLBACK_FAILURE, __LINE__);
+				return -1;
+			}			
+			if( partial != fwrite(mig_buf_, 1, moved, file_)){
+				// rollback failed, leave broken data alone
+				on_error(ROLLBACK_FAILURE, __LINE__);
 				return -1;
 			}
-			on_error(SYSTEM_ERROR, __LINE__);
-			return -1;
+			
 		}
 		
 		// update header 
 		if(-1 == headerPool_.write(loc_header, addr)){
+			if(-1 == seek(addr, off)){
+				on_error(ROLLBACK_FAILURE, __LINE__);
+				return -1;
+			}			
+			if( partial != fwrite(mig_buf_, 1, moved, file_)){
+				// rollback failed, leave broken data alone
+				on_error(ROLLBACK_FAILURE, __LINE__);
+				return -1;
+			}
 			on_error(SYSTEM_ERROR, __LINE__);
 			return -1;
 		}

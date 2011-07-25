@@ -27,6 +27,9 @@ namespace BDB {
 		/// TODO deprecate this
 		operator void const*() const;
 
+		AddrType
+		preserve(size_t preserve_size, char const* data=0, size_t size=0);
+		
 		/** @brief Put data
 		 *  @param data
 		 *  @param size
