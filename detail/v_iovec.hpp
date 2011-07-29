@@ -12,10 +12,13 @@ namespace BDB {
 		FILE *fp;
 		off_t off;
 	};
+	
+	struct no_data_src
+	{};
 
 	struct viov
 	{
-		boost::variant<file_src, char const*> data;
+		boost::variant<file_src, char const*, no_data_src> data;
 		size_t size;
 	};
 
@@ -26,6 +29,9 @@ namespace BDB {
 		
 		size_t
 		operator()(file_src & psrc);
+		
+		size_t
+		operator()(no_data_src & ndsrc);
 
 		FILE* dest;
 		off_t dest_pos;

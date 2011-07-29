@@ -368,7 +368,7 @@ namespace BDB {
 	}
 	
 	AddrType
-	pool::merge_move(char const*data, size_t size, AddrType src_addr, size_t off, 
+	pool::merge_copy(char const* data, size_t size, AddrType src_addr, size_t off, 
 		pool *dest_pool, ChunkHeader const* header)
 	{
 		assert(0 != *this && "pool is not proper initiated");
@@ -384,9 +384,13 @@ namespace BDB {
 	
 		viov vv[3];
 		file_src fs;
+		no_data_src nds;
 		AddrType loc_addr;
 		if(0 == off){ // prepend
-			vv[0].data = data;
+			if(0 == data)
+				vv[0].data = nds;
+			else	
+				vv[0].data = data;
 			vv[0].size = size;
 			fs.fp = file_;
 			fs.off = addr_off2tell(src_addr, 0);
@@ -398,7 +402,10 @@ namespace BDB {
 			fs.off = addr_off2tell(src_addr, 0);
 			vv[0].data = fs;
 			vv[0].size = loc_header.size;
-			vv[1].data = data;
+			if(0 == data)
+				vv[1].data = nds;
+			else
+				vv[1].data = data;
 			vv[1].size = size;
 			loc_addr = dest_pool->write(vv, 2);
 		}else{ // insert
@@ -406,7 +413,10 @@ namespace BDB {
 			fs.off = addr_off2tell(src_addr, 0);
 			vv[0].data = fs;
 			vv[0].size = off;
-			vv[1].data = data;
+			if(0 == data)
+				vv[1].data = nds;
+			else
+				vv[1].data = data;
 			vv[1].size = size;
 			fs.off += off;
 			vv[2].data = fs;
@@ -418,13 +428,27 @@ namespace BDB {
 			on_error(SYSTEM_ERROR, __LINE__);
 			return -1;
 		}
+		return loc_addr;
+	}
+
+	AddrType
+	pool::merge_move(char const*data, size_t size, AddrType src_addr, size_t off, 
+		pool *dest_pool, ChunkHeader const* header)
+	{
+		assert(0 != *this && "pool is not proper initiated");
+		assert(0 != *dest_pool && "dest pool is not proper initiated");
+
+		AddrType loc_addr = 
+			merge_copy(data, size, src_addr, off, dest_pool, header);
 
 		idPool_->Release(src_addr);
+		idPool_->Commit(src_addr);
+
 		return loc_addr;
 	}
 
 	size_t
-	pool::erase(AddrType addr)
+	pool::free(AddrType addr)
 	{ 
 		assert(0 != *this && "pool is not proper initiated");
 

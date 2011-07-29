@@ -25,6 +25,7 @@
 namespace BDB {
 	
 	typedef unsigned int AddrType;
+	struct stream_state;
 	typedef size_t (*Chunk_size_est)(unsigned int dir, size_t min_size);
 
 	// Decide how many fragmentation is acceptiable for initial data insertion

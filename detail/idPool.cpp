@@ -306,6 +306,9 @@ namespace BDB {
 		return 	super::beg_ + rt;
 	}
 	
+	bool IDValPool::avail() const
+	{ return super::bm_.any(); }
+
 	int IDValPool::Commit(AddrType const& id)
 	{
 		AddrType off = id - begin();

@@ -212,7 +212,7 @@ namespace BDB {
 		if(-1 == rt){
 			global_id_->Release(rt);
 			error(ADDRESS_OVERFLOW, __LINE__);
-			if(-1 == pools_[dir-1].erase(loc_addr)){
+			if(-1 == pools_[dir-1].free(loc_addr)){
 				error(dir-1);
 			}
 			return -1;
@@ -305,7 +305,7 @@ namespace BDB {
 		unsigned int dir = addrEval::addr_to_dir(internal_addr);
 		AddrType loc_addr = addrEval::local_addr(internal_addr);
 		
-		if(-1 == pools_[dir].erase(loc_addr)){
+		if(-1 == pools_[dir].free(loc_addr)){
 			error(dir);
 			return -1;	
 		}

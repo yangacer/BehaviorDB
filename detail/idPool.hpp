@@ -153,6 +153,8 @@ namespace BDB {
 		 */
 		AddrType Acquire(AddrType const &val);
 		
+		bool avail() const;
+
 		int Commit(AddrType const &id);
 
 		/** Find value by ID

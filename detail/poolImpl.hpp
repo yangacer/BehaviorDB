@@ -72,15 +72,28 @@ namespace BDB
 		read(std::string *buffer, size_t max, AddrType addr, size_t off=0, ChunkHeader const* header=0);
 		
 		AddrType
-		merge_move(char const*data, size_t size, AddrType src_addr, size_t off,
-			pool *dest_pool, ChunkHeader const* header=0);
+		merge_copy(char const* data, size_t size, AddrType src_addr, 
+			size_t off, pool* dest_pool, ChunkHeader const* header=0);
+
+		AddrType
+		merge_move(char const* data, size_t size, AddrType src_addr, 
+			size_t off, pool *dest_pool, ChunkHeader const* header=0);
 
 		size_t
-		erase(AddrType addr);
+		free(AddrType addr);
 
 		size_t
 		erase(AddrType addr, size_t off, size_t size);
 	
+		// for supporting stream read/write
+
+
+		//size_t
+		//raw_write(char const* data, size_t size, AddrType addr, size_t off);
+
+		
+		// misc 
+
 		int
 		head(ChunkHeader *header, AddrType addr) const;
 

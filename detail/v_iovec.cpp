@@ -40,5 +40,13 @@ namespace BDB {
 			return 0;
 		return size;
 	}
+	
+	size_t
+	write_viov::operator()(no_data_src & ndsrc)
+	{
+		if(-1 == fseeko(dest, size, SEEK_CUR))
+			return 0;
+		return size;
+	}
 
 } // end of namespace BDB
