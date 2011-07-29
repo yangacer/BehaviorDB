@@ -89,6 +89,11 @@ namespace BDB {
 	BDBImpl::put(char const *data, size_t size)
 	{
 		assert(0 != *this && "BDBImpl is not proper initiated");
+		
+		if(!global_id_->avail()){
+			error(ADDRESS_OVERFLOW, __LINE__);
+			return -1;
+		}
 
 		unsigned int dir = addrEval::directory(size);
 		if((unsigned int)-1 == dir){
@@ -109,15 +114,6 @@ namespace BDB {
 
 		rt = addrEval::global_addr(dir, loc_addr);
 		rt = global_id_->Acquire(rt);
-
-		if(-1 == rt){
-			global_id_->Release(rt);
-			error(ADDRESS_OVERFLOW, __LINE__);
-			if(-1 == pools_[dir-1].erase(loc_addr)){
-				error(dir-1);
-			}
-			return -1;
-		}
 		
 		global_id_->Commit(rt);
 		
