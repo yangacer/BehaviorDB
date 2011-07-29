@@ -150,7 +150,7 @@ namespace BDB {
 				return -1;
 			}
 			AddrType next_loc_addr;
-			if(-1 == off)
+			if(npos == off)
 				off = header.size;
 			
 			// TODO migrate failure 
@@ -337,6 +337,10 @@ namespace BDB {
 		fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", "partial_del", addr, off, size);
 		return nsize;
 	}
+	
+	bool
+	BDBImpl::stream_error(stream_state const* state)
+	{ return state->error; }
 
 	stream_state const*
 	BDBImpl::ostream(size_t stream_size)
@@ -349,7 +353,7 @@ namespace BDB {
 		}
 		
 		unsigned int dir = addrEval::directory(stream_size);
-		AddrType rt(0), loc_addr(0);
+		AddrType inter_addr(0), loc_addr(0);
 		while(dir < addrEval::dir_count()){
 			loc_addr = pools_[dir].write((char const*)0, stream_size);
 			if(loc_addr != -1)	break;
@@ -361,14 +365,126 @@ namespace BDB {
 			return 0;
 		}
 
-		rt = addrEval::global_addr(dir, loc_addr);
-		rt = global_id_->Acquire(rt);
-		global_id_->Commit(rt);
+		inter_addr = addrEval::global_addr(dir, loc_addr);
+
 		fprintf(acc_log_, "%-12s\t%08x\n", "ostream", stream_size);
 		
-		return 0;
+		stream_state *rt = new stream_state;
+		rt->read_write = stream_state::WRT;
+		rt->existed = false;
+		rt->error = false;
+		rt->inter_addr = inter_addr;
+		rt->offset = 0;
+		rt->size = stream_size;
+		rt->used = 0;
+
+		return rt;
+	}
+
+	stream_state const*
+	BDBImpl::ostream(size_t stream_size, AddrType addr, size_t off)
+	{
+		assert(0 != *this && "BDBImpl is not proper initiated");
+
+		AddrType internal_addr;
+		if( !global_id_->isAcquired(addr) )
+			return 0;
+		
+		internal_addr = global_id_->Find(addr);
+
+		unsigned int dir = addrEval::addr_to_dir(internal_addr);
+		AddrType loc_addr = addrEval::local_addr(internal_addr);
+		
+		ChunkHeader header;
+		if(-1 == pools_[dir].head(&header, loc_addr)){
+			error(dir);
+			return 0;
+		}
+		
+		unsigned int next_dir = addrEval::directory(stream_size + header.size);
+
+		if(-1 == next_dir){
+			error(DATA_TOO_BIG, __LINE__);
+			return 0;
+		}
+		
+		off = (npos == off) ? header.size : off;
+
+		AddrType next_loc_addr =
+			pools_[dir].merge_copy( 
+				0, stream_size, loc_addr, off,
+				&pools_[next_dir], &header); 
+		
+		if(-1 == next_loc_addr){
+			error(next_dir);
+			return 0;
+		}
+		
+		fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", "ostream_inplace", stream_size, addr, off);
+
+		stream_state* rt = new stream_state;
+		rt->read_write = stream_state::WRT;
+		rt->existed = true;
+		rt->error = false;
+		rt->ext_addr = addr;
+		rt->inter_addr = addrEval::global_addr(
+				next_dir, next_loc_addr);
+		rt->offset = off;
+		rt->size = stream_size;
+		rt->used = 0;
+
+		return rt;
 	}
 	
+	stream_state const*
+	BDBImpl::stream_write(stream_state const* state, char const* data, size_t size)
+	{
+		stream_state *ss = const_cast<stream_state*>(state);
+		if(ss->size - ss->used < size){
+			ss->error = true;
+			return ss;
+		}
+
+		unsigned int dir = addrEval::addr_to_dir(ss->inter_addr);
+		AddrType loc_addr = addrEval::local_addr(ss->inter_addr);
+
+		if(size != pools_[dir].overwrite(data, size, loc_addr, ss->offset + ss->used)){
+			error(dir);
+			ss->error = true;
+			return ss;
+		}
+		
+		ss->used += size;
+		// complete
+		if(ss->used == ss->size){
+			if(ss->existed){
+				global_id_->Update(ss->ext_addr, ss->inter_addr);
+			}else {
+				if(-1 == (ss->ext_addr = global_id_->Acquire(ss->inter_addr))){
+					ss->error = true;
+					return ss;
+				}	
+			}	
+			global_id_->Commit(ss->ext_addr);
+			delete ss;
+			return 0;
+		}
+		return ss;
+	}
+	
+	
+	void
+	BDBImpl::stream_abort(stream_state const* state)
+	{
+		stream_state *ss = const_cast<stream_state*>(state);
+		
+		unsigned int dir = addrEval::addr_to_dir(ss->inter_addr);
+		AddrType loc_addr = addrEval::local_addr(ss->inter_addr);
+		
+		if(-1 == pools_[dir].free(loc_addr))
+			error(dir);	
+	}
+
 	AddrIterator
 	BDBImpl::begin() const
 	{

@@ -57,6 +57,23 @@ namespace BDB {
 	size_t
 	BehaviorDB::del(AddrType addr, size_t off, size_t size)
 	{ return impl_->del(addr, off, size); }
+	
+	stream_state const*
+	BehaviorDB::ostream(size_t stream_size)
+	{ return impl_->ostream(stream_size); }
+
+	stream_state const*
+	BehaviorDB::ostream(size_t stream_size, AddrType addr, size_t off)
+	{ return impl_->ostream(stream_size, addr, off); }
+	
+	
+	stream_state const*
+	BehaviorDB::stream_write(stream_state const* state, char const* data, size_t size)
+	{ return impl_->stream_write(state, data, size); }
+
+	void
+	BehaviorDB::stream_abort(stream_state const* state)
+	{ impl_->stream_abort(state); }
 
 	AddrIterator
 	BehaviorDB::begin() const

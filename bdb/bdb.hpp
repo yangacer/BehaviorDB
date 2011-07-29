@@ -73,6 +73,18 @@ namespace BDB {
 
 		size_t
 		del(AddrType addr, size_t off, size_t size);
+	
+		stream_state const*
+		ostream(size_t stream_size);
+
+		stream_state const*
+		ostream(size_t stream_size, AddrType addr, size_t off=npos);
+
+		stream_state const*
+		stream_write(stream_state const* state, char const* data, size_t size);
+
+		void
+		stream_abort(stream_state const* state);
 
 		AddrIterator
 		begin() const;

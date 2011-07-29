@@ -86,6 +86,9 @@ namespace BDB {
 
 		void
 		stream_abort(stream_state const* state);
+		
+		bool
+		stream_error(stream_state const* state);
 
 		AddrIterator
 		begin() const;

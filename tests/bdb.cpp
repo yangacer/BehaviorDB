@@ -177,5 +177,17 @@ int main(int argc, char** argv)
 	printf("disk size: ");
 	print_in_proper_unit(stat.disk_size);
 	printf("\n");
+	
+	// streaming write
+	rec = "toma";
+	stream_state const* os = bdb.ostream(4);
+	for(int i=0; i<4; ++i){
+		os = bdb.stream_write(os, rec.data()+i, 1);
+	}
+	rec.clear();
+	bdb.get(&rec, 10, 1u);
+	printf("======== stream write (prototype) ========\n");
+	printf("%s\n", rec.c_str());
+	bdb.del(1u);
 	return 0;	
 }
