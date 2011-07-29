@@ -85,13 +85,29 @@ namespace BDB
 		size_t
 		erase(AddrType addr, size_t off, size_t size);
 	
-		// for supporting stream read/write
+		/** Overwrite chunk data
+		 *  @remark This method ONLY checks the written 
+		 *  data be in a chunk area. It does NOT change
+		 *  chunk header (for data size). For better data
+		 *  integrate, this method should be used
+		 *  with merge_copy(...).
+		 *  i.e.
+		 *  @code
+		 *  // copy data refered by the exist_addr to a new address
+		 *  // one can control position of the room by 'off' param
+		 *  // here we use 'data_end' to perform an 'append' operation
+		 *  // caller should determine which pool to place the copy
+		 *  size_t data_end = end_position_of_the_original_data;
+		 *  AddrType addr = merge_copy(0, 128, exist_addr, data_end, dest_pool);
+		 *  if(128 != overwrite(new_data, 128, addr, data_end)){
+		 *	free(addr); // abort, no change to the original chunk
+		 *  }
+		 *  // success
+		 *  @endcode
+		 */
+		size_t
+		overwrite(char const* data, size_t size, AddrType addr, size_t off);
 
-
-		//size_t
-		//raw_write(char const* data, size_t size, AddrType addr, size_t off);
-
-		
 		// misc 
 
 		int

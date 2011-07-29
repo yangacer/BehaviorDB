@@ -79,8 +79,8 @@ namespace BDB {
 			on_error(SYSTEM_ERROR, __LINE__);
 			return -1;
 		}
-
-		if(size != fwrite(data, 1, size, file_)){
+		// allow data = 0 to act as allocation
+		if(0 != data && size != fwrite(data, 1, size, file_)){
 			idPool_->Release(loc_addr);
 			on_error(SYSTEM_ERROR, __LINE__);
 			return -1;
@@ -477,7 +477,6 @@ namespace BDB {
 		
 		// TODO exception(error) ?
 		if(off > header.size) return header.size;
-	
 
 		// overflow check
 		size = (off + size > off) ?  
@@ -494,12 +493,19 @@ namespace BDB {
 		
 		while(toRead > 0){
 			readCnt = (toRead > MIGBUF_SIZ) ? MIGBUF_SIZ : toRead;
-			seek(addr, off + size + loopOff);
+			if(-1 == seek(addr, off + size + loopOff)){
+				on_error(SYSTEM_ERROR, __LINE__);
+				return -1;
+			}
+
 			if(readCnt != fread(mig_buf_, 1, readCnt, file_)){
 				on_error(SYSTEM_ERROR, __LINE__);
 				return -1;
 			}
-			seek(addr, off + loopOff);
+			if(-1 == seek(addr, off + loopOff)){
+				on_error(SYSTEM_ERROR, __LINE__);
+				return -1;
+			}
 			if(readCnt != fwrite(mig_buf_, 1, readCnt, file_)){
 				on_error(SYSTEM_ERROR, __LINE__);
 				return -1;
@@ -511,6 +517,28 @@ namespace BDB {
 		return header.size;
 	}
 	
+	size_t
+	pool::overwrite(char const* data, size_t size, AddrType addr, size_t off)
+	{
+		assert(true == idPool_->isAcquired(addr) && 
+			"overwrite to invalid address");
+
+		assert(off+size < addrEval::chunk_size_estimation(dirID)
+			&& "exceed chunk size");
+
+		if(-1 == seek(addr, off)){
+			on_error(SYSTEM_ERROR, __LINE__);
+			return -1;
+		}
+
+		if(size != fwrite(data, 1, size, file_)){
+			on_error(SYSTEM_ERROR, __LINE__);
+			return -1;
+		}
+
+		return size;
+	}
+
 	int
 	pool::head(ChunkHeader *header, AddrType addr) const
 	{ 

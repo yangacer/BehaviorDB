@@ -4,6 +4,7 @@
 #include "idPool.hpp"
 #include "addr_iter.hpp"
 #include "stat.hpp"
+#include "stream_state.hpp"
 #include <cassert>
 #include <stdexcept>
 
@@ -335,6 +336,37 @@ namespace BDB {
 		}
 		fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", "partial_del", addr, off, size);
 		return nsize;
+	}
+
+	stream_state const*
+	BDBImpl::ostream(size_t stream_size)
+	{
+		assert(0 != *this && "BDBImpl is not proper initiated");
+		
+		if(!global_id_->avail()){
+			error(ADDRESS_OVERFLOW, __LINE__);
+			return 0;
+		}
+		
+		unsigned int dir = addrEval::directory(stream_size);
+		AddrType rt(0), loc_addr(0);
+		while(dir < addrEval::dir_count()){
+			loc_addr = pools_[dir].write((char const*)0, stream_size);
+			if(loc_addr != -1)	break;
+			dir++;
+		}
+		
+		if(-1 == loc_addr){
+			error(dir-1);
+			return 0;
+		}
+
+		rt = addrEval::global_addr(dir, loc_addr);
+		rt = global_id_->Acquire(rt);
+		global_id_->Commit(rt);
+		fprintf(acc_log_, "%-12s\t%08x\n", "ostream", stream_size);
+		
+		return 0;
 	}
 	
 	AddrIterator
