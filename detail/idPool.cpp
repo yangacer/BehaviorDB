@@ -114,7 +114,7 @@ namespace BDB {
 		AddrType rt;
 		
 		// extend bitmap
-		if(Bitmap::npos == (rt = bm_.find_first())){
+		if((AddrType)Bitmap::npos == (rt = bm_.find_first())){
 			if(!full_alloc_ ) {
 				try {
 					extend();  
@@ -285,7 +285,7 @@ namespace BDB {
 
 		AddrType rt;
 		
-		if( super::Bitmap::npos == (rt = super::bm_.find_first()) ){
+		if((AddrType)super::Bitmap::npos == (rt = super::bm_.find_first()) ){
 			// *ec = make_error_code(bdb_errc::id_pool::bitmap_full);
 			return -1;
 		}
