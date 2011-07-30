@@ -184,10 +184,14 @@ int main(int argc, char** argv)
 	for(int i=0; i<4; ++i){
 		os = bdb.stream_write(os, rec.data()+i, 1);
 	}
+	addr = bdb.stream_finish(os);
 	rec.clear();
-	bdb.get(&rec, 10, 1u);
+	bdb.get(&rec, 10, addr);
 	printf("======== stream write (prototype) ========\n");
-	printf("%s\n", rec.c_str());
-	bdb.del(1u);
+	printf("should: %08x\n", 1u);
+	printf("result: %08x\n", addr);
+	printf("should: %s\n", "toma");
+	printf("result: %s\n", rec.c_str());
+	bdb.del(addr);
 	return 0;	
 }

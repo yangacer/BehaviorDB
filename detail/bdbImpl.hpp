@@ -83,6 +83,9 @@ namespace BDB {
 		
 		stream_state const*
 		stream_read(stream_state const* state, char* output, size_t size);
+		
+		AddrType
+		stream_finish(stream_state const* state);
 
 		void
 		stream_abort(stream_state const* state);
@@ -97,6 +100,8 @@ namespace BDB {
 		end() const;
 		
 		void stat(Stat* s) const;
+		
+		bool full() const;
 
 	private: // disable interfaces
 		BDBImpl(BDBImpl const& cp);

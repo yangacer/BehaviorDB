@@ -437,6 +437,26 @@ namespace BDB {
 	}
 	
 	stream_state const*
+	BDBImpl::istream(size_t stream_size, AddrType addr, size_t off)
+	{
+		if(!global_id_->isAcquired(addr))
+			return 0;	
+		
+
+		stream_state *rt = new stream_state;
+		rt->read_write = stream_state::READ;
+		rt->existed = true;
+		rt->error = false;
+		rt->ext_addr = addr;
+		rt->inter_addr = global_id_->Find(addr);
+		rt->offset = off;
+		rt->size = stream_size;
+		rt->used = 0;
+
+		return rt;
+	}
+
+	stream_state const*
 	BDBImpl::stream_write(stream_state const* state, char const* data, size_t size)
 	{
 		stream_state *ss = const_cast<stream_state*>(state);
@@ -455,34 +475,83 @@ namespace BDB {
 		}
 		
 		ss->used += size;
-		// complete
-		if(ss->used == ss->size){
-			if(ss->existed){
-				global_id_->Update(ss->ext_addr, ss->inter_addr);
-			}else {
-				if(-1 == (ss->ext_addr = global_id_->Acquire(ss->inter_addr))){
-					ss->error = true;
-					return ss;
-				}	
-			}	
-			global_id_->Commit(ss->ext_addr);
-			delete ss;
-			return 0;
-		}
+		
 		return ss;
 	}
 	
-	
+	stream_state const*
+	BDBImpl::stream_read(stream_state const* state, char *output, size_t size)
+	{
+		// TODO consistency checking
+		stream_state *ss = const_cast<stream_state*>(state);
+
+		unsigned int dir = addrEval::addr_to_dir(ss->inter_addr);
+		AddrType loc_addr = addrEval::local_addr(ss->inter_addr);
+
+		size_t toRead = (ss->size - ss->used < size) ?
+			ss->size - ss->used : size;
+		
+		if(toRead != pools_[dir].read(output, size, loc_addr,
+			ss->offset + ss->used))
+		{
+			error(dir);
+			ss->error = true;
+		}
+		returen ss;
+
+	}
+
+	AddrType
+	BDBImpl::stream_finish(stream_state const* state)
+	{
+		stream_state *ss = const_cast<stream_state*>(state);
+		AddrType rt;
+		
+		// read mode
+		if(stream_state::READ == ss->read_write){
+			rt = ss->ext_addr;
+			delete ss;
+			return rt;
+		}
+		
+		// write mode
+		if(ss->used == ss->size){
+			if(ss->existed){
+				global_id_->Update(ss->ext_addr, ss->inter_addr);
+				// TODO deal with old chunk that are read by others
+				global_id_->Commit(ss->ext_addr);
+			}else {
+				if(-1 == (ss->ext_addr = global_id_->Acquire(ss->inter_addr))){
+					error(SYSTEM_ERROR, __LINE__);
+					return -1;
+				}	
+				global_id_->Commit(ss->ext_addr);
+			}	
+			rt = ss->ext_addr;
+			delete ss;
+		}else { //incomplete buffer
+			stream_abort(state);
+			rt = -1;
+		}
+		return rt;
+	}
+
 	void
 	BDBImpl::stream_abort(stream_state const* state)
 	{
 		stream_state *ss = const_cast<stream_state*>(state);
 		
+		if(stream_state::READ == ss->read_write){
+			delete ss;
+			return;
+		}
+
 		unsigned int dir = addrEval::addr_to_dir(ss->inter_addr);
 		AddrType loc_addr = addrEval::local_addr(ss->inter_addr);
 		
 		if(-1 == pools_[dir].free(loc_addr))
-			error(dir);	
+			error(dir);
+		delete ss;
 	}
 
 	AddrIterator
@@ -510,6 +579,10 @@ namespace BDB {
 		bstat(this);
 	}
 	
+	bool
+	BDBImpl::full() const
+	{ return !global_id_->avail(); }
+
 	void
 	BDBImpl::error(int errcode, int line)
 	{

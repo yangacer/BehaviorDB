@@ -70,6 +70,10 @@ namespace BDB {
 	stream_state const*
 	BehaviorDB::stream_write(stream_state const* state, char const* data, size_t size)
 	{ return impl_->stream_write(state, data, size); }
+	
+	AddrType
+	BehaviorDB::stream_finish(stream_state const* state)
+	{ impl_->stream_finish(state); }
 
 	void
 	BehaviorDB::stream_abort(stream_state const* state)
