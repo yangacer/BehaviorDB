@@ -497,7 +497,7 @@ namespace BDB {
 			error(dir);
 			ss->error = true;
 		}
-		returen ss;
+		return ss;
 
 	}
 
