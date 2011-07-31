@@ -68,7 +68,6 @@ namespace BDB {
 	{
 		assert(0 != *this && "pool is not proper initiated");
 		
-		assert(true == addrEval::capacity_test(dirID, size));
 
 		AddrType loc_addr = idPool_->Acquire();
 		ChunkHeader header;
