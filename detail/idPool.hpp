@@ -82,9 +82,15 @@ namespace BDB {
 		int
 		Commit(AddrType const&id);
 
-		//bool 
-		//avail() const;
+		void
+		Lock(AddrType const &id);
+
+		void
+		Unlock(AddrType const &id);
 		
+		bool
+		isLocked(AddrType const &id) const;
+
 		/** Find the first acquired ID from curID which is included
 		 * @param curID Current ID
 		 * @remark The curID will be tested also.
@@ -133,6 +139,7 @@ namespace BDB {
 		AddrType const beg_, end_;
 		FILE*  file_;
 		Bitmap bm_;
+		Bitmap lock_;
 		bool full_alloc_;
 		AddrType max_used_;
 	};

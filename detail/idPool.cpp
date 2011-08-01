@@ -41,44 +41,51 @@ namespace BDB {
 
 	
 	IDPool::IDPool()
-	: beg_(0), end_(0), file_(0), bm_(), full_alloc_(false), max_used_(0)
+	: beg_(0), end_(0), file_(0), bm_(), lock_(), 
+	  full_alloc_(false), max_used_(0)
 	{}
 
 	
 	IDPool::IDPool(char const* tfile, AddrType beg)
 	: beg_(beg), end_(std::numeric_limits<AddrType>::max()-1), 
-	file_(0), bm_(), full_alloc_(false), max_used_(0)
+	  file_(0), bm_(), lock_(), full_alloc_(false), max_used_(0)
 	{
 		assert( 0 != tfile );
 		assert( beg_ <= end_ );
 		assert((AddrType)-1 > end_);
 
-		bm_.resize(4096, true);
-		
+		bm_.resize(8192, true);
+		lock_.resize(8192, false);
+
 		replay_transaction(tfile);
 		init_transaction(tfile);
 	}
 
 	
 	IDPool::IDPool(char const* tfile, AddrType beg, AddrType end)
-	: beg_(beg), end_(end), file_(0), bm_(), full_alloc_(true), max_used_(0)
+	: beg_(beg), end_(end), file_(0), bm_(), lock_(),
+	  full_alloc_(true), max_used_(0)
 	{
 		assert(0 != tfile);
 		assert( beg_ <= end_ );	
 		assert((AddrType)-1 > end_);
 
 		bm_.resize(end_- beg_, true);
-		
+		lock_.resize(end_- beg_, false);
+
 		replay_transaction(tfile);
 		init_transaction(tfile);
 	}
 
 	
 	IDPool::IDPool(AddrType beg, AddrType end)
-	: beg_(beg), end_(end), file_(0), bm_(), full_alloc_(true), max_used_(0)
+	: beg_(beg), end_(end), file_(0), bm_(), lock_(), 
+	  full_alloc_(true), max_used_(0)
 	{
 		assert(end >= beg);
+
 		bm_.resize(end_- beg_, true);
+		bm_.resize(end_ - beg_, false);
 	}
 
 	
@@ -106,10 +113,7 @@ namespace BDB {
 	AddrType
 	IDPool::Acquire()
 	{
-		// using namespace boost::system;
-
 		assert(0 != this);
-		//assert(0 != ec);
 		
 		AddrType rt;
 		
@@ -119,21 +123,14 @@ namespace BDB {
 				try {
 					extend();  
 				}catch(std::bad_alloc const& e){ 
-					//*ec = make_error_code(bdb_errc::id_pool::bitmap_resize_failure);
 					return -1;
 				}
 				rt = bm_.find_first();
 			}else{
-				//*ec = make_error_code(bdb_errc::id_pool::bitmap_full);
 				return -1;	
 			}
 		}
-		/*
-		std::stringstream ss;
-		ss<<"+"<<rt<<"\n";
-		if(-1 == write(ss.str().c_str(), ss.str().size()))
-			return -1;
-		*/
+		
 		bm_[rt] = false;
 
 		if(rt >= max_used_) max_used_ = rt + 1;
@@ -143,18 +140,16 @@ namespace BDB {
 		
 	
 	int
-	IDPool::Release(AddrType const &id)//, ECType *ec)
+	IDPool::Release(AddrType const &id)
 	{
 		assert(0 != this);
-		
+		assert(true == isAcquired(id) && "id is not acquired");
+
+		if(lock_[id - beg_]) return -1;
+
 		if(id - beg_ >= bm_.size())
 			return -1;
-		/*
-		std::stringstream ss;
-		ss<<"-"<<(id-beg_)<<"\n";
-		if(-1 == write(ss.str().c_str(), ss.str().size()))
-			return -1;
-		*/
+
 		bm_[id - beg_] = true;
 		return 0;
 	}
@@ -166,6 +161,27 @@ namespace BDB {
 		char symbol = bm_[id-beg_] ? '-' : '+';
 		ss<<symbol<<(id-beg_)<<"\n";
 		return write(ss.str().c_str(), ss.str().size());
+	}
+
+	void
+	IDPool::Lock(AddrType const &id)
+	{
+		assert(true == isAcquired(id) && "id is not acquired");
+		lock_[id - beg_] = true;
+	}
+
+	void
+	IDPool::Unlock(AddrType const &id)
+	{
+		assert(true == isAcquired(id) && "id is not acquired");
+		lock_[id - beg_] = false;
+	}
+		
+	bool
+	IDPool::isLocked(AddrType const &id) const
+	{
+		assert(true == isAcquired(id) && "id is not acquired");
+		return lock_[id - beg_];
 	}
 
 	AddrType
@@ -255,6 +271,7 @@ namespace BDB {
 			return;
 
 		bm_.resize(size, true); 
+		lock_.resize(size, false);
 	}
 
 	// ------------ IDValPool Impl ----------------
