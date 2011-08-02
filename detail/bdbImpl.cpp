@@ -424,7 +424,8 @@ namespace BDB {
 		
 		fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", "ostream_inplace", stream_size, addr, off);
 
-		stream_state* rt = new stream_state;
+		stream_state *rt = stream_state_pool_.malloc();
+		if(0 == rt) return 0;
 		rt->read_write = stream_state::WRT;
 		rt->existed = true;
 		rt->error = false;
@@ -445,7 +446,8 @@ namespace BDB {
 			return 0;	
 		
 
-		stream_state *rt = new stream_state;
+		stream_state *rt = stream_state_pool_.malloc();
+		if(0 == rt) return 0;
 		rt->read_write = stream_state::READ;
 		rt->existed = true;
 		rt->error = false;
