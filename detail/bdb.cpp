@@ -66,11 +66,18 @@ namespace BDB {
 	BehaviorDB::ostream(size_t stream_size, AddrType addr, size_t off)
 	{ return impl_->ostream(stream_size, addr, off); }
 	
+	stream_state const*
+	BehaviorDB::istream(size_t stream_size, AddrType addr, size_t off)
+	{ return impl_->istream(stream_size, addr, off); }
 	
 	stream_state const*
 	BehaviorDB::stream_write(stream_state const* state, char const* data, size_t size)
 	{ return impl_->stream_write(state, data, size); }
 	
+	stream_state const*
+	BehaviorDB::stream_read(stream_state const* state, char* output, size_t size)
+	{ return impl_->stream_read(state, output, size); }
+
 	AddrType
 	BehaviorDB::stream_finish(stream_state const* state)
 	{ impl_->stream_finish(state); }

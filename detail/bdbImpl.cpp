@@ -517,6 +517,7 @@ namespace BDB {
 			error(dir);
 			ss->error = true;
 		}
+		ss->used += toRead;
 		return ss;
 
 	}

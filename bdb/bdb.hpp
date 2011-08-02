@@ -79,10 +79,16 @@ namespace BDB {
 
 		stream_state const*
 		ostream(size_t stream_size, AddrType addr, size_t off=npos);
+		
+		stream_state const*
+		istream(size_t stream_size, AddrType addr, size_t off=0);
 
 		stream_state const*
 		stream_write(stream_state const* state, char const* data, size_t size);
 		
+		stream_state const*
+		stream_read(stream_state const* state, char* output, size_t size);
+
 		AddrType
 		stream_finish(stream_state const* state);
 

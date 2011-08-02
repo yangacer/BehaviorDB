@@ -11,6 +11,8 @@ target_link_libraries(bdb_test bdb)
 add_executable (bdb_put ${PROJECT_SOURCE_DIR}/tests/put.cpp)
 target_link_libraries(bdb_put bdb)
 
+add_executable (bdb_streaming ${PROJECT_SOURCE_DIR}/tests/streaming.cpp)
+target_link_libraries(bdb_streaming bdb)
 
 #add_executable (addreval ${PROJECT_SOURCE_DIR}/tests/addreval.cpp)
 #target_link_libraries(addreval bdb)

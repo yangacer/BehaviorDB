@@ -85,7 +85,7 @@ namespace BDB {
 		assert(end >= beg);
 
 		bm_.resize(end_- beg_, true);
-		bm_.resize(end_ - beg_, false);
+		lock_.resize(end_ - beg_, false);
 	}
 
 	
