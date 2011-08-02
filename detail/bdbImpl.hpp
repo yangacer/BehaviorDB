@@ -18,7 +18,7 @@ namespace BDB {
 	{
 		friend struct bdbStater;
 		friend struct AddrIterator;
-
+		
 	        BDBImpl(Config const & conf);
 		~BDBImpl();
 		
@@ -119,6 +119,7 @@ namespace BDB {
 	
 	private:
 		typedef addr_eval<AddrType> addrEval;
+		typedef boost::unordered_map<AddrType, unsigned int> AddrCntCont;
 
 		pool* pools_;
 		FILE* err_log_;
@@ -127,8 +128,8 @@ namespace BDB {
 		FILE* acc_log_;
 		char acc_log_buf_[256];
 		IDValPool *global_id_;
-
-		boost::unordered_map<AddrType, unsigned int> in_reading_addr_cnt;
+		
+		AddrCntCont in_reading_;
 		boost::object_pool<stream_state> stream_state_pool_;
 	};
 

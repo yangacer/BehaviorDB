@@ -13,11 +13,12 @@ namespace BDB {
 		bool existed;
 		bool error;
 		AddrType ext_addr;
-		AddrType inter_addr;
+		AddrType inter_src_addr;
+		AddrType inter_dest_addr;
 
-		size_t offset; 	// offset from chunk begin
-		size_t size;  	// size of stream
-		size_t used; 	// read/written size
+		unsigned int offset; 	// offset from chunk begin
+		unsigned int size;  	// size of stream
+		unsigned int used; 	// read/written size
 	};
 
 } // end of namespace BDB

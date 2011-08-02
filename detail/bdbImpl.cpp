@@ -375,7 +375,7 @@ namespace BDB {
 		rt->read_write = stream_state::WRT;
 		rt->existed = false;
 		rt->error = false;
-		rt->inter_addr = inter_addr;
+		rt->inter_dest_addr = inter_addr;
 		rt->offset = 0;
 		rt->size = stream_size;
 		rt->used = 0;
@@ -388,10 +388,13 @@ namespace BDB {
 	{
 		assert(0 != *this && "BDBImpl is not proper initiated");
 
-		AddrType internal_addr;
-		if( !global_id_->isAcquired(addr) )
+		// TODO: support better error diagnose
+		if( !global_id_->isAcquired(addr) ||  global_id_->isLocked(addr) )
 			return 0;
 		
+		global_id_->Lock(addr);
+
+		AddrType internal_addr;
 		internal_addr = global_id_->Find(addr);
 
 		unsigned int dir = addrEval::addr_to_dir(internal_addr);
@@ -400,6 +403,7 @@ namespace BDB {
 		ChunkHeader header;
 		if(-1 == pools_[dir].head(&header, loc_addr)){
 			error(dir);
+			global_id_->Unlock(addr);
 			return 0;
 		}
 		
@@ -407,11 +411,13 @@ namespace BDB {
 
 		if(-1 == next_dir){
 			error(DATA_TOO_BIG, __LINE__);
+			global_id_->Unlock(addr);
 			return 0;
 		}
 		
 		off = (npos == off) ? header.size : off;
-
+		
+		// TODO: append optimization (no copy)
 		AddrType next_loc_addr =
 			pools_[dir].merge_copy( 
 				0, stream_size, loc_addr, off,
@@ -419,10 +425,11 @@ namespace BDB {
 		
 		if(-1 == next_loc_addr){
 			error(next_dir);
+			global_id_->Unlock(addr);
 			return 0;
 		}
 		
-		fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", "ostream_inplace", stream_size, addr, off);
+		fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", "ostream_ins", stream_size, addr, off);
 
 		stream_state *rt = stream_state_pool_.malloc();
 		if(0 == rt) return 0;
@@ -430,7 +437,8 @@ namespace BDB {
 		rt->existed = true;
 		rt->error = false;
 		rt->ext_addr = addr;
-		rt->inter_addr = addrEval::global_addr(
+		rt->inter_src_addr = internal_addr;
+		rt->inter_dest_addr = addrEval::global_addr(
 				next_dir, next_loc_addr);
 		rt->offset = off;
 		rt->size = stream_size;
@@ -442,9 +450,17 @@ namespace BDB {
 	stream_state const*
 	BDBImpl::istream(size_t stream_size, AddrType addr, size_t off)
 	{
-		if(!global_id_->isAcquired(addr))
-			return 0;	
-		
+		if(!global_id_->isAcquired(addr) || global_id_->isLocked(addr))
+			return 0;
+
+		AddrType inter_addr = global_id_->Find(addr); 
+
+		// register to in_reading hash table
+		AddrCntCont::iterator iter;
+		if(in_reading_.end() == (iter = in_reading_.find(inter_addr)))
+			in_reading_[inter_addr] = 1;
+		else
+			iter->second++;
 
 		stream_state *rt = stream_state_pool_.malloc();
 		if(0 == rt) return 0;
@@ -452,7 +468,7 @@ namespace BDB {
 		rt->existed = true;
 		rt->error = false;
 		rt->ext_addr = addr;
-		rt->inter_addr = global_id_->Find(addr);
+		rt->inter_src_addr = inter_addr;
 		rt->offset = off;
 		rt->size = stream_size;
 		rt->used = 0;
@@ -469,8 +485,8 @@ namespace BDB {
 			return ss;
 		}
 
-		unsigned int dir = addrEval::addr_to_dir(ss->inter_addr);
-		AddrType loc_addr = addrEval::local_addr(ss->inter_addr);
+		unsigned int dir = addrEval::addr_to_dir(ss->inter_dest_addr);
+		AddrType loc_addr = addrEval::local_addr(ss->inter_dest_addr);
 
 		if(size != pools_[dir].overwrite(data, size, loc_addr, ss->offset + ss->used)){
 			error(dir);
@@ -489,8 +505,8 @@ namespace BDB {
 		// TODO consistency checking
 		stream_state *ss = const_cast<stream_state*>(state);
 
-		unsigned int dir = addrEval::addr_to_dir(ss->inter_addr);
-		AddrType loc_addr = addrEval::local_addr(ss->inter_addr);
+		unsigned int dir = addrEval::addr_to_dir(ss->inter_src_addr);
+		AddrType loc_addr = addrEval::local_addr(ss->inter_src_addr);
 
 		size_t toRead = (ss->size - ss->used < size) ?
 			ss->size - ss->used : size;
@@ -508,11 +524,36 @@ namespace BDB {
 	AddrType
 	BDBImpl::stream_finish(stream_state const* state)
 	{
+		if(state->error){
+			stream_abort(state);
+			return -1;
+		}
+
 		stream_state *ss = const_cast<stream_state*>(state);
 		AddrType rt;
 		
+		unsigned int dir = 
+			addrEval::addr_to_dir(ss->inter_src_addr);
+		AddrType loc_addr = 
+			addrEval::local_addr(ss->inter_src_addr);
+
 		// read mode
 		if(stream_state::READ == ss->read_write){
+			// unpine if the inter_dest addr is pinned 
+			// and a reader is the last one
+			AddrCntCont::iterator iter = 
+				in_reading_.find(ss->inter_src_addr);
+			assert(in_reading_.end() != iter && 
+				"unexpected address");
+			iter->second--;
+			if(iter->second == 0){ // the last reader
+				if(pools_[dir].is_pinned(loc_addr)){
+					pools_[dir].unpine(loc_addr);
+					pools_[dir].free(loc_addr);
+				}
+				in_reading_.erase(iter);
+			}
+			
 			rt = ss->ext_addr;
 			stream_state_pool_.free(ss);
 			return rt;
@@ -521,12 +562,24 @@ namespace BDB {
 		// write mode
 		if(ss->used == ss->size){
 			if(ss->existed){
-				global_id_->Update(ss->ext_addr, ss->inter_addr);
-				// TODO deal with old chunk that are read by others
+				
+				// if anyone is reading the chunk
+				// do pine instead of free
+				AddrCntCont::iterator iter = 
+					in_reading_.find(ss->inter_src_addr);
+				if(in_reading_.end() != iter)
+					pools_[dir].pine(loc_addr);
+				else
+					pools_[dir].free(loc_addr);
+
+				global_id_->Update(ss->ext_addr, ss->inter_dest_addr);
 				global_id_->Commit(ss->ext_addr);
 			}else {
-				if(-1 == (ss->ext_addr = global_id_->Acquire(ss->inter_addr))){
+				if(-1 == (ss->ext_addr = 
+					global_id_->Acquire(ss->inter_dest_addr)))
+				{
 					error(SYSTEM_ERROR, __LINE__);
+					stream_abort(state);
 					return -1;
 				}	
 				global_id_->Commit(ss->ext_addr);
@@ -546,15 +599,39 @@ namespace BDB {
 		stream_state *ss = const_cast<stream_state*>(state);
 		
 		if(stream_state::READ == ss->read_write){
+			unsigned int dir = 
+				addrEval::addr_to_dir(ss->inter_src_addr);
+			AddrType loc_addr = 
+				addrEval::local_addr(ss->inter_src_addr);
+			
+			// unpine if the inter_dest addr is pinned 
+			// and a reader is the last one
+			AddrCntCont::iterator iter = 
+				in_reading_.find(ss->inter_src_addr);
+			assert(in_reading_.end() != iter && 
+				"unexpected address");
+			iter->second--;
+			
+			if(iter->second == 0){ // the last reader
+				if(pools_[dir].is_pinned(loc_addr)){
+					pools_[dir].unpine(loc_addr);
+					pools_[dir].free(loc_addr);
+				}
+				in_reading_.erase(iter);
+			}
+
 			stream_state_pool_.free(ss);
 			return;
 		}
 
-		unsigned int dir = addrEval::addr_to_dir(ss->inter_addr);
-		AddrType loc_addr = addrEval::local_addr(ss->inter_addr);
+		unsigned int dir = addrEval::addr_to_dir(ss->inter_dest_addr);
+		AddrType loc_addr = addrEval::local_addr(ss->inter_dest_addr);
 		
 		if(-1 == pools_[dir].free(loc_addr))
 			error(dir);
+		
+		if(ss->existed) global_id_->Unlock(ss->ext_addr);
+
 		stream_state_pool_.free(ss);
 	}
 
