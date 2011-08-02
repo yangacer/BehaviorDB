@@ -5,7 +5,8 @@
 #include <string>
 #include "common.hpp"
 #include "addr_eval.hpp"
-
+#include "boost/unordered_map.hpp"
+#include "boost/pool/object_pool.hpp"
 
 namespace BDB {
 	
@@ -127,6 +128,8 @@ namespace BDB {
 		char acc_log_buf_[256];
 		IDValPool *global_id_;
 
+		boost::unordered_map<AddrType, unsigned int> in_reading_addr_cnt;
+		boost::object_pool<stream_state> stream_state_pool_;
 	};
 
 } // end of namespace BDB

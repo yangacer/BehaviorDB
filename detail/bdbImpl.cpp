@@ -369,7 +369,9 @@ namespace BDB {
 
 		fprintf(acc_log_, "%-12s\t%08x\n", "ostream", stream_size);
 		
-		stream_state *rt = new stream_state;
+		stream_state *rt = stream_state_pool_.malloc();
+		if(0 == rt) return 0;
+
 		rt->read_write = stream_state::WRT;
 		rt->existed = false;
 		rt->error = false;
@@ -510,7 +512,7 @@ namespace BDB {
 		// read mode
 		if(stream_state::READ == ss->read_write){
 			rt = ss->ext_addr;
-			delete ss;
+			stream_state_pool_.free(ss);
 			return rt;
 		}
 		
@@ -528,7 +530,7 @@ namespace BDB {
 				global_id_->Commit(ss->ext_addr);
 			}	
 			rt = ss->ext_addr;
-			delete ss;
+			stream_state_pool_.free(ss);
 		}else { //incomplete buffer
 			stream_abort(state);
 			rt = -1;
@@ -542,7 +544,7 @@ namespace BDB {
 		stream_state *ss = const_cast<stream_state*>(state);
 		
 		if(stream_state::READ == ss->read_write){
-			delete ss;
+			stream_state_pool_.free(ss);
 			return;
 		}
 
@@ -551,7 +553,7 @@ namespace BDB {
 		
 		if(-1 == pools_[dir].free(loc_addr))
 			error(dir);
-		delete ss;
+		stream_state_pool_.free(ss);
 	}
 
 	AddrIterator
