@@ -119,14 +119,16 @@ namespace BDB
 		std::pair<int, int>
 		get_error();
 
-		/* TODO: To be considered
-		AddrType
+		void
 		pine(AddrType addr);
 
-		AddrType
+		void
 		unpine(AddrType addr);
 		
+		bool
+		is_pinned(AddrType addr);
 
+		/* TODO: To be considered
 		std::pair<AddrType, size_t>
 		tell2addr_off(off_t fpos) const;
 		*/

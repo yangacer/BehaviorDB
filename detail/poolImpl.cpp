@@ -599,5 +599,17 @@ namespace BDB {
 		return rt;
 		
 	}
+	
+	void
+	pool::pine(AddrType addr)
+	{ idPool_->Lock(addr); }
+
+	void
+	pool::unpine(AddrType addr)
+	{ idPool_->Unlock(addr); }
+
+	bool
+	pool::is_pinned(AddrType addr)
+	{ return idPool_->isLocked(addr); }
 
 } // end of BDB namespace
