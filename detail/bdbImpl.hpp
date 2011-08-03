@@ -130,7 +130,7 @@ namespace BDB {
 	private:
 		typedef addr_eval<AddrType> addrEval;
 		typedef boost::unordered_map<AddrType, unsigned int> AddrCntCont;
-		typedef boost::unordered_set<unsigned int> EncStreamCont;
+		typedef boost::unordered_set<size_t> EncStreamCont;
 		
 
 		pool* pools_;
