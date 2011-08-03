@@ -6,6 +6,7 @@
 #include "common.hpp"
 #include "addr_eval.hpp"
 #include "boost/unordered_map.hpp"
+#include "boost/unordered_set.hpp"
 #include "boost/pool/object_pool.hpp"
 
 namespace BDB {
@@ -87,6 +88,15 @@ namespace BDB {
 		
 		AddrType
 		stream_finish(stream_state const* state);
+		
+		unsigned int
+		stream_pause(stream_state const* state);
+
+		stream_state const*
+		stream_resume(unsigned int encrypt_handle);
+		
+		void
+		stream_expire(unsigned int encrypt_handle);
 
 		void
 		stream_abort(stream_state const* state);
@@ -120,6 +130,8 @@ namespace BDB {
 	private:
 		typedef addr_eval<AddrType> addrEval;
 		typedef boost::unordered_map<AddrType, unsigned int> AddrCntCont;
+		typedef boost::unordered_set<unsigned int> EncStreamCont;
+		
 
 		pool* pools_;
 		FILE* err_log_;
@@ -130,6 +142,8 @@ namespace BDB {
 		IDValPool *global_id_;
 		
 		AddrCntCont in_reading_;
+		// TODO two containers as follows are not recoverable
+		EncStreamCont enc_stream_state_;
 		boost::object_pool<stream_state> stream_state_pool_;
 	};
 

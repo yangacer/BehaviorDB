@@ -593,6 +593,40 @@ namespace BDB {
 		}
 		return rt;
 	}
+	
+	unsigned int
+	BDBImpl::stream_pause(stream_state const* state)
+	{
+		unsigned int rt = reinterpret_cast<unsigned int>(state);
+		rt ^= 0xDEA3;
+
+		assert(enc_stream_state_.end() == enc_stream_state_.find(rt));
+
+		enc_stream_state_.insert(rt);
+
+		return rt;
+	}
+	
+	stream_state const*
+	BDBImpl::stream_resume(unsigned int encrypt_handle)
+	{
+		if(enc_stream_state_.end() == enc_stream_state_.find(encrypt_handle) )
+			return 0;
+		enc_stream_state_.erase(encrypt_handle);
+		encrypt_handle ^= 0xDEA3;
+		return reinterpret_cast<stream_state const*>(encrypt_handle);
+	}
+
+	void
+	BDBImpl::stream_expire(unsigned int encrypt_handle)
+	{
+		assert(enc_stream_state_.end() == 
+			enc_stream_state_.find(encrypt_handle) );
+
+		stream_state const* state = stream_resume(encrypt_handle);
+		enc_stream_state_.erase(encrypt_handle);
+		stream_abort(state);
+	}
 
 	void
 	BDBImpl::stream_abort(stream_state const* state)

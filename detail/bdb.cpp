@@ -80,7 +80,19 @@ namespace BDB {
 
 	AddrType
 	BehaviorDB::stream_finish(stream_state const* state)
-	{ impl_->stream_finish(state); }
+	{ return impl_->stream_finish(state); }
+
+	unsigned int
+	BehaviorDB::stream_pause(stream_state const* state)
+	{ return impl_->stream_pause(state); }
+
+	stream_state const*
+	BehaviorDB::stream_resume(unsigned int encrypt_handle)
+	{ return impl_->stream_resume(encrypt_handle); }
+	
+	void
+	BehaviorDB::stream_expire(unsigned int encrypt_handle)
+	{ impl_->stream_expire(encrypt_handle); }
 
 	void
 	BehaviorDB::stream_abort(stream_state const* state)
