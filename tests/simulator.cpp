@@ -37,7 +37,7 @@ int main(int argc, char **argv)
 			fin>>size;
 			if(size > data_src.size())
 				data_src.resize(size);
-			if(-1 == bdb.put(&*data_src.begin(), size)){
+			if(-1 == bdb.put((char const*)&*data_src.begin(), size)){
 				cerr<<"put error at line: "<<lineNum<<endl;
 			}
 		}
