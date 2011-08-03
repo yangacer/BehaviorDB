@@ -608,10 +608,10 @@ namespace BDB {
 		return rt;
 	}
 	
-	unsigned int
+	size_t
 	BDBImpl::stream_pause(stream_state const* state)
 	{
-		unsigned int rt = reinterpret_cast<unsigned int>(state);
+		size_t rt = reinterpret_cast<size_t>(state);
 		rt ^= 0xDEA3;
 
 		assert(enc_stream_state_.end() == enc_stream_state_.find(rt));
@@ -622,7 +622,7 @@ namespace BDB {
 	}
 	
 	stream_state const*
-	BDBImpl::stream_resume(unsigned int encrypt_handle)
+	BDBImpl::stream_resume(size_t encrypt_handle)
 	{
 		if(enc_stream_state_.end() == enc_stream_state_.find(encrypt_handle) )
 			return 0;
@@ -632,7 +632,7 @@ namespace BDB {
 	}
 
 	void
-	BDBImpl::stream_expire(unsigned int encrypt_handle)
+	BDBImpl::stream_expire(size_t encrypt_handle)
 	{
 		assert(enc_stream_state_.end() == 
 			enc_stream_state_.find(encrypt_handle) );

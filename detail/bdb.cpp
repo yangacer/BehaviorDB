@@ -78,16 +78,16 @@ namespace BDB {
 	BehaviorDB::stream_finish(stream_state const* state)
 	{ return impl_->stream_finish(state); }
 
-	unsigned int
+	size_t
 	BehaviorDB::stream_pause(stream_state const* state)
 	{ return impl_->stream_pause(state); }
 
 	stream_state const*
-	BehaviorDB::stream_resume(unsigned int encrypt_handle)
+	BehaviorDB::stream_resume(size_t encrypt_handle)
 	{ return impl_->stream_resume(encrypt_handle); }
 	
 	void
-	BehaviorDB::stream_expire(unsigned int encrypt_handle)
+	BehaviorDB::stream_expire(size_t encrypt_handle)
 	{ impl_->stream_expire(encrypt_handle); }
 
 	void

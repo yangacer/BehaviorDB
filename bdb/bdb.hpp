@@ -89,14 +89,14 @@ namespace BDB {
 		AddrType
 		stream_finish(stream_state const* state);
 		
-		unsigned int
+		size_t
 		stream_pause(stream_state const* state);
 
 		stream_state const*
-		stream_resume(unsigned int encrypt_handle);
+		stream_resume(size_t encrypt_handle);
 		
 		void
-		stream_expire(unsigned int encrypt_handle);
+		stream_expire(size_t encrypt_handle);
 
 		void
 		stream_abort(stream_state const* state);
