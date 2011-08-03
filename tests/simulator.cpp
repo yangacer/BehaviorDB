@@ -27,7 +27,7 @@ int main(int argc, char **argv)
 		return 0;
 
 	string cmd;
-	unsigned int size, offset;
+	size_t size, offset;
 	AddrType addr;
 	string data_src;
 	data_src.resize(4 KB);

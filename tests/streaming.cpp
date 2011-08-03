@@ -28,7 +28,7 @@ int main(int argc, char** argv)
 	writer = bdb.ostream(4, addr, 0);
 	writer = bdb.stream_write(writer, "ya", 2);
 	
-	unsigned int enc_handle = bdb.stream_pause(writer);
+	size_t enc_handle = bdb.stream_pause(writer);
 	writer = bdb.stream_resume(enc_handle);
 
 	// write finish
