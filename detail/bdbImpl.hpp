@@ -48,8 +48,8 @@ namespace BDB {
 		put(std::string const& data, AddrType addr, size_t off=npos)
 		{ return put(data.data(), data.size(), addr, off); }
 		
-		AddrType
-		preserve(size_t preserve_size, char const *data=0, size_t size=0);
+		//AddrType
+		//preserve(size_t preserve_size, char const *data=0, size_t size=0);
 
 		AddrType
 		update(char const *data, size_t size, AddrType addr);

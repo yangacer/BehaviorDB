@@ -144,7 +144,8 @@ namespace BDB {
 		if( size + header.size > addrEval::chunk_size_estimation(dir)){
 			
 			// migration
-			unsigned int next_dir = addrEval::directory(size + header.size); //(*MigPredictor)(addr);
+			unsigned int next_dir = 
+				addrEval::directory(size + header.size);
 			if((unsigned int)-1 == next_dir){
 				error(DATA_TOO_BIG, __LINE__);
 				return -1;
@@ -154,8 +155,9 @@ namespace BDB {
 				off = header.size;
 			
 			// TODO migrate failure 
-			next_loc_addr = pools_[dir].merge_move( data, size, loc_addr, off,
-					&pools_[next_dir], &header); 
+			next_loc_addr = pools_[dir].merge_move( 
+				data, size, loc_addr, off,
+				&pools_[next_dir], &header); 
 
 			if(-1 == next_loc_addr){
 				error(dir);
@@ -165,15 +167,19 @@ namespace BDB {
 			rt = addrEval::global_addr(next_dir, next_loc_addr);
 			global_id_->Update(addr, rt);
 			global_id_->Commit(addr);
-			fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", "insert", size, addr, off);
+			fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", 
+				"insert", size, addr, off);
 			return addr;
 		}
 
 		// no migration
-		// **Althought the chunk need not migrate to another pool, it might be moved to 
-		// another chunk of the same pool due to size of data to be moved exceed size of 
+		// **Althought the chunk need not migrate to another pool, 
+		// it might be moved to another chunk of the same pool 
+		// due to size of data to be moved exceed size of 
 		// migration buffer that a pool contains
-		if(-1 == (loc_addr = pools_[dir].write(data, size, loc_addr, off, &header)) ){
+		if(-1 == (loc_addr = 
+			pools_[dir].write(data, size, loc_addr, off, &header)) )
+		{
 			error(dir);
 			return -1;	
 		}
@@ -182,11 +188,13 @@ namespace BDB {
 		global_id_->Update(addr, rt);
 		global_id_->Commit(addr);
 		
-		fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", "insert", size, addr, off);
+		fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", 
+			"insert", size, addr, off);
 
 		return addr;
 	}
-
+	
+	/*
 	AddrType
 	BDBImpl::preserve(size_t preserve_size, char const *data, size_t size)
 	{
@@ -220,10 +228,12 @@ namespace BDB {
 		}
 		
 		global_id_->Commit(rt);
-		fprintf(acc_log_, "%-12s\t%08x\t%08x\n", "preserve", preserve_size, size);
+		fprintf(acc_log_, "%-12s\t%08x\t%08x\n", 
+			"preserve", preserve_size, size);
 		return rt;
 	
 	}
+	*/
 
 	AddrType
 	BDBImpl::update(char const *data, size_t size, AddrType addr)
@@ -256,11 +266,11 @@ namespace BDB {
 		
 		if( !global_id_->isAcquired(addr) )
 			return 0;
-		addr = global_id_->Find(addr);
+		AddrType internal_addr = global_id_->Find(addr);
 
 		size_t rt(0);
-		unsigned int dir = addrEval::addr_to_dir(addr);
-		AddrType loc_addr = addrEval::local_addr(addr);
+		unsigned int dir = addrEval::addr_to_dir(internal_addr);
+		AddrType loc_addr = addrEval::local_addr(internal_addr);
 		
 		if(-1 == (rt = pools_[dir].read(output, size, loc_addr, off))){
 			error(dir);
@@ -277,12 +287,11 @@ namespace BDB {
 		
 		if( !global_id_->isAcquired(addr) )
 			return 0;
-		addr = global_id_->Find(addr);
-
+		AddrType internal_addr = global_id_->Find(addr);
 
 		size_t rt(0);
-		unsigned int dir = addrEval::addr_to_dir(addr);
-		AddrType loc_addr = addrEval::local_addr(addr);
+		unsigned int dir = addrEval::addr_to_dir(internal_addr);
+		AddrType loc_addr = addrEval::local_addr(internal_addr);
 		
 		if( -1 == (rt = pools_[dir].read(output, max, loc_addr, off))){
 			error(dir);
@@ -382,7 +391,8 @@ namespace BDB {
 
 		return rt;
 	}
-
+	
+	// TODO suuport replace mode
 	stream_state const*
 	BDBImpl::ostream(size_t stream_size, AddrType addr, size_t off)
 	{
@@ -407,7 +417,8 @@ namespace BDB {
 			return 0;
 		}
 		
-		unsigned int next_dir = addrEval::directory(stream_size + header.size);
+		unsigned int next_dir = 
+			addrEval::directory(stream_size + header.size);
 
 		if(-1 == next_dir){
 			error(DATA_TOO_BIG, __LINE__);
@@ -429,7 +440,8 @@ namespace BDB {
 			return 0;
 		}
 		
-		fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", "ostream_ins", stream_size, addr, off);
+		fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", 
+			"ostream_ins", stream_size, addr, off);
 
 		stream_state *rt = stream_state_pool_.malloc();
 		if(0 == rt) return 0;
@@ -488,7 +500,9 @@ namespace BDB {
 		unsigned int dir = addrEval::addr_to_dir(ss->inter_dest_addr);
 		AddrType loc_addr = addrEval::local_addr(ss->inter_dest_addr);
 
-		if(size != pools_[dir].overwrite(data, size, loc_addr, ss->offset + ss->used)){
+		if(size != pools_[dir].overwrite(
+			data, size, loc_addr, ss->offset + ss->used) )
+		{
 			error(dir);
 			ss->error = true;
 			return ss;
