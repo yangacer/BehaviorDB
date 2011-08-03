@@ -29,15 +29,16 @@ int main(int argc, char **argv)
 	string cmd;
 	unsigned int size, offset;
 	AddrType addr;
-	vector<char> data_src(4 KB);
-	
+	string data_src;
+	data_src.resize(4 KB);
+
 	size_t lineNum = 1;
 	while(fin>>cmd){
 		if("put" == cmd){
 			fin>>size;
 			if(size > data_src.size())
 				data_src.resize(size);
-			if(-1 == bdb.put((char const*)&*data_src.begin(), size)){
+			if(-1 == bdb.put(data_src.c_str(), size)){
 				cerr<<"put error at line: "<<lineNum<<endl;
 			}
 		}
