@@ -63,9 +63,17 @@ operator>>(FILE* fp, ChunkHeader &ch)
 FILE*
 operator<<(FILE* fp, ChunkHeader const &ch)
 {
+	using namespace std;
+	stringstream cvt;
+	cvt<<setfill('0')<<setw(8)<<hex<<ch.size;
+
+	if( 8 != fwrite(cvt.str().c_str(), 1, 8, fp))
+		return 0;
+	/*
 	if(0 >  fprintf(fp, "%08x", ch.size)){
 		return 0;
 	}
+	*/
 	return fp;
 
 }
@@ -86,7 +94,7 @@ read_header(FILE* fp, ChunkHeader &ch)
 
 int
 write_header(FILE* fp, ChunkHeader const& ch)
-{
+{	
 	if(0 >  fprintf(fp, "%08x", ch.size)){
 		return -1;
 	}

@@ -7,13 +7,35 @@
 #include "stream_state.hpp"
 #include <cassert>
 #include <stdexcept>
+#include <ios>
+#include <sstream>
+
+/*
+std::stringstream defaultFmt;
+std::stringstream hexFmt;
+std::stringstream fixedLenStrFmt;
+*/
 
 namespace BDB {
-
+	
 	BDBImpl::BDBImpl(Config const & conf)
 	: pools_(0), err_log_(0), acc_log_(0), global_id_(0)
 	{
+		using namespace std;
+
 		conf.validate();
+		
+		/*
+		// init Fmt
+		hexFmt.fill('0');
+		hexFmt.width(8);
+		hexFmt.setf(ios::hex, ios::basefield);
+		
+		fixedLenStrFmt.fill(' ');
+		fixedLenStrFmt.width(12);
+		fixedLenStrFmt.setf(ios::left, ios::adjustfield);
+		*/
+
 		init_(conf); 
 	}
 	
@@ -77,7 +99,7 @@ namespace BDB {
 			if(0 == (acc_log_ = fopen(fname, "ab")))
 				throw std::runtime_error("create access log file failed\n");
 		
-			if(0 != setvbuf(acc_log_, acc_log_buf_, _IOLBF, 256))
+			if(0 != setvbuf(acc_log_, acc_log_buf_, _IOFBF, 4096))
 				throw std::runtime_error("setvbuf to log file failed\n");
 		}
 
@@ -193,47 +215,6 @@ namespace BDB {
 
 		return addr;
 	}
-	
-	/*
-	AddrType
-	BDBImpl::preserve(size_t preserve_size, char const *data, size_t size)
-	{
-		assert(0 != *this && "BDBImpl is not proper initiated");
-		assert(preserve_size > size && 
-			"preserve size should be greater than size");
-
-		unsigned int dir = addrEval::directory(preserve_size);
-		AddrType rt(0), loc_addr(0);
-		while(dir < addrEval::dir_count()){
-			loc_addr = pools_[dir].write(data, size);
-			if(loc_addr != -1)	break;
-			dir++;
-		}
-		
-		if(-1 == loc_addr){
-			error(dir-1);
-			return -1;
-		}
-
-		rt = addrEval::global_addr(dir, loc_addr);
-		rt = global_id_->Acquire(rt);
-
-		if(-1 == rt){
-			global_id_->Release(rt);
-			error(ADDRESS_OVERFLOW, __LINE__);
-			if(-1 == pools_[dir-1].free(loc_addr)){
-				error(dir-1);
-			}
-			return -1;
-		}
-		
-		global_id_->Commit(rt);
-		fprintf(acc_log_, "%-12s\t%08x\t%08x\n", 
-			"preserve", preserve_size, size);
-		return rt;
-	
-	}
-	*/
 
 	AddrType
 	BDBImpl::update(char const *data, size_t size, AddrType addr)

@@ -3,6 +3,8 @@
 #include <fstream>
 #include <string>
 #include <iostream>
+#include <cstring>
+#include <cstdio>
 
 #define KB *1024
 #define MB *1048576
@@ -27,6 +29,7 @@ int main(int argc, char **argv)
 		return 0;
 
 	string cmd;
+	string arg;
 	size_t size, offset;
 	AddrType addr;
 	string data_src;
@@ -35,7 +38,8 @@ int main(int argc, char **argv)
 	size_t lineNum = 1;
 	while(fin>>cmd){
 		if("put" == cmd){
-			fin>>size;
+			fin>>arg;
+			size = strtoul(arg.c_str(), 0, 16);
 			if(size > data_src.size())
 				data_src.resize(size);
 			if(-1 == bdb.put(data_src.c_str(), size)){
