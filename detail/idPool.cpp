@@ -251,7 +251,7 @@ namespace BDB {
 			throw std::runtime_error("IDPool: Fail to open transaction file");
 		
 		
-		if(0 != setvbuf(file_, (char*)0, _IONBF, 0))
+		if(0 != setvbuf(file_, filebuf_, _IOLBF, 128))
 			throw std::runtime_error("IDPool: Fail to set zero buffer on transaction_file");
 
 	}
@@ -296,23 +296,13 @@ namespace BDB {
 	
 	AddrType IDValPool::Acquire(AddrType const &val)//, error_code *ec)
 	{
-		//using namespace boost::system;
-
 		if(!*this) return -1;
 
 		AddrType rt;
 		
 		if((AddrType)super::Bitmap::npos == (rt = super::bm_.find_first()) ){
-			// *ec = make_error_code(bdb_errc::id_pool::bitmap_full);
 			return -1;
 		}
-		/*
-		std::stringstream ss;
-		ss<<"+"<<rt<<"\t"<<val<<"\n";
-
-		if(-1 == write(ss.str().c_str(), ss.str().size()))
-			return -1;
-		*/
 		super::bm_[rt] = false;
 
 		if(rt >= super::max_used_)

@@ -142,6 +142,7 @@ namespace BDB {
 		Bitmap lock_;
 		bool full_alloc_;
 		AddrType max_used_;
+		char filebuf_[128];
 	};
 
 	/** @brief Extend IDPool<B> for associating a value with an ID.

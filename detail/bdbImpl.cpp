@@ -10,11 +10,11 @@
 #include <ios>
 #include <sstream>
 
-/*
+
 std::stringstream defaultFmt;
 std::stringstream hexFmt;
 std::stringstream fixedLenStrFmt;
-*/
+
 
 namespace BDB {
 	
@@ -25,16 +25,16 @@ namespace BDB {
 
 		conf.validate();
 		
-		/*
+		
 		// init Fmt
 		hexFmt.fill('0');
 		hexFmt.width(8);
 		hexFmt.setf(ios::hex, ios::basefield);
 		
 		fixedLenStrFmt.fill(' ');
-		fixedLenStrFmt.width(12);
+		fixedLenStrFmt.width(14);
 		fixedLenStrFmt.setf(ios::left, ios::adjustfield);
-		*/
+		
 
 		init_(conf); 
 	}
@@ -140,7 +140,14 @@ namespace BDB {
 		
 		global_id_->Commit(rt);
 		
-		fprintf(acc_log_, "%-12s\t%08x\n", "put", size);
+		std::stringstream cvt;
+		cvt.copyfmt(fixedLenStrFmt);
+		cvt<<"put";
+		cvt.copyfmt(hexFmt);
+		cvt<<size<<"\n";
+		fwrite(cvt.str().c_str(), 1, cvt.str().size(), acc_log_);
+
+		// fprintf(acc_log_, "%-12s\t%08x\n", "put", size);
 
 		return rt;
 	}
