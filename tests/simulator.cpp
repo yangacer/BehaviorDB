@@ -9,21 +9,33 @@
 #define KB *1024
 #define MB *1048576
 
+void usage()
+{ 
+	using namespace std;
+	cout<<"./simulator work_dir workload"<<endl;
+	exit(1);
+}
+
 int main(int argc, char **argv)
 {
 	using namespace std;
 	using namespace BDB;
+		
+	if(argc < 3)
+		usage();
+	
 
 	ifstream fin;
 	size_t const bufsize = 1 MB;
 	char buf[bufsize];
 	Config conf;
 	conf.min_size = 1 KB;
+	conf.root_dir = argv[1];
 	conf.beg = 1; conf.end = 1 + 5000000;
 	BehaviorDB bdb(conf);
 
 	fin.rdbuf()->pubsetbuf(buf, bufsize);
-	fin.open(argv[1], ios::in | ios::binary);
+	fin.open(argv[2], ios::in | ios::binary);
 
 	if(!fin.is_open())
 		return 0;
