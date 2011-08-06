@@ -314,7 +314,10 @@ namespace BDB {
 	}
 	
 	bool IDValPool::avail() const
-	{ return super::bm_.any(); }
+	{
+		if(super::max_used() < super::end()) return true;
+		return super::bm_.any(); 
+	}
 
 	int IDValPool::Commit(AddrType const& id)
 	{
