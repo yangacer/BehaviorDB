@@ -121,6 +121,20 @@ namespace BDB {
 		// the one behind pos of (max_used() - 1)  >
 		// the one behind pos of (max_used() - 1) after extension
 		// the one is located before pos
+		rt = (max_used_) ? bm_.find_next(max_used_ - 1) : bm_.find_first() ;
+		if((AddrType)Bitmap::npos == rt){
+			if( !full_alloc_){
+				try {
+					extend();  
+				}catch(std::bad_alloc const& e){ 
+					return -1;
+				}
+				rt = bm_.find_next(max_used_ - 1);
+			}else if( (AddrType)Bitmap::npos == (rt = bm_.find_first()) ) {
+					return -1;
+			}		
+		}
+		/*
 		if((AddrType)Bitmap::npos == (rt = bm_.find_next(max_used_ - 1))){
 			if(!full_alloc_ ) {
 				try {
@@ -129,11 +143,12 @@ namespace BDB {
 					return -1;
 				}
 				rt = bm_.find_next(max_used_ - 1);
-			}else if((AddrType)Bitmap::npos == (rt = bm_.find_first())){
-				return -1;	
+			}else {
+				if( (AddrType)Bitmap::npos == (rt = bm_.find_first())){
+					return -1;	
 			}
 		}
-		
+		*/
 		bm_[rt] = false;
 
 		if(rt >= max_used_) max_used_ = rt + 1;
