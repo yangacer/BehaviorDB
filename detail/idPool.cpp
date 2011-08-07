@@ -117,16 +117,19 @@ namespace BDB {
 		
 		AddrType rt;
 		
-		// extend bitmap
-		if((AddrType)Bitmap::npos == (rt = bm_.find_first())){
+		// acquire priority: 
+		// the one behind pos of (max_used() - 1)  >
+		// the one behind pos of (max_used() - 1) after extension
+		// the one is located before pos
+		if((AddrType)Bitmap::npos == (rt = bm_.find_next(max_used_ - 1))){
 			if(!full_alloc_ ) {
 				try {
 					extend();  
 				}catch(std::bad_alloc const& e){ 
 					return -1;
 				}
-				rt = bm_.find_first();
-			}else{
+				rt = bm_.find_next(max_used_ - 1);
+			}else if((AddrType)Bitmap::npos == (rt = bm_.find_first())){
 				return -1;	
 			}
 		}
@@ -299,10 +302,20 @@ namespace BDB {
 		if(!*this) return -1;
 
 		AddrType rt;
-		
-		if((AddrType)super::Bitmap::npos == (rt = super::bm_.find_first()) ){
+		if(-1 == (rt = super::Acquire()))
 			return -1;
+		arr_[rt - super::begin()] = val;
+		
+		return rt;
+		/*
+		if((AddrType)super::Bitmap::npos == 
+			(rt = super::bm_.find_next(super::max_used() - 1)) )
+		{
+			if((AddrType)super::Bitmap::npos == 
+					(rt = super::bm_.find_first()) )
+				return -1;
 		}
+
 		super::bm_[rt] = false;
 
 		if(rt >= super::max_used_)
@@ -311,6 +324,7 @@ namespace BDB {
 		arr_[rt] = val;
 
 		return 	super::beg_ + rt;
+		*/
 	}
 	
 	bool IDValPool::avail() const
