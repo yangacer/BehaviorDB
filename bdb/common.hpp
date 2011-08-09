@@ -89,14 +89,19 @@ namespace BDB {
 		/** @brief Config default constructor 
 		 * @desc Construct BDB::Config with default configurations  
 		 */
-		Config()
-		: beg(1), end(100000001),
-		  addr_prefix_len(4), min_size(32), 
-		  root_dir(""), pool_dir(""), trans_dir(""), header_dir(""), log_dir(""),
-		  cse_func(&default_chunk_size_est), 
-		  ct_func(&default_capacity_test)
-		{ validate(); }
-		
+		Config(	AddrType beg = 1,
+			AddrType end = 100000001,
+			unsigned int addr_prefix_len = 4,
+			size_t min_size = 32,
+			char const *root_dir = "",
+			char const *pool_dir = "",
+			char const *trans_dir = "",
+			char const *header_dir = "",
+			char const *log_dir = "",
+			Chunk_size_est cse_func = &default_chunk_size_est,
+			Capacity_test ct_func = &default_capacity_test 
+			);
+
 		/** @brief Validate configuration
 		 *  @throw invalid_argument
 		 */

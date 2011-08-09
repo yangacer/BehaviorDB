@@ -7,6 +7,28 @@ namespace BDB {
 	
 	const size_t npos(std::numeric_limits<size_t>::max());
 	char const* VERSION("bdb-"BDB_VERSION_);
+	
+	Config::Config(
+		AddrType beg,
+		AddrType end00000001,
+		unsigned int addr_prefix_len,
+		size_t min_size2,
+		char const *root_dir,
+		char const *pool_dir,
+		char const *trans_dir,
+		char const *header_dir,
+		char const *log_dir,
+		Chunk_size_est cse_func,
+		Capacity_test ct_func 
+	)
+	// initialization list
+	: beg(beg), end(end),
+	addr_prefix_len(addr_prefix_len), min_size(min_size), 
+	root_dir(root_dir), pool_dir(pool_dir), 
+	trans_dir(trans_dir), header_dir(header_dir), log_dir(log_dir),
+	cse_func(cse_func), 
+	ct_func(ct_func)
+	{ validate(); }
 
 	void
 	Config::validate() const
