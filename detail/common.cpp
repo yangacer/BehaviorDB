@@ -10,9 +10,9 @@ namespace BDB {
 	
 	Config::Config(
 		AddrType beg,
-		AddrType end00000001,
+		AddrType end,
 		unsigned int addr_prefix_len,
-		size_t min_size2,
+		size_t min_size,
 		char const *root_dir,
 		char const *pool_dir,
 		char const *trans_dir,
