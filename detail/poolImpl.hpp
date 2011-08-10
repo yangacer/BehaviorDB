@@ -41,8 +41,7 @@ namespace BDB
 			{}
 		};
 
-		pool();
-		pool(config const &conf);
+		pool(config const &conf, addr_eval<AddrType> &addrEval);
 		~pool();
 		
 		operator void const*() const;
@@ -153,14 +152,14 @@ namespace BDB
 		pool(pool const& cp);
 		pool& operator=(pool const& cp);
 
-	private: // data member
+	private: // data membera
+		addr_eval<AddrType> const & addrEval;
 		unsigned int dirID;
 		std::string work_dir;
 		std::string trans_dir;
 		
 		// pool file
 		FILE *file_;
-		typedef addr_eval<AddrType> addrEval;
 	public:
 		char mig_buf_[MIGBUF_SIZ];
 	private:	

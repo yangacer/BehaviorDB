@@ -125,11 +125,10 @@ namespace BDB {
 		error(int errcode, int line);
 	
 	private:
-		typedef addr_eval<AddrType> addrEval;
 		typedef boost::unordered_map<AddrType, unsigned int> AddrCntCont;
 		typedef boost::unordered_set<size_t> EncStreamCont;
 		
-
+		addr_eval<AddrType> addrEval;
 		pool* pools_;
 		FILE* err_log_;
 		char err_log_buf_[256];

@@ -14,7 +14,7 @@ namespace BDB {
 
 		(*this)(bdb->global_id_);
 		
-		for(size_t i=0;i<addr_eval<AddrType>::dir_count();++i){
+		for(size_t i=0;i< bdb->addrEval.dir_count();++i){
 			(*this)(bdb->pools_ + i);
 		}
 	}
@@ -26,7 +26,7 @@ namespace BDB {
 
 		s->disk_size += 
 			pool->idPool_->max_used()* 
-			pool::addrEval::chunk_size_estimation(pool->dirID);
+			pool->addrEval.chunk_size_estimation(pool->dirID);
 
 		s->pool_mem_size += MIGBUF_SIZ;
 	}

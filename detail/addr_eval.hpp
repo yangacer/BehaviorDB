@@ -9,62 +9,62 @@ namespace BDB {
 	template<typename addr_t = AddrType>
 	struct addr_eval
 	{
-		static void
+		void
 		init( 	unsigned int dir_prefix_len, size_t min_size, 
 			Chunk_size_est cse = &BDB::default_chunk_size_est, 
 			Capacity_test ct = &BDB::default_capacity_test );
 
-		static bool
-		is_init();
+		bool
+		is_init() const;
 			
-		static void
+		void
 		set(unsigned char dir_prefix_len);
 		
-		static void
+		void
 		set(size_t min_size);
 
-		static void
+		void
 		set(Chunk_size_est chunk_size_estimation_func);
 
-		static void
+		void
 		set(Capacity_test capacity_test_func);
 
-		static unsigned int
-		global_addr_len();
+		unsigned int
+		global_addr_len() const;
 
-		static unsigned char
-		local_addr_len();
+		unsigned char
+		local_addr_len() const;
 
-		static size_t 
-		chunk_size_estimation(unsigned int dir);
+		size_t 
+		chunk_size_estimation(unsigned int dir) const;
 		
-		static bool
-		capacity_test(unsigned int dir, size_t size);
+		bool
+		capacity_test(unsigned int dir, size_t size) const;
 
-		static unsigned int 
-		dir_count();
+		unsigned int 
+		dir_count() const;
 		
 		// estimate directory ID according to chunk size
-		static unsigned int 
-		directory(size_t size);
+		unsigned int 
+		directory(size_t size) const;
 		
-		static unsigned int 
-		addr_to_dir(addr_t addr);
+		unsigned int 
+		addr_to_dir(addr_t addr) const;
 
-		static addr_t 
-		global_addr(unsigned int dir, addr_t local_addr);
+		addr_t 
+		global_addr(unsigned int dir, addr_t local_addr) const;
 
-		static addr_t 
-		local_addr(addr_t global_addr);
+		addr_t 
+		local_addr(addr_t global_addr) const;
 		
 	private:
-		static unsigned char dir_prefix_len_;
-		static size_t min_size_;
+		unsigned char dir_prefix_len_;
+		size_t min_size_;
 		
-		static Chunk_size_est chunk_size_est_;
-		static Capacity_test capacity_test_;
+		Chunk_size_est chunk_size_est_;
+		Capacity_test capacity_test_;
 
-		static addr_t loc_addr_mask;
+		addr_t loc_addr_mask;
 
 	};
 

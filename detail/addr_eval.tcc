@@ -3,21 +3,7 @@
 
 namespace BDB {
 
-	template<typename T>
-	unsigned char addr_eval<T>::dir_prefix_len_(0);
 	
-	template<typename T>
-	size_t addr_eval<T>::min_size_(0);
-		
-	template<typename T>
-	Chunk_size_est addr_eval<T>::chunk_size_est_(0);
-
-	template<typename T>
-	Capacity_test addr_eval<T>::capacity_test_(0);
-
-	template<typename T>
-	T addr_eval<T>::loc_addr_mask(0);
-
 	template<typename T>
 	void
 	addr_eval<T>::init(unsigned int dir_prefix_len, size_t min_size, 
@@ -34,7 +20,7 @@ namespace BDB {
 
 	template<typename T>
 	bool
-	addr_eval<T>::is_init()
+	addr_eval<T>::is_init() const
 	{ 
 		if((!dir_prefix_len_ && !min_size_) || !chunk_size_est_ || !capacity_test_)	
 			return false;
@@ -68,32 +54,32 @@ namespace BDB {
 
 	template<typename T>
 	unsigned int
-	addr_eval<T>::global_addr_len()
+	addr_eval<T>::global_addr_len() const
 	{ return dir_prefix_len_; }
 
 	template<typename T>
 	unsigned char
-	addr_eval<T>::local_addr_len()
+	addr_eval<T>::local_addr_len() const
 	{ return (sizeof(T)<<3) - dir_prefix_len_; }
 
 	template<typename T>
 	size_t 
-	addr_eval<T>::chunk_size_estimation(unsigned int dir)
+	addr_eval<T>::chunk_size_estimation(unsigned int dir) const
 	{ return (*chunk_size_est_)(dir, min_size_); }
 	
 	template<typename T>
 	bool
-	addr_eval<T>::capacity_test(unsigned int dir, size_t size)
+	addr_eval<T>::capacity_test(unsigned int dir, size_t size) const
 	{ return (*capacity_test_)((*chunk_size_est_)(dir, min_size_), size); }
 
 	template<typename T>
 	unsigned int 
-	addr_eval<T>::dir_count()
+	addr_eval<T>::dir_count() const
 	{ return 1<<dir_prefix_len_; }
 
 	template<typename T>
 	unsigned int 
-	addr_eval<T>::directory(size_t size)
+	addr_eval<T>::directory(size_t size) const
 	{
 		unsigned int i;
 		for(i=0; i < dir_count(); ++i)
@@ -106,14 +92,14 @@ namespace BDB {
 	
 	template<typename T>
 	unsigned int 
-	addr_eval<T>::addr_to_dir(T addr)
+	addr_eval<T>::addr_to_dir(T addr) const
 	{
 		return addr >> local_addr_len() ;	
 	}
 
 	template<typename T>
 	T 
-	addr_eval<T>::global_addr(unsigned int dir, T local_addr)
+	addr_eval<T>::global_addr(unsigned int dir, T local_addr) const
 	{
 		// preservation of failure
 		return (local_addr == -1) ? -1 :
@@ -122,7 +108,7 @@ namespace BDB {
 
 	template<typename T>
 	T
-	addr_eval<T>::local_addr(T global_addr)
+	addr_eval<T>::local_addr(T global_addr) const
 	{ return loc_addr_mask & global_addr; }
 	
 

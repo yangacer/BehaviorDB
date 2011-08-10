@@ -10,15 +10,10 @@
 namespace BDB {
 	
 
-	pool::pool()
-	: dirID(0), 
-	  work_dir(), trans_dir(),
-	  //addrEval(0), 
-	  file_(0), idPool_(0), headerPool_()
-	{}
-
-	pool::pool(pool::config const &conf)
-	: dirID(conf.dirID), 
+	
+	pool::pool(pool::config const &conf, addr_eval<AddrType>& addrEval)
+	: addrEval(addrEval),
+	  dirID(conf.dirID), 
 	  work_dir(conf.work_dir), trans_dir(conf.trans_dir), 
 	  //addrEval(conf.addrEval), 
 	  file_(0), idPool_(0), headerPool_(conf.dirID, conf.header_dir)
@@ -58,7 +53,7 @@ namespace BDB {
 	
 	pool::operator void const*() const
 	{ 
-		if(!this || !addrEval::is_init() || !idPool_)
+		if(!this || !addrEval.is_init() || !idPool_)
 			return 0;
 		return this;
 	}
@@ -122,7 +117,7 @@ namespace BDB {
 			return -1;
 		}
 		
-		assert(size + loc_header.size <= addrEval::chunk_size_estimation(dirID) && 
+		assert(size + loc_header.size <= addrEval.chunk_size_estimation(dirID) && 
 			"data exceeds chunk size");
 		
 		assert((off == npos || off <= loc_header.size) && 
@@ -220,7 +215,7 @@ namespace BDB {
 			total += vv[i].size;		
 		}
 		
-		assert(total <= addrEval::chunk_size_estimation(dirID) && 
+		assert(total <= addrEval.chunk_size_estimation(dirID) && 
 			"data exceeds chunk size");
 
 		ChunkHeader header;
@@ -285,7 +280,7 @@ namespace BDB {
 			return -1;
 		}
 		
-		assert(size <= addrEval::chunk_size_estimation(dirID));
+		assert(size <= addrEval.chunk_size_estimation(dirID));
 		new_header.size = size;
 		
 		if(-1 == seek(addr, 0)){
@@ -522,7 +517,7 @@ namespace BDB {
 		assert(true == idPool_->isAcquired(addr) && 
 			"overwrite to invalid address");
 
-		assert(off+size < addrEval::chunk_size_estimation(dirID)
+		assert(off+size < addrEval.chunk_size_estimation(dirID)
 			&& "exceed chunk size");
 
 		if(-1 == seek(addr, off)){
@@ -556,7 +551,7 @@ namespace BDB {
 		assert(0 != *this && "pool is not proper initiated");
 
 		off_t pos = addr;
-		pos *= addrEval::chunk_size_estimation(dirID);
+		pos *= addrEval.chunk_size_estimation(dirID);
 		pos += off;
 		if(-1 == fseeko(file_, pos, SEEK_SET)){
 			return -1;
@@ -571,7 +566,7 @@ namespace BDB {
 		assert(0 != *this && "pool is not proper initiated");
 
 		off_t pos = addr;
-		pos *= addrEval::chunk_size_estimation(dirID);
+		pos *= addrEval.chunk_size_estimation(dirID);
 		pos += off;
 		return pos;
 	}
