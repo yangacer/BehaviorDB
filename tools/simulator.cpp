@@ -12,7 +12,7 @@
 void usage()
 { 
 	using namespace std;
-	cout<<"./simulator work_dir workload"<<endl;
+	cout<<"./simulator -w work_dir -h header_dir workload"<<endl;
 	exit(1);
 }
 
@@ -23,19 +23,38 @@ int main(int argc, char **argv)
 		
 	if(argc < 3)
 		usage();
-	
+
+	char const *work_dir = 0;
+	char const *header_dir = 0; 
+	char const *workload = 0;
+
+	for(int i=0;i<argc;++i){
+		if(0 == strcmp("-w", argv[i])){
+			if(i+i >= argc) usage();
+			work_dir = argv[i+1];
+			++i;
+		}else if(0 == strcmp("-h", argv[i])){
+			if(i+i >= argc) usage();
+			header_dir = argv[i+1];
+			++i;
+		}else {
+			workload = argv[i];	
+		}
+		
+	}
 
 	ifstream fin;
 	size_t const bufsize = 1 MB;
 	char buf[bufsize];
 	Config conf;
 	conf.min_size = 1 KB;
-	conf.root_dir = argv[1];
+	if(work_dir) conf.root_dir = work_dir;
+	if(header_dir) conf.header_dir = header_dir;
 	conf.beg = 1; conf.end = 1 + 5000000;
 	BehaviorDB bdb(conf);
 
 	fin.rdbuf()->pubsetbuf(buf, bufsize);
-	fin.open(argv[2], ios::in | ios::binary);
+	fin.open(workload, ios::in | ios::binary);
 
 	if(!fin.is_open())
 		return 0;
