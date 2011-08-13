@@ -21,20 +21,20 @@ int main(int argc, char **argv)
 	using namespace std;
 	using namespace BDB;
 		
-	if(argc < 3)
+	if(argc < 2)
 		usage();
 
 	char const *work_dir = 0;
 	char const *header_dir = 0; 
 	char const *workload = 0;
 
-	for(int i=0;i<argc;++i){
+	for(int i=1;i<argc;++i){
 		if(0 == strcmp("-w", argv[i])){
-			if(i+i >= argc) usage();
+			if(i+1 >= argc) usage();
 			work_dir = argv[i+1];
 			++i;
 		}else if(0 == strcmp("-h", argv[i])){
-			if(i+i >= argc) usage();
+			if(i+1 >= argc) usage();
 			header_dir = argv[i+1];
 			++i;
 		}else {
