@@ -35,7 +35,7 @@ namespace BDB {
 			}
 		}
 
-		if(0 != setvbuf(file_, 0, _IONBF, 0))
+		if(0 != setvbuf(file_, file_buf_, _IONBF, MIGBUF_SIZ))
 			throw runtime_error("pool: setvbuf to pool file failed");
 
 		// setup idPool
@@ -74,12 +74,15 @@ namespace BDB {
 			return -1;
 		}
 		// allow data = 0 to act as allocation
-		if(0 != data && size != fwrite(data, 1, size, file_)){
+		if(0 != data && 
+			size != fwrite(data, 1, size, file_) && 
+			0 != fflush(file_))
+		{
 			idPool_->Release(loc_addr);
 			on_error(SYSTEM_ERROR, __LINE__);
 			return -1;
 		}
-		
+
 		if(-1 == headerPool_.write(header, loc_addr)){
 			idPool_->Release(loc_addr);
 			on_error(SYSTEM_ERROR, __LINE__);
@@ -169,7 +172,7 @@ namespace BDB {
 				return -1;
 			}
 		}
-
+		
 		// write buffered data
 		if(moved && moved != (partial = fwrite(mig_buf_, 1, moved, file_))){
 			// rollback to previous state
@@ -186,6 +189,11 @@ namespace BDB {
 			
 		}
 		
+		if(0 != fflush(file_)){
+			on_error(SYSTEM_ERROR, __LINE__);
+			return -1;
+		}
+
 		// update header 
 		if(-1 == headerPool_.write(loc_header, addr)){
 			if(-1 == seek(addr, off)){
@@ -253,6 +261,13 @@ namespace BDB {
 			}
 			wv.dest_pos += vv[i].size;
 		}
+		
+		if(0 != fflush(file_)){
+			idPool_->Release(loc_addr);
+			on_error(SYSTEM_ERROR, __LINE__);
+			return -1;
+		}
+
 		if( -1 == idPool_->Commit(loc_addr)){
 			idPool_->Release(loc_addr);
 			on_error(SYSTEM_ERROR, __LINE__);
@@ -288,7 +303,8 @@ namespace BDB {
 			return -1;
 		}
 		
-		if(size != fwrite(data, 1, size, file_)){
+		if(size != fwrite(data, 1, size, file_) &&
+			0 != fflush(file_)){
 			idPool_->Release(addr);
 			idPool_->Commit(addr);
 			on_error(SYSTEM_ERROR, __LINE__);
@@ -500,7 +516,9 @@ namespace BDB {
 				on_error(SYSTEM_ERROR, __LINE__);
 				return -1;
 			}
-			if(readCnt != fwrite(mig_buf_, 1, readCnt, file_)){
+			if(readCnt != fwrite(mig_buf_, 1, readCnt, file_) &&
+				0 != fflush(file_))
+			{
 				on_error(SYSTEM_ERROR, __LINE__);
 				return -1;
 			}
@@ -525,7 +543,9 @@ namespace BDB {
 			return -1;
 		}
 
-		if(size != fwrite(data, 1, size, file_)){
+		if(size != fwrite(data, 1, size, file_) &&
+			fflush(file_) )
+		{
 			on_error(SYSTEM_ERROR, __LINE__);
 			return -1;
 		}

@@ -144,15 +144,13 @@ namespace BDB
 		void lock_rel();
 		*/
 
-	private: // methods
-		
 		// TODO is ctor sufficient?
 		// void create(config const& conf);
 
 		pool(pool const& cp);
 		pool& operator=(pool const& cp);
 
-	private: // data membera
+		// data membera
 		addr_eval<AddrType> const & addrEval;
 		unsigned int dirID;
 		std::string work_dir;
@@ -160,9 +158,8 @@ namespace BDB
 		
 		// pool file
 		FILE *file_;
-	public:
 		char mig_buf_[MIGBUF_SIZ];
-	private:	
+		char file_buf_[MIGBUF_SIZ];
 		// id file
 		IDPool *idPool_;
 
