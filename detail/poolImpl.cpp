@@ -35,7 +35,7 @@ namespace BDB {
 			}
 		}
 
-		if(0 != setvbuf(file_, file_buf_, _IONBF, MIGBUF_SIZ))
+		if(0 != setvbuf(file_, file_buf_, _IOFBF, MIGBUF_SIZ))
 			throw runtime_error("pool: setvbuf to pool file failed");
 
 		// setup idPool
