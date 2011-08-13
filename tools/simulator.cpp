@@ -45,7 +45,9 @@ int main(int argc, char **argv)
 	size_t size, offset;
 	AddrType addr;
 	string data_src;
+	string data_dest;
 	data_src.resize(4 KB);
+	data_dest.resize(4 KB);
 
 	size_t lineNum = 1;
 	while(fin>>cmd){
@@ -57,6 +59,17 @@ int main(int argc, char **argv)
 			if(-1 == bdb.put(data_src.c_str(), size)){
 				cerr<<"put error at line: "<<lineNum<<endl;
 			}
+		}else if("get" == cmd){
+			fin>>arg;
+			size = strtoul(arg.c_str(), 0, 16);
+			fin>>arg;
+			addr = strtoul(arg.c_str(), 0, 16);
+			fin>>arg;
+			offset = strtoul(arg.c_str(), 0, 16);
+			if(size > data_dest.size()) 
+				data_dest.resize(size);
+ 			if(-1 == bdb.get(&data_dest, size, addr, offset))
+				cerr<<"get error at line: "<<lineNum<<endl;
 		}
 		lineNum++;
 	}

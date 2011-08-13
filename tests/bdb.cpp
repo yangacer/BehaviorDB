@@ -188,7 +188,7 @@ int main(int argc, char** argv)
 	rec.clear();
 	bdb.get(&rec, 10, addr);
 	printf("======== stream write (prototype) ========\n");
-	printf("should: %08x\n", 1u);
+	printf("should: %08x\n", 6u);
 	printf("result: %08x\n", addr);
 	printf("should: %s\n", "toma");
 	printf("result: %s\n", rec.c_str());
