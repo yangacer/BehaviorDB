@@ -122,8 +122,13 @@ namespace BDB {
 
 		rt = addrEval.global_addr(dir, loc_addr);
 		rt = global_id_->Acquire(rt);
+
+		assert(-1 != rt && "Unexpected return value");
 		
-		global_id_->Commit(rt);
+		if( !global_id_->Commit(rt) ){
+			error(COMMIT_FAILURE, __LINE__);
+			return -1;
+		}
 		
 		fprintf(acc_log_, "%-12s\t%08x\n", "put", size);
 
@@ -146,7 +151,10 @@ namespace BDB {
 		AddrType rt;
 
 		ChunkHeader header;
-		pools_[dir].head(&header, loc_addr);
+		if(-1 == pools_[dir].head(&header, loc_addr)){
+			error(dir);	
+			return -1;
+		}
 		
 		if( size + header.size > addrEval.chunk_size_estimation(dir)){
 			
@@ -193,14 +201,18 @@ namespace BDB {
 		
 		rt = addrEval.global_addr(dir, loc_addr);
 		global_id_->Update(addr, rt);
-		global_id_->Commit(addr);
+		if(!global_id_->Commit(addr)){
+			error(COMMIT_FAILURE, __LINE__);
+			return -1;
+		}
 		
 		fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", 
 			"insert", size, addr, off);
 
 		return addr;
 	}
-
+	
+	/// TODO this method should called "replace"
 	AddrType
 	BDBImpl::update(char const *data, size_t size, AddrType addr)
 	{
@@ -286,7 +298,10 @@ namespace BDB {
 			return -1;	
 		}
 		global_id_->Release(addr);
-		global_id_->Commit(addr);
+		if( !global_id_->Commit(addr) ){
+			error(COMMIT_FAILURE, __LINE__);
+			return -1;
+		}
 		fprintf(acc_log_, "%-12s\t%08x\n", "del", addr);
 		return 0;
 	}
@@ -428,6 +443,7 @@ namespace BDB {
 	stream_state const*
 	BDBImpl::istream(size_t stream_size, AddrType addr, size_t off)
 	{
+		/// TODO Consider allow reader when a chunk is been written
 		if(!global_id_->isAcquired(addr) || global_id_->isLocked(addr))
 			return 0;
 
@@ -442,6 +458,7 @@ namespace BDB {
 
 		stream_state *rt = stream_state_pool_.malloc();
 		if(0 == rt) return 0;
+
 		rt->read_write = stream_state::READ;
 		rt->existed = true;
 		rt->error = false;
@@ -524,8 +541,10 @@ namespace BDB {
 			// and a reader is the last one
 			AddrCntCont::iterator iter = 
 				in_reading_.find(ss->inter_src_addr);
+
 			assert(in_reading_.end() != iter && 
 				"unexpected address");
+
 			iter->second--;
 			if(iter->second == 0){ // the last reader
 				if(pools_[dir].is_pinned(loc_addr)){
@@ -554,7 +573,12 @@ namespace BDB {
 					pools_[dir].free(loc_addr);
 
 				global_id_->Update(ss->ext_addr, ss->inter_dest_addr);
-				global_id_->Commit(ss->ext_addr);
+				
+				if(!global_id_->Commit(ss->ext_addr)){
+					global_id_->Update(ss->ext_addr, ss->inter_src_addr);
+					error(COMMIT_FAILURE, __LINE__);	
+					return -1;
+				}
 			}else {
 				if(-1 == (ss->ext_addr = 
 					global_id_->Acquire(ss->inter_dest_addr)))
@@ -563,7 +587,11 @@ namespace BDB {
 					stream_abort(state);
 					return -1;
 				}	
-				global_id_->Commit(ss->ext_addr);
+				if(!global_id_->Commit(ss->ext_addr)){
+					global_id_->Release(ss->ext_addr);
+					error(COMMIT_FAILURE, __LINE__);
+					return -1;
+				}
 			}	
 			rt = ss->ext_addr;
 			stream_state_pool_.free(ss);
@@ -623,8 +651,10 @@ namespace BDB {
 			// and a reader is the last one
 			AddrCntCont::iterator iter = 
 				in_reading_.find(ss->inter_src_addr);
+
 			assert(in_reading_.end() != iter && 
 				"unexpected address");
+
 			iter->second--;
 			
 			if(iter->second == 0){ // the last reader

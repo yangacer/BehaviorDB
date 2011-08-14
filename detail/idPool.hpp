@@ -79,7 +79,7 @@ namespace BDB {
 		int 
 		Release(AddrType const &id);
 
-		int
+		bool
 		Commit(AddrType const&id);
 
 		void
@@ -161,9 +161,11 @@ namespace BDB {
 		 */
 		AddrType Acquire(AddrType const &val);
 		
-		bool avail() const;
+		bool 
+		avail() const;
 
-		int Commit(AddrType const &id);
+		bool 
+		Commit(AddrType const &id);
 
 		/** Find value by ID
 		 * @param id

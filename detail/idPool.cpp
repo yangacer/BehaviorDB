@@ -134,21 +134,7 @@ namespace BDB {
 					return -1;
 			}		
 		}
-		/*
-		if((AddrType)Bitmap::npos == (rt = bm_.find_next(max_used_ - 1))){
-			if(!full_alloc_ ) {
-				try {
-					extend();  
-				}catch(std::bad_alloc const& e){ 
-					return -1;
-				}
-				rt = bm_.find_next(max_used_ - 1);
-			}else {
-				if( (AddrType)Bitmap::npos == (rt = bm_.find_first())){
-					return -1;	
-			}
-		}
-		*/
+		
 		bm_[rt] = false;
 
 		if(rt >= max_used_) max_used_ = rt + 1;
@@ -172,13 +158,13 @@ namespace BDB {
 		return 0;
 	}
 
-	int
+	bool
 	IDPool::Commit(AddrType const& id)
 	{
 		std::stringstream ss;
 		char symbol = bm_[id-beg_] ? '-' : '+';
 		ss<<symbol<<(id-beg_)<<"\n";
-		return write(ss.str().c_str(), ss.str().size());
+		return -1 != write(ss.str().c_str(), ss.str().size());
 	}
 
 	void
@@ -276,7 +262,8 @@ namespace BDB {
 
 
 	
-	size_t IDPool::num_blocks() const
+	size_t 
+	IDPool::num_blocks() const
 	{ return bm_.num_blocks(); }
 
 	
@@ -322,24 +309,7 @@ namespace BDB {
 		arr_[rt - super::begin()] = val;
 		
 		return rt;
-		/*
-		if((AddrType)super::Bitmap::npos == 
-			(rt = super::bm_.find_next(super::max_used() - 1)) )
-		{
-			if((AddrType)super::Bitmap::npos == 
-					(rt = super::bm_.find_first()) )
-				return -1;
-		}
-
-		super::bm_[rt] = false;
-
-		if(rt >= super::max_used_)
-			super::max_used_ = 1 + rt;
-
-		arr_[rt] = val;
-
-		return 	super::beg_ + rt;
-		*/
+		
 	}
 	
 	bool IDValPool::avail() const
@@ -348,7 +318,8 @@ namespace BDB {
 		return super::bm_.any(); 
 	}
 
-	int IDValPool::Commit(AddrType const& id)
+	bool 
+	IDValPool::Commit(AddrType const& id)
 	{
 		AddrType off = id - begin();
 		if(super::bm_[off]) 
@@ -356,7 +327,7 @@ namespace BDB {
 
 		std::stringstream ss;
 		ss<<"+"<<(off)<<"\t"<<arr_[off]<<"\n";
-		return write(ss.str().c_str(), ss.str().size());
+		return -1 != write(ss.str().c_str(), ss.str().size());
 	}
 	
 	AddrType IDValPool::Find(AddrType const & id) const

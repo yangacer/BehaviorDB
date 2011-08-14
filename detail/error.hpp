@@ -20,7 +20,9 @@ namespace BDB  {
 		
 		NON_EXIST = 5,
 
-		ROLLBACK_FAILURE
+		ROLLBACK_FAILURE = 6,
+
+		COMMIT_FAILURE = 7
 	};
 
 	struct error_num_to_str
@@ -30,7 +32,7 @@ namespace BDB  {
 			return buf[error_num];
 		}
 	private:
-		static char buf[7][40];
+		static char buf[8][40];
 	};
 } // end of namespace BDB
 

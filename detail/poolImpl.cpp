@@ -91,7 +91,7 @@ namespace BDB {
 
 		if(-1 == idPool_->Commit(loc_addr)){
 			idPool_->Release(loc_addr);
-			on_error(SYSTEM_ERROR, __LINE__);
+			on_error(COMMIT_FAILURE, __LINE__);
 			return -1;
 		}
 		return loc_addr;
