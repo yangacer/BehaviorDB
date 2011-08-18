@@ -125,6 +125,16 @@ int main(int argc, char** argv)
 	printf("\n==== replace data with \"replaced\" ====\n");
 	printf("should:\t%s\n", should.c_str());
 	printf("result:\t%s\n", rec.c_str());
+	
+	// update to cause migration
+	addr2 = bdb.put("small", 4);
+	should = "123456789012345678901234567890tail";
+	bdb.update(should.c_str(), should.size(), addr2);
+	bdb.get(&rec, 1024, addr2);
+	printf("\n==== replace data with long value to cause migration ====\n");
+	printf("should:\t%s\n", should.c_str());
+	printf("result:\t%s\n", rec.c_str());
+	
 
 	// erase all
 	bdb.del(addr);
@@ -132,6 +142,11 @@ int main(int argc, char** argv)
 	printf("\n==== del whole data ====\n");
 	printf("should: 0\n");
 	printf("result: %d\n", negtive);
+	bdb.del(addr2);
+	negtive = bdb.get(&rec, 1024, addr2);
+	printf("should: 0\n");
+	printf("result: %d\n", negtive);
+	
 
 	// put new data for test iterator
 	AddrType addrs[3];

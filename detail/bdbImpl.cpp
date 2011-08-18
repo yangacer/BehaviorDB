@@ -225,14 +225,57 @@ namespace BDB {
 
 		unsigned int dir = addrEval.addr_to_dir(internal_addr);
 		AddrType loc_addr = addrEval.local_addr(internal_addr);
-		AddrType rt;
+		
+		// check size
+		if( !addrEval.capacity_test(dir, size) ){
+			unsigned int old_dir = dir;
+			AddrType old_loc_addr = loc_addr;
+			AddrType new_internal_addr;
 
-		if(-1 == (loc_addr = pools_[dir].replace(data, size, loc_addr)) ){
+			dir = addrEval.directory(size);
+			
+			if((unsigned int)-1 == dir){
+				error(DATA_TOO_BIG, __LINE__);
+				return -1;
+			}
+
+			while(dir < addrEval.dir_count()){
+				loc_addr = pools_[dir].write(data, size);
+				if(loc_addr != -1)	break;
+				dir++;
+			}
+
+			if(-1 == loc_addr){
+				error(dir-1);
+				return -1;
+			}
+
+			new_internal_addr = addrEval.global_addr(dir, loc_addr);
+			
+			global_id_->Update(addr, new_internal_addr);
+
+			if(!global_id_->Commit(addr)){
+				global_id_->Update(addr, internal_addr);
+				error(COMMIT_FAILURE, __LINE__);	
+				return -1;
+			}
+			
+			if(-1 == pools_[old_dir].free(old_loc_addr)){
+				error(old_dir);
+				return -1;
+			}
+
+			fprintf(acc_log_, "%-12s\t%08x\t%08x\n", "update_put", size, addr);
+			return addr;
+		}
+		
+		if(-1 == (loc_addr = 
+			pools_[dir].replace(data, size, loc_addr)) )
+		{
 			error(dir);
 			return -1;	
 		}
-		
-		rt = addrEval.global_addr(dir, loc_addr);
+
 		fprintf(acc_log_, "%-12s\t%08x\t%08x\n", "update", size, addr);
 		return addr;
 	}
