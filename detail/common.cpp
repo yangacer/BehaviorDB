@@ -2,6 +2,7 @@
 #include "version.hpp"
 #include <stdexcept>
 #include <limits>
+#include <cstring>
 
 namespace BDB {
 	

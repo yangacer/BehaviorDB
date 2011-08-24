@@ -5,6 +5,7 @@
 #include <iostream>
 #include <cstring>
 #include <cstdio>
+#include <cstdlib>
 
 #define KB *1024
 #define MB *1048576

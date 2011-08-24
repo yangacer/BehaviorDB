@@ -1,8 +1,10 @@
 #ifndef _IDPOOL_HPP
 #define _IDPOOL_HPP
 
+#include <cstdio>
 #include "boost/dynamic_bitset.hpp"
 #include "common.hpp"
+
 
 namespace BDB {
 

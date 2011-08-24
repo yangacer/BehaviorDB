@@ -5,6 +5,7 @@
 #include <string>
 #include <exception>
 #include <cassert>
+#include <cstdlib>
 #include <cmath>
 
 void print_in_proper_unit(unsigned long long size)
