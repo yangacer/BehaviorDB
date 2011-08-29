@@ -43,29 +43,39 @@ namespace BDB {
 	
 	IDPool::IDPool()
 	: beg_(0), end_(0), file_(0), bm_(), lock_(), 
-	  full_alloc_(IDPoolAlloc::dynamic), max_used_(0)
+	  full_alloc_(dynamic), max_used_(0)
 	{}
 
 	
-	IDPool::IDPool(char const* tfile, AddrType beg)
-	: beg_(beg), end_(std::numeric_limits<AddrType>::max()-1), 
-	  file_(0), bm_(), lock_(), full_alloc_(IDPoolAlloc::dynamic), max_used_(0)
+	IDPool::IDPool(char const* tfile, 
+        AddrType beg, 
+        AddrType end, 
+        IDPoolAlloc alloc_policy ) 
+	: beg_(beg), end_(end), 
+	  file_(0), bm_(), lock_(), 
+      full_alloc_(alloc_policy), max_used_(0)
 	{
 		assert( 0 != tfile );
 		assert( beg_ <= end_ );
 		assert((AddrType)-1 > end_);
-
-		bm_.resize(8192, true);
-		lock_.resize(8192, false);
+        
+        if(dynamic == full_alloc_){
+            size_t init = (end - beg) >> 16;
+            bm_.resize(init, true);
+            lock_.resize(init, false);
+        }else if(full == full_alloc_){
+            bm_.resize(end - beg_, true);
+            lock_.resize(end_ - beg_, false);
+        }
 
 		replay_transaction(tfile);
 		init_transaction(tfile);
 	}
 
-	
+	/*
 	IDPool::IDPool(char const* tfile, AddrType beg, AddrType end)
 	: beg_(beg), end_(end), file_(0), bm_(), lock_(),
-	  full_alloc_(IDPoolAlloc::full), max_used_(0)
+	  full_alloc_(full), max_used_(0)
 	{
 		assert(0 != tfile);
 		assert( beg_ <= end_ );	
@@ -77,11 +87,11 @@ namespace BDB {
 		replay_transaction(tfile);
 		init_transaction(tfile);
 	}
-
+    */
 	
 	IDPool::IDPool(AddrType beg, AddrType end)
 	: beg_(beg), end_(end), file_(0), bm_(), lock_(), 
-	  full_alloc_(IDPoolAlloc::full), max_used_(0)
+	  full_alloc_(full), max_used_(0)
 	{
 		assert(end >= beg);
 

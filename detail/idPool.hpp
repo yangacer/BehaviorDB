@@ -2,6 +2,7 @@
 #define _IDPOOL_HPP
 
 #include <cstdio>
+#include <limits>
 #include "boost/dynamic_bitset.hpp"
 #include "common.hpp"
 
@@ -13,12 +14,10 @@ namespace BDB {
 	/** @brief Integer ID manager within bitmap storage.
 	 */
 
-    namespace IDPoolAlloc {
-        enum  {
-            dynamic = false,
-            full = 1
-        };
-    } // namespace IDPoolAlloc
+    enum IDPoolAlloc {
+        dynamic = 0,
+        full = 1
+    };
 
 	class IDPool
 	{
@@ -50,7 +49,10 @@ namespace BDB {
 		 * (beg,  numeric_limits<BlockType>::max() - 1]. 
 		 * @throw std::bad_alloc
 		 */
-		IDPool(char const* trans_file, AddrType beg);
+		IDPool(char const* trans_file, 
+            AddrType beg, 
+            AddrType end = std::numeric_limits<AddrType>::max()-1, 
+            IDPoolAlloc alloc_policy = dynamic);
 
 		/** Constructor for being given begin and end
 		 * @desc Construct a IDPool that manages numerical ID.
@@ -63,7 +65,7 @@ namespace BDB {
 		 * (beg, end]. 
 		 * @throw std::bad_alloc
 		 */	
-		IDPool(char const* trans_file, AddrType beg, AddrType end);
+		// IDPool(char const* trans_file, AddrType beg, AddrType end);
 		
 		~IDPool();
 
@@ -150,7 +152,7 @@ namespace BDB {
 		FILE*  file_;
 		Bitmap bm_;
 		Bitmap lock_;
-		bool full_alloc_;
+		IDPoolAlloc full_alloc_;
 		AddrType max_used_;
 		char filebuf_[128];
 	};
