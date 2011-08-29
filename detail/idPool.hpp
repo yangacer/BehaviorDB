@@ -13,6 +13,13 @@ namespace BDB {
 	/** @brief Integer ID manager within bitmap storage.
 	 */
 
+    namespace IDPoolAlloc {
+        enum  {
+            dynamic = false,
+            full = 1
+        };
+    } // namespace IDPoolAlloc
+
 	class IDPool
 	{
 
@@ -21,7 +28,8 @@ namespace BDB {
 		typedef AddrType BlockType;
 		typedef boost::dynamic_bitset<BlockType> Bitmap;
 	public:
-
+        
+        
 		/** Default constructor
 		 * @desc Construct a IDPool that manages numerical ID.
 		 * @post An IDPool without associated transaction file.
