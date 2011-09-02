@@ -28,7 +28,7 @@ namespace BDB {
 			pool->idPool_->max_used()* 
 			pool->addrEval.chunk_size_estimation(pool->dirID);
 
-		s->pool_mem_size += MIGBUF_SIZ;
+		s->pool_mem_size += MIGBUF_SIZ * 2;
 	}
 	
 	void

@@ -144,9 +144,6 @@ namespace BDB
 		void lock_rel();
 		*/
 
-		// TODO is ctor sufficient?
-		// void create(config const& conf);
-
 		pool(pool const& cp);
 		pool& operator=(pool const& cp);
 
