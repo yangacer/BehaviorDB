@@ -14,12 +14,17 @@ namespace BDB {
 	{
 		friend struct BDBImpl;
 
+        /// ctor
 		AddrIterator();
+
+        /// copy ctor
 		AddrIterator(AddrIterator const &cp);
 		
+        /// Assignment operator
 		AddrIterator& 
 		operator=(AddrIterator const& cp);
 
+        /// prefix increment operator
 		AddrIterator &
 		operator++();
 		
@@ -28,15 +33,19 @@ namespace BDB {
 		AddrType
 		operator*() const;
 		
+        /// equality binary operator
 		bool 
 		operator==(AddrIterator const& rhs) const;
 		
+        /// in-equality binary operator
 		bool 
 		operator!=(AddrIterator const& rhs) const
 		{ return !(*this == rhs); }
 
 	protected:
-		AddrIterator(BDBImpl const &bdb, AddrType cur);
+		
+        /// internal ctor
+        AddrIterator(BDBImpl const &bdb, AddrType cur);
 
 	private:
 		AddrType cur_;

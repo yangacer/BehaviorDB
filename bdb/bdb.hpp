@@ -20,7 +20,7 @@ namespace BDB {
 		 *  @throw std::bad_alloc 
 		 *  @throw std::runtime_error
 		 *  @throw std::length_error
-		 *  @desc Call conf.validate() internally to verify configuration.
+		 *  @details Call conf.validate() internally to verify configuration.
 		 */
         BehaviorDB(Config const & conf);
 
@@ -40,7 +40,7 @@ namespace BDB {
 		 *  @param addr
 		 *  @param off
 		 *  @return Address of the stored data
-		 *  @desc If the off parameter is BDB::npos or is not given, this 
+		 *  @details If the off parameter is BDB::npos or is not given, this 
          *  method acts as an append operation.
          *  @return Address on success. -1 for failure.
 		 */

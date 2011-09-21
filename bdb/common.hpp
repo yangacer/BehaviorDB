@@ -26,21 +26,28 @@ namespace BDB {
 	
 	typedef unsigned int AddrType;
 	struct stream_state;
+
+    /// Prototype of chunk size estimation callback.
 	typedef size_t (*Chunk_size_est)(unsigned int dir, size_t min_size);
 
-	// Decide how many fragmentation is acceptiable for initial data insertion
-	// Or, w.r.t. preallocation, how many fraction of a chunk one want to preserve
-	// for future insertion.
-	// *****
-	// It should return true if data/chunk_size is acceptiable, otherwise it return false
+    /// Prototype of chunk cacpcity testing callback.
 	typedef bool (*Capacity_test)(size_t chunk_size, size_t data_size);
 	
+    /**@brief Default chunk size estimation callback.
+     */
 	inline size_t 
 	default_chunk_size_est(unsigned int dir, size_t min_size)
 	{
 		return min_size<<dir;
 	}
 
+	/**@brief Default capacity testing callback
+     * @details Decide how many fragmentation is acceptiable for initial 
+     * data insertion. 
+     * Or, w.r.t. preallocation, how many fraction of a chunk one want to preserve
+     * for future insertion.
+     * It should return true if data/chunk_size is acceptiable, otherwise it return false.
+     */
 	inline bool 
 	default_capacity_test(size_t chunk_size, size_t data_size)
 	{
@@ -81,13 +88,15 @@ namespace BDB {
 
 		/// Directory for placing log file. Default is the root_dir.
 		char const *log_dir;
-
+    
+        /// Chunk size estimation callback
 		Chunk_size_est cse_func;
 
+        /// Capacity testing callback
 		Capacity_test ct_func;
 
 		/** @brief Config default constructor 
-		 * @desc Construct BDB::Config with default configurations  
+		 *  @details Construct BDB::Config with default configurations  
 		 */
 		Config(	AddrType beg = 1,
 			AddrType end = 100000001,
@@ -117,7 +126,8 @@ namespace BDB {
 
 		/// pool byte size
 		unsigned long long pool_mem_size;
-			
+		
+        /// disk usage
 		unsigned long long disk_size;
 
 		Stat():gid_mem_size(0), pool_mem_size(0), disk_size(0)

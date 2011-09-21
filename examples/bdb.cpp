@@ -14,6 +14,7 @@
 #include <cstdlib>
 #include <cmath>
 
+/// print byte size in proper unit
 void print_in_proper_unit(unsigned long long size)
 {	
 	char const * units = " KMGT";
@@ -26,6 +27,7 @@ void print_in_proper_unit(unsigned long long size)
 	printf(" %cB", units[i]);
 }
 
+/// echo usage and exit
 void usage()
 {
 	printf("./bdb work_dir/\n");
