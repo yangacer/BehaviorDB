@@ -8,6 +8,8 @@ namespace BDB {
 
 	struct BDBImpl;
 	
+    /** @brief Iterating addresses
+     */
 	struct BDB_EXPORT AddrIterator 
 	{
 		friend struct BDBImpl;
