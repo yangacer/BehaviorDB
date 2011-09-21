@@ -14,18 +14,18 @@ namespace BDB {
 	{
 		/** @brief Constructor
 		 *  @param conf
-		 *  @throw invalid_argument 
-		 *  @throw bad_alloc 
-		 *  @throw runtime_error
-		 *  @throw length_error
+		 *  @throw std::invalid_argument 
+		 *  @throw std::bad_alloc 
+		 *  @throw std::runtime_error
+		 *  @throw std::length_error
 		 *  @desc Call conf.validate() internally to verify configuration.
 		 */
-	        BehaviorDB(Config const & conf);
+        BehaviorDB(Config const & conf);
 
 		~BehaviorDB();
 		
 		/// TODO deprecate this
-		operator void const*() const;
+		// operator void const*() const;
 
 		/** @brief Put data
 		 *  @param data

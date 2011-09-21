@@ -37,12 +37,13 @@ namespace BDB {
 		free(pools_);
 	}
 	
+    /*
 	BDBImpl::operator void const*() const
 	{
 		if(!this || !addrEval.is_init() || !pools_)
 			return 0;
 		return this;
-	}
+	}*/
 	
 	
 	void
@@ -96,7 +97,7 @@ namespace BDB {
 	AddrType
 	BDBImpl::put(char const *data, size_t size)
 	{
-		assert(0 != *this && "BDBImpl is not proper initiated");
+		// assert(0 != *this && "BDBImpl is not proper initiated");
 		
 		if(!global_id_->avail()){
 			error(ADDRESS_OVERFLOW, __LINE__);
@@ -139,7 +140,7 @@ namespace BDB {
 	AddrType
 	BDBImpl::put(char const* data, size_t size, AddrType addr, size_t off)
 	{
-		assert(0 != *this && "BDBImpl is not proper initiated");
+		// assert(0 != *this && "BDBImpl is not proper initiated");
 
 		AddrType internal_addr;
 		if( !global_id_->isAcquired(addr) )
@@ -216,7 +217,7 @@ namespace BDB {
 	AddrType
 	BDBImpl::update(char const *data, size_t size, AddrType addr)
 	{
-		assert(0 != *this && "BDBImpl is not proper initiated");
+		// assert(0 != *this && "BDBImpl is not proper initiated");
 
 		AddrType internal_addr;
 		if( !global_id_->isAcquired(addr) )
@@ -283,7 +284,7 @@ namespace BDB {
 	size_t
 	BDBImpl::get(char *output, size_t size, AddrType addr, size_t off)
 	{
-		assert(0 != *this && "BDBImpl is not proper initiated");
+		// assert(0 != *this && "BDBImpl is not proper initiated");
 		
 		if( !global_id_->isAcquired(addr) )
 			return 0;
@@ -304,7 +305,7 @@ namespace BDB {
 	size_t
 	BDBImpl::get(std::string *output, size_t max, AddrType addr, size_t off)
 	{
-		assert(0 != *this && "BDBImpl is not proper initiated");
+		// assert(0 != *this && "BDBImpl is not proper initiated");
 		
 		if( !global_id_->isAcquired(addr) )
 			return 0;
@@ -325,7 +326,7 @@ namespace BDB {
 	size_t
 	BDBImpl::del(AddrType addr)
 	{
-		assert(0 != *this && "BDBImpl is not proper initiated");
+		// assert(0 != *this && "BDBImpl is not proper initiated");
 	
 		AddrType internal_addr;
 		
@@ -352,7 +353,7 @@ namespace BDB {
 	size_t
 	BDBImpl::del(AddrType addr, size_t off, size_t size)
 	{
-		assert(0 != *this && "BDBImpl is not proper initiated");
+		// assert(0 != *this && "BDBImpl is not proper initiated");
 		
 	
 		if( !global_id_->isAcquired(addr) )
@@ -378,7 +379,7 @@ namespace BDB {
 	stream_state const*
 	BDBImpl::ostream(size_t stream_size)
 	{
-		assert(0 != *this && "BDBImpl is not proper initiated");
+		// assert(0 != *this && "BDBImpl is not proper initiated");
 		
 		if(!global_id_->avail()){
 			error(ADDRESS_OVERFLOW, __LINE__);
@@ -420,7 +421,7 @@ namespace BDB {
 	stream_state const*
 	BDBImpl::ostream(size_t stream_size, AddrType addr, size_t off)
 	{
-		assert(0 != *this && "BDBImpl is not proper initiated");
+		// assert(0 != *this && "BDBImpl is not proper initiated");
 
 		// TODO: support better error diagnose
 		if( !global_id_->isAcquired(addr) ||  global_id_->isLocked(addr) )
@@ -726,7 +727,7 @@ namespace BDB {
 	AddrIterator
 	BDBImpl::begin() const
 	{
-		assert(0 != *this && "BDBImpl is not proper initiated");
+		// assert(0 != *this && "BDBImpl is not proper initiated");
 		AddrType first_used = global_id_->begin();
 		first_used = global_id_->next_used(first_used);
 		
@@ -736,7 +737,7 @@ namespace BDB {
 	AddrIterator
 	BDBImpl::end() const
 	{
-		assert(0 != *this && "BDBImpl is not proper initiated");
+		// assert(0 != *this && "BDBImpl is not proper initiated");
 		return AddrIterator(*this, global_id_->end());	
 	}
 
@@ -755,7 +756,7 @@ namespace BDB {
 	void
 	BDBImpl::error(int errcode, int line)
 	{
-		assert(0 != *this && "BDBImpl is not proper initiated");
+		// assert(0 != *this && "BDBImpl is not proper initiated");
 
 		if(0 == err_log_) return;
 		
@@ -773,7 +774,7 @@ namespace BDB {
 	void
 	BDBImpl::error(unsigned int dir)
 	{	
-		assert(0 != *this && "BDBImpl is not proper initiated");
+		// assert(0 != *this && "BDBImpl is not proper initiated");
 
 		if(0 == err_log_) return;
 

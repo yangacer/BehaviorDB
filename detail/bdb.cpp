@@ -11,8 +11,8 @@ namespace BDB {
 	BehaviorDB::~BehaviorDB()
 	{ delete impl_; }
 
-	BehaviorDB::operator void const*() const
-	{ if(!*impl_) return 0; return this; }
+	//BehaviorDB::operator void const*() const
+	//{ if(!*impl_) return 0; return this; }
 	
 	AddrType
 	BehaviorDB::put(char const *data, size_t size)

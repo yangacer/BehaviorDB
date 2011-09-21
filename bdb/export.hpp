@@ -29,12 +29,12 @@
 
 
 #ifdef BDB_DLL
-#pragma message ("Link with shared yaks lib " BDB_VERSION_ "(dll required)")
+#pragma message ("Link with shared bdb lib " BDB_VERSION_ "(dll required)")
 #define BDB_EXPORT IMPORT_SPEC 
 #elif !defined(BDB_STATIC) && !defined(BDB_MAKE_DLL) 
-#pragma message ("You must define BDB_DLL when compile your code with dll version yaks lib.")
+#pragma message ("You must define BDB_DLL when compile your code with dll version bdb lib.")
 #pragma message ("If you are using a static version, just ignore this warning.")
-#pragma message ("Link with static yaks lib " BDB_VERSION_)
+#pragma message ("Link with static bdb lib " BDB_VERSION_)
 #define BDB_EXPORT
 #endif // end of BDB_DLL
 
