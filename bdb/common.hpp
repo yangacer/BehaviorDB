@@ -19,7 +19,7 @@
 
 #endif
 
-/// TODO make sure this is OK in win
+// TODO make sure this is OK in win
 #include <stddef.h>
 
 namespace BDB {
