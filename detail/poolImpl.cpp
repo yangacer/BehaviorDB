@@ -34,7 +34,10 @@ namespace BDB {
 				throw invalid_argument(msg.c_str());
 			}
 		}
-
+        
+        mig_buf_ = new char[MIGBUF_SIZ];
+        file_buf_ = new char[MIGBUF_SIZ];
+        
 		if(0 != setvbuf(file_, file_buf_, _IOFBF, MIGBUF_SIZ))
 			throw runtime_error("pool: setvbuf to pool file failed");
 
@@ -48,6 +51,8 @@ namespace BDB {
 	pool::~pool()
 	{
 		delete idPool_;
+        delete file_buf_;
+        delete mig_buf_;
 		fclose(file_);
 	}
 	

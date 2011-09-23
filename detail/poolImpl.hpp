@@ -155,8 +155,8 @@ namespace BDB
 		
 		// pool file
 		FILE *file_;
-		char mig_buf_[MIGBUF_SIZ];
-		char file_buf_[MIGBUF_SIZ];
+		char *mig_buf_;
+		char *file_buf_;
 		// id file
 		IDPool *idPool_;
 
