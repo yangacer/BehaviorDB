@@ -5,6 +5,13 @@
 
 #define PATH_DELIM '/'
 
+#ifdef __MINGW__ // MINGW
+
+#define ftello(X) ftello64(X)
+#define fseeko(X,Y,Z) fseeko64(X,Y,Z)
+
+#endif
+
 #elif defined(_WIN32) // MSVC
 
 #define PATH_DELIM '\\'
