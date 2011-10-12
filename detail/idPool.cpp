@@ -355,13 +355,6 @@ namespace BDB {
 		
 		if(val == Find(id)) return;
 		
-		/*
-		std::stringstream ss;
-		ss<<"+"<<(id - super::beg_)<<"\t"<<val<<"\n";
-
-		if(ss.str().size() != fwrite(ss.str().c_str(), 1, ss.str().size(), super::file_))
-			throw std::runtime_error("IDValPool(Update): write transaction failure");
-		*/
 		arr_[id - super::beg_] = val;
 
 	}
