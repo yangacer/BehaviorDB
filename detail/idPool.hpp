@@ -83,6 +83,9 @@ namespace BDB {
 		 */
 		AddrType 
 		Acquire();
+    
+    AddrType
+    Acquire(AddrType const &id);
 
 		/** Release an ID
 		 *  @throw A write transaction error of type
@@ -139,7 +142,7 @@ namespace BDB {
 		/** Extend bitmap size to 1.5 times large
 		 *  @throw std::bad_alloc
 		 */
-		void extend();
+		void extend(Bitmap::size_type new_size=0);
 
 		IDPool(AddrType beg, AddrType end);
 
@@ -173,6 +176,8 @@ namespace BDB {
 		 */
 		AddrType Acquire(AddrType const &val);
 		
+    AddrType Acquire(AddrType const &id, AddrType const &val);
+
 		bool 
 		avail() const;
 

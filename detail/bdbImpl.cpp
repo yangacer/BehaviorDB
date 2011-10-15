@@ -142,38 +142,67 @@ namespace BDB {
 	{
 		// assert(0 != *this && "BDBImpl is not proper initiated");
 
+    if( !global_id_->isAcquired(addr) ){
+      unsigned int dir = addrEval.directory(size);
+      if((unsigned int)-1 == dir){
+        error(DATA_TOO_BIG, __LINE__);
+        return -1;
+      }
+      AddrType rt(0), loc_addr(0);
+      while(dir < addrEval.dir_count()){
+        loc_addr = pools_[dir].write(data, size);
+        if(loc_addr != -1)	break;
+        dir++;
+      }
+
+      if(-1 == loc_addr){
+        error(dir-1);
+        return -1;
+      }
+
+      rt = addrEval.global_addr(dir, loc_addr);
+      rt = global_id_->Acquire(addr, rt);
+
+      assert(-1 != rt && "Unexpected return value");
+
+      if( !global_id_->Commit(rt) ){
+        error(COMMIT_FAILURE, __LINE__);
+        return -1;
+      } 
+      
+      fprintf(acc_log_, "%-12s\t%08x\t%08x\n", "put-spec", size, addr);
+    }
+
 		AddrType internal_addr;
-		if( !global_id_->isAcquired(addr) )
-			return -1;
-		internal_addr = global_id_->Find(addr);
+    internal_addr = global_id_->Find(addr);
 
-		unsigned int dir = addrEval.addr_to_dir(internal_addr);
-		AddrType loc_addr = addrEval.local_addr(internal_addr);
-		AddrType rt;
+    unsigned int dir = addrEval.addr_to_dir(internal_addr);
+    AddrType loc_addr = addrEval.local_addr(internal_addr);
+    AddrType rt;
 
-		ChunkHeader header;
-		if(-1 == pools_[dir].head(&header, loc_addr)){
-			error(dir);	
-			return -1;
-		}
-		
-		if( size + header.size > addrEval.chunk_size_estimation(dir)){
-			
-			// migration
-			unsigned int next_dir = 
-				addrEval.directory(size + header.size);
-			if((unsigned int)-1 == next_dir){
-				error(DATA_TOO_BIG, __LINE__);
-				return -1;
-			}
-			AddrType next_loc_addr;
-			if(npos == off)
-				off = header.size;
-			
-			// TODO migrate failure 
-			next_loc_addr = pools_[dir].merge_move( 
-				data, size, loc_addr, off,
-				&pools_[next_dir], &header); 
+    ChunkHeader header;
+    if(-1 == pools_[dir].head(&header, loc_addr)){
+      error(dir);	
+      return -1;
+    }
+
+    if( size + header.size > addrEval.chunk_size_estimation(dir)){
+
+      // migration
+      unsigned int next_dir = 
+        addrEval.directory(size + header.size);
+      if((unsigned int)-1 == next_dir){
+        error(DATA_TOO_BIG, __LINE__);
+        return -1;
+      }
+      AddrType next_loc_addr;
+      if(npos == off)
+        off = header.size;
+
+      // TODO migrate failure 
+      next_loc_addr = pools_[dir].merge_move( 
+          data, size, loc_addr, off,
+          &pools_[next_dir], &header); 
 
 			if(-1 == next_loc_addr){
 				error(dir);
@@ -411,6 +440,7 @@ namespace BDB {
 
 		rt->read_write = stream_state::WRT;
 		rt->existed = false;
+    rt->ext_addr = -1;
 		rt->error = false;
 		rt->inter_dest_addr = inter_addr;
 		rt->offset = 0;
@@ -424,12 +454,15 @@ namespace BDB {
 	stream_state const*
 	BDBImpl::ostream(size_t stream_size, AddrType addr, size_t off)
 	{
-		// assert(0 != *this && "BDBImpl is not proper initiated");
-
-		// TODO: support better error diagnose
-		if( !global_id_->isAcquired(addr) ||  global_id_->isLocked(addr) )
+		if( global_id_->isLocked(addr) )
 			return 0;
-		
+
+		if( !global_id_->isAcquired(addr)){
+      // TODO: need to support this   
+      // UTILIZE ext_addr to save acquiring addr
+      return 0;
+    }
+
 		global_id_->Lock(addr);
 
 		AddrType internal_addr;

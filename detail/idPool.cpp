@@ -152,7 +152,28 @@ namespace BDB {
 
 		return 	beg_ + rt;
 	}
-		
+	
+  AddrType
+  IDPool::Acquire(AddrType const& id)
+  {
+    AddrType off = id - beg_;
+
+    if(off < max_used_){
+        if(!bm_[off]) return -1;
+        bm_[off] = false;
+        return id;
+    }else if(full_alloc_)
+      return -1;
+    else{  
+      try{
+        extend(off+1); 
+      }catch(std::bad_alloc const &e){
+        return -1;
+      }  
+      bm_[off] = false;
+    }
+    return id;
+  }
 	
 	int
 	IDPool::Release(AddrType const &id)
@@ -278,8 +299,14 @@ namespace BDB {
 	{ return bm_.num_blocks(); }
 
 	
-	void IDPool::extend()
+	void IDPool::extend(Bitmap::size_type new_size)
 	{ 
+    if(new_size){
+      bm_.resize(new_size, true);
+      lock_.resize(new_size, false);
+      return;
+    }
+
 		Bitmap::size_type size = bm_.size();
 		size = (size<<1) -  (size>>1);
 
@@ -289,6 +316,7 @@ namespace BDB {
 		bm_.resize(size, true); 
 		lock_.resize(size, false);
 	}
+  
 
 	// ------------ IDValPool Impl ----------------
 
@@ -323,6 +351,16 @@ namespace BDB {
 		
 	}
 	
+  AddrType IDValPool::Acquire(AddrType const& id, AddrType const& val)
+  {
+    AddrType rt;
+    if(-1 == (rt = super::Acquire(id)))
+      return -1;
+    arr_[rt - super::begin()] = val;
+
+    return rt;
+  }
+
 	bool IDValPool::avail() const
 	{
 		if(super::max_used() < super::end()) return true;
