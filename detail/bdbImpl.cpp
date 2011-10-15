@@ -201,12 +201,15 @@ namespace BDB {
 		}
 		
 		rt = addrEval.global_addr(dir, loc_addr);
-		global_id_->Update(addr, rt);
-		if(!global_id_->Commit(addr)){
-			error(COMMIT_FAILURE, __LINE__);
-			return -1;
-		}
-		
+
+    if(internal_addr != rt){
+      global_id_->Update(addr, rt);
+      if(!global_id_->Commit(addr)){
+        error(COMMIT_FAILURE, __LINE__);
+        return -1;
+      }
+    }
+
 		fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", 
 			"insert", size, addr, off);
 
