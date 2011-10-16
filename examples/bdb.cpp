@@ -1,9 +1,3 @@
-/** @file bdb.cpp
- *  @example bdb.cpp
- */
-
-
-
 #include "bdb.hpp"
 #include "addr_iter.hpp"
 #include <cstdio>
@@ -14,7 +8,6 @@
 #include <cstdlib>
 #include <cmath>
 
-/// print byte size in proper unit
 void print_in_proper_unit(unsigned long long size)
 {	
 	char const * units = " KMGT";
@@ -27,7 +20,6 @@ void print_in_proper_unit(unsigned long long size)
 	printf(" %cB", units[i]);
 }
 
-/// echo usage and exit
 void usage()
 {
 	printf("./bdb work_dir/\n");
@@ -61,7 +53,13 @@ int main(int argc, char** argv)
 	printf("write \"%s\"\n", data);
 	printf("should: 00000002\n");
 	printf("result: %08x\n", addr2);	
-
+  
+  // write to specific chunk
+  AddrType addr3 = bdb.put("good", 4, 3u);
+  printf("\n=== write to address 3 which does not exist currently ====\n");
+  printf("should: 00000003\n");
+  printf("result: %08x\n", addr3);
+  
 	// read
 	char read[5] = {};
 	char read2[5] = {};
@@ -74,8 +72,6 @@ int main(int argc, char** argv)
 	printf("should: %s\n", data);
 	printf("result: %s\n", read2);
 	
-	bdb.del(addr2);
-
 	// append include migration
 	char const *data2 = "1234567890asdfghjkl;12345678901234567890";
 	addr = bdb.put(data2, strlen(data2), addr);
@@ -136,7 +132,6 @@ int main(int argc, char** argv)
 	printf("result:\t%s\n", rec.c_str());
 	
 	// update to cause migration
-	addr2 = bdb.put("small", 4);
 	should = "123456789012345678901234567890tail";
 	bdb.update(should.c_str(), should.size(), addr2);
 	bdb.get(&rec, 1024, addr2);
@@ -144,25 +139,8 @@ int main(int argc, char** argv)
 	printf("should:\t%s\n", should.c_str());
 	printf("result:\t%s\n", rec.c_str());
 	
+  AddrType addrs[] = { 1, 2, 3 };
 
-	// erase all
-	bdb.del(addr);
-	size_t negtive = bdb.get(&rec, 1024, addr);
-	printf("\n==== del whole data ====\n");
-	printf("should: 0\n");
-	printf("result: %d\n", negtive);
-	bdb.del(addr2);
-	negtive = bdb.get(&rec, 1024, addr2);
-	printf("should: 0\n");
-	printf("result: %d\n", negtive);
-	
-
-	// put new data for test iterator
-	AddrType addrs[3];
-	addrs[0] = bdb.put("acer", 4); // should be placed in 0000.pool
-	addrs[1] = bdb.put("123456789012345678901234567890", 30); // should be placed in 0001.pool
-	addrs[2] = bdb.put("123456789012345678901234567890123456789012345678901234567890", 60); // should be placed in 0002.pool
-	
 	AddrIterator iter = bdb.begin();
 	int i=0;
 	printf("\n==== iterating all data ==== \n");
@@ -212,10 +190,26 @@ int main(int argc, char** argv)
 	rec.clear();
 	bdb.get(&rec, 10, addr);
 	printf("======== stream write (prototype) ========\n");
-	printf("should: %08x\n", 7u);
+	printf("should: %08x\n", 4u);
 	printf("result: %08x\n", addr);
 	printf("should: %s\n", "toma");
 	printf("result: %s\n", rec.c_str());
 	bdb.del(addr);
+
+  // streaming write to non-allocated addr
+  os = bdb.ostream(4, 5);
+  for(int i=0; i<4; ++i){
+		os = bdb.stream_write(os, rec.data()+i, 1);
+	}
+	addr = bdb.stream_finish(os);
+	rec.clear();
+	bdb.get(&rec, 10, addr);
+	printf("======== stream write to non-allocated addr ========\n");
+	printf("should: %08x\n", 5u);
+	printf("result: %08x\n", addr);
+	printf("should: %s\n", "toma");
+	printf("result: %s\n", rec.c_str());
+	bdb.del(addr);
+
 	return 0;	
 }

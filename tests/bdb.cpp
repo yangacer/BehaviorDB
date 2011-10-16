@@ -139,30 +139,6 @@ int main(int argc, char** argv)
 	printf("should:\t%s\n", should.c_str());
 	printf("result:\t%s\n", rec.c_str());
 	
-  /*
-	// erase all
-	bdb.del(addr);
-	size_t negtive = bdb.get(&rec, 1024, addr);
-	printf("\n==== del whole data ====\n");
-	printf("should: 0\n");
-	printf("result: %d\n", negtive);
-	bdb.del(addr2);
-	negtive = bdb.get(&rec, 1024, addr2);
-	printf("should: 0\n");
-	printf("result: %d\n", negtive);
-	bdb.del(addr3);
-	negtive = bdb.get(&rec, 1024, addr2);
-	printf("should: 0\n");
-	printf("result: %d\n", negtive);
-  
-
-	// put new data for test iterator
-	AddrType addrs[3];
-	addrs[0] = bdb.put("acer", 4); // should be placed in 0000.pool
-	addrs[1] = bdb.put("123456789012345678901234567890", 30); // should be placed in 0001.pool
-	addrs[2] = bdb.put("123456789012345678901234567890123456789012345678901234567890", 60); // should be placed in 0002.pool
-	*/
-
   AddrType addrs[] = { 1, 2, 3 };
 
 	AddrIterator iter = bdb.begin();
