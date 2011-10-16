@@ -158,10 +158,8 @@ namespace BDB {
   {
     AddrType off = id - beg_;
 
-    if(off < max_used_){
+    if(off < bm_.size()){
         if(!bm_[off]) return -1;
-        bm_[off] = false;
-        return id;
     }else if(full_alloc_)
       return -1;
     else{  
@@ -170,8 +168,10 @@ namespace BDB {
       }catch(std::bad_alloc const &e){
         return -1;
       }  
-      bm_[off] = false;
     }
+    bm_[off] = false;
+    if(off >= max_used_) max_used_ = off + 1;
+    
     return id;
   }
 	
@@ -202,21 +202,18 @@ namespace BDB {
 	void
 	IDPool::Lock(AddrType const &id)
 	{
-		assert(true == isAcquired(id) && "id is not acquired");
 		lock_[id - beg_] = true;
 	}
 
 	void
 	IDPool::Unlock(AddrType const &id)
 	{
-		assert(true == isAcquired(id) && "id is not acquired");
 		lock_[id - beg_] = false;
 	}
 		
 	bool
 	IDPool::isLocked(AddrType const &id) const
 	{
-		assert(true == isAcquired(id) && "id is not acquired");
 		return lock_[id - beg_];
 	}
 

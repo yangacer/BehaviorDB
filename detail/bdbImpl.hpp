@@ -18,10 +18,10 @@ namespace BDB {
 	struct BDBImpl 
 	{
 		friend struct bdbStater;
-		friend struct AddrIterator;
-		
-	        BDBImpl(Config const & conf);
-		~BDBImpl();
+    friend struct AddrIterator;
+
+    BDBImpl(Config const & conf);
+    ~BDBImpl();
 		
 		//operator void const*() const;
 		
@@ -116,14 +116,21 @@ namespace BDB {
 		BDBImpl& operator=(BDBImpl const &cp);
 
 	protected:
-		// handle error triggered in pool(s)
+    
+    // write data to pool
+    // Return -1 if fail, otherwise returns internal address
+		AddrType
+    write_pool(char const*data, size_t size);
+    
+    // handle error triggered in pool(s)
 		void
 		error(unsigned int dir);
 
 		// handle error triggered in BDBImpl
 		void
 		error(int errcode, int line);
-	
+	  
+
 	private:
 		typedef boost::unordered_map<AddrType, unsigned int> AddrCntCont;
 		typedef boost::unordered_set<size_t> EncStreamCont;

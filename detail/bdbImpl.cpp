@@ -104,27 +104,10 @@ namespace BDB {
 			return -1;
 		}
 
-		unsigned int dir = addrEval.directory(size);
-		if((unsigned int)-1 == dir){
-			error(DATA_TOO_BIG, __LINE__);
-			return -1;
-		}
-		AddrType rt(0), loc_addr(0);
-		while(dir < addrEval.dir_count()){
-			loc_addr = pools_[dir].write(data, size);
-			if(loc_addr != -1)	break;
-			dir++;
-		}
-		
-		if(-1 == loc_addr){
-			error(dir-1);
-			return -1;
-		}
+    AddrType rt = write_pool(data, size);
+    if(-1 == rt) return -1;
 
-		rt = addrEval.global_addr(dir, loc_addr);
 		rt = global_id_->Acquire(rt);
-
-		assert(-1 != rt && "Unexpected return value");
 		
 		if( !global_id_->Commit(rt) ){
 			error(COMMIT_FAILURE, __LINE__);
@@ -143,28 +126,12 @@ namespace BDB {
 		// assert(0 != *this && "BDBImpl is not proper initiated");
 
     if( !global_id_->isAcquired(addr) ){
-      unsigned int dir = addrEval.directory(size);
-      if((unsigned int)-1 == dir){
-        error(DATA_TOO_BIG, __LINE__);
-        return -1;
-      }
-      AddrType rt(0), loc_addr(0);
-      while(dir < addrEval.dir_count()){
-        loc_addr = pools_[dir].write(data, size);
-        if(loc_addr != -1)	break;
-        dir++;
-      }
+      
+      AddrType rt = write_pool(data, size);
+      if(-1 == rt) return -1;
 
-      if(-1 == loc_addr){
-        error(dir-1);
-        return -1;
-      }
-
-      rt = addrEval.global_addr(dir, loc_addr);
       rt = global_id_->Acquire(addr, rt);
-
-      assert(-1 != rt && "Unexpected return value");
-
+      
       if( !global_id_->Commit(rt) ){
         error(COMMIT_FAILURE, __LINE__);
         return -1;
@@ -261,30 +228,17 @@ namespace BDB {
 		
 		// check size
 		if( !addrEval.capacity_test(dir, size) ){
-			unsigned int old_dir = dir;
-			AddrType old_loc_addr = loc_addr;
-			AddrType new_internal_addr;
-
-			dir = addrEval.directory(size);
 			
-			if((unsigned int)-1 == dir){
-				error(DATA_TOO_BIG, __LINE__);
-				return -1;
-			}
-
-			while(dir < addrEval.dir_count()){
-				loc_addr = pools_[dir].write(data, size);
-				if(loc_addr != -1)	break;
-				dir++;
-			}
-
-			if(-1 == loc_addr){
-				error(dir-1);
-				return -1;
-			}
-
-			new_internal_addr = addrEval.global_addr(dir, loc_addr);
+      unsigned int old_dir = dir;
 			
+      AddrType old_loc_addr = loc_addr;
+
+			AddrType new_internal_addr =
+			  write_pool(data, size);
+
+			if(-1 == new_internal_addr)
+        return -1;  
+      
 			global_id_->Update(addr, new_internal_addr);
 
 			if(!global_id_->Commit(addr)){
@@ -419,19 +373,10 @@ namespace BDB {
 		}
 		
 		unsigned int dir = addrEval.directory(stream_size);
-		AddrType inter_addr(0), loc_addr(0);
-		while(dir < addrEval.dir_count()){
-			loc_addr = pools_[dir].write((char const*)0, stream_size);
-			if(loc_addr != -1)	break;
-			dir++;
-		}
 		
-		if(-1 == loc_addr){
-			error(dir-1);
-			return 0;
-		}
+    AddrType inter_addr = write_pool(NULL, stream_size);
 
-		inter_addr = addrEval.global_addr(dir, loc_addr);
+    if(-1 == inter_addr) return NULL;
 
 		fprintf(acc_log_, "%-12s\t%08x\n", "ostream", stream_size);
 		
@@ -457,13 +402,17 @@ namespace BDB {
 		if( global_id_->isLocked(addr) )
 			return 0;
 
+		global_id_->Lock(addr);
+
 		if( !global_id_->isAcquired(addr)){
       // TODO: need to support this   
       // UTILIZE ext_addr to save acquiring addr
-      return 0;
+      stream_state * ss = 
+        const_cast<stream_state*>(ostream(stream_size));
+      if(ss) ss->ext_addr = addr;
+      return ss;
     }
 
-		global_id_->Lock(addr);
 
 		AddrType internal_addr;
 		internal_addr = global_id_->Find(addr);
@@ -660,13 +609,24 @@ namespace BDB {
 					return -1;
 				}
 			}else {
-				if(-1 == (ss->ext_addr = 
-					global_id_->Acquire(ss->inter_dest_addr)))
-				{
-					error(SYSTEM_ERROR, __LINE__);
-					stream_abort(state);
-					return -1;
-				}	
+        if(-1 == ss->ext_addr){
+          if(-1 == (ss->ext_addr = 
+                global_id_->Acquire(ss->inter_dest_addr)))
+          {
+            error(SYSTEM_ERROR, __LINE__);
+            stream_abort(state);
+            return -1;
+          }
+        }else {
+          if(-1 == global_id_->Acquire(ss->ext_addr, ss->inter_dest_addr))
+          {
+             error(SYSTEM_ERROR, __LINE__);
+            stream_abort(state);
+            return -1;
+ 
+          }
+          global_id_->Unlock(ss->ext_addr);
+        }
 				if(!global_id_->Commit(ss->ext_addr)){
 					global_id_->Release(ss->ext_addr);
 					error(COMMIT_FAILURE, __LINE__);
@@ -748,14 +708,15 @@ namespace BDB {
 			stream_state_pool_.free(ss);
 			return;
 		}
-
+  
+    // write mode
 		unsigned int dir = addrEval.addr_to_dir(ss->inter_dest_addr);
 		AddrType loc_addr = addrEval.local_addr(ss->inter_dest_addr);
 		
 		if(-1 == pools_[dir].free(loc_addr))
 			error(dir);
 		
-		if(ss->existed) global_id_->Unlock(ss->ext_addr);
+		if(-1 != ss->ext_addr) global_id_->Unlock(ss->ext_addr);
 
 		stream_state_pool_.free(ss);
 	}
@@ -788,6 +749,31 @@ namespace BDB {
 	bool
 	BDBImpl::full() const
 	{ return !global_id_->avail(); }
+
+  
+  AddrType
+  BDBImpl::write_pool(char const*data, size_t size)
+  {
+      unsigned int dir = addrEval.directory(size);
+      if((unsigned int)-1 == dir){
+        error(DATA_TOO_BIG, __LINE__);
+        return -1;
+      }
+      AddrType rt(0), loc_addr(0);
+      while(dir < addrEval.dir_count()){
+        loc_addr = pools_[dir].write(data, size);
+        if(loc_addr != -1)	break;
+        dir++;
+      }
+
+      if(-1 == loc_addr){
+        error(dir-1);
+        return -1;
+      }
+
+      rt = addrEval.global_addr(dir, loc_addr);
+      return rt;
+  }
 
 	void
 	BDBImpl::error(int errcode, int line)
