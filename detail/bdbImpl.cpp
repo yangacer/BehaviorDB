@@ -37,15 +37,6 @@ namespace BDB {
 		free(pools_);
 	}
 	
-    /*
-	BDBImpl::operator void const*() const
-	{
-		if(!this || !addrEval.is_init() || !pools_)
-			return 0;
-		return this;
-	}*/
-	
-	
 	void
 	BDBImpl::init_(Config const & conf)
 	{
@@ -114,7 +105,7 @@ namespace BDB {
 			return -1;
 		}
 		
-		fprintf(acc_log_, "%-12s\t%08x\n", "put", size);
+		if(acc_log_) fprintf(acc_log_, "%-12s\t%08x\n", "put", size);
 
 		return rt;
 	}
@@ -137,7 +128,7 @@ namespace BDB {
         return -1;
       } 
       
-      fprintf(acc_log_, "%-12s\t%08x\t%08x\n", "put-spec", size, addr);
+      if(acc_log_)fprintf(acc_log_, "%-12s\t%08x\t%08x\n", "put-spec", size, addr);
     }
 
 		AddrType internal_addr;
@@ -179,7 +170,7 @@ namespace BDB {
 			rt = addrEval.global_addr(next_dir, next_loc_addr);
 			global_id_->Update(addr, rt);
 			global_id_->Commit(addr);
-			fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", 
+			if(acc_log_)fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", 
 				"insert", size, addr, off);
 			return addr;
 		}
@@ -206,7 +197,7 @@ namespace BDB {
       }
     }
 
-		fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", 
+		if(acc_log_)fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", 
 			"insert", size, addr, off);
 
 		return addr;
@@ -252,7 +243,7 @@ namespace BDB {
 				return -1;
 			}
 
-			fprintf(acc_log_, "%-12s\t%08x\t%08x\n", "update_put", size, addr);
+			if(acc_log_) fprintf(acc_log_, "%-12s\t%08x\t%08x\n", "update_put", size, addr);
 			return addr;
 		}
 		
@@ -263,7 +254,7 @@ namespace BDB {
 			return -1;	
 		}
 
-		fprintf(acc_log_, "%-12s\t%08x\t%08x\n", "update", size, addr);
+		if(acc_log_) fprintf(acc_log_, "%-12s\t%08x\t%08x\n", "update", size, addr);
 		return addr;
 	}
 
@@ -284,7 +275,7 @@ namespace BDB {
 			error(dir);
 			return 0;
 		}
-		fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", "get", size, addr, off);
+		if(acc_log_) fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", "get", size, addr, off);
 		return rt;
 	}
 	
@@ -305,7 +296,7 @@ namespace BDB {
 			error(dir);
 			return 0;
 		}
-		fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", "string_get", max, addr, off);
+		if(acc_log_) fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", "string_get", max, addr, off);
 		return rt;
 	}
 
@@ -332,7 +323,7 @@ namespace BDB {
 			error(COMMIT_FAILURE, __LINE__);
 			return -1;
 		}
-		fprintf(acc_log_, "%-12s\t%08x\n", "del", addr);
+		if(acc_log_) fprintf(acc_log_, "%-12s\t%08x\n", "del", addr);
 		return 0;
 	}
 
@@ -354,7 +345,7 @@ namespace BDB {
 			error(dir);
 			return -1;
 		}
-		fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", "partial_del", addr, off, size);
+		if(acc_log_) fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", "partial_del", addr, off, size);
 		return nsize;
 	}
 	
@@ -378,7 +369,7 @@ namespace BDB {
 
     if(-1 == inter_addr) return NULL;
 
-		fprintf(acc_log_, "%-12s\t%08x\n", "ostream", stream_size);
+		if(acc_log_) fprintf(acc_log_, "%-12s\t%08x\n", "ostream", stream_size);
 		
 		stream_state *rt = stream_state_pool_.malloc();
 		if(0 == rt) return 0;
@@ -450,7 +441,7 @@ namespace BDB {
 			return 0;
 		}
 		
-		fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", 
+		if(acc_log_) fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", 
 			"ostream_ins", stream_size, addr, off);
 
 		stream_state *rt = stream_state_pool_.malloc();
@@ -788,7 +779,7 @@ namespace BDB {
 			fprintf(err_log_, "Pool ID\tLine\tMessage\n");
 		}
 		
-		fprintf(acc_log_, "None    \t%d\t%s\n", line, error_num_to_str()(errcode));
+		if(acc_log_) fprintf(acc_log_, "None    \t%d\t%s\n", line, error_num_to_str()(errcode));
 		
 		//unlock
 	}
