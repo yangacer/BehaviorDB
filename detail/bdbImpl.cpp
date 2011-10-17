@@ -769,8 +769,6 @@ namespace BDB {
 	void
 	BDBImpl::error(int errcode, int line)
 	{
-		// assert(0 != *this && "BDBImpl is not proper initiated");
-
 		if(0 == err_log_) return;
 		
 		//lock
@@ -787,7 +785,6 @@ namespace BDB {
 	void
 	BDBImpl::error(unsigned int dir)
 	{	
-		// assert(0 != *this && "BDBImpl is not proper initiated");
 
 		if(0 == err_log_) return;
 
