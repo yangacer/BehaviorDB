@@ -1,38 +1,32 @@
 #ifndef _IDPOOL_HPP
 #define _IDPOOL_HPP
 
-#include <cstdio>
-#include <limits>
+#include <string>
+#include <vector>
+#include <iosfwd>
 #include "boost/dynamic_bitset.hpp"
 #include "boost/noncopyable.hpp"
-#include "boost/shared_ptr.hpp"
 #include "common.hpp"
 #include "bdb.hpp"
 
 namespace BDB {
 
 	/// @todo TODO: Transaction file compression (snapshot).
-
-	/** @brief Integer ID manager within bitmap storage.
-	 */
-
-    
   class Array : boost::noncopyable
 	{
 
 	protected:
-		typedef AddrType BlockType;
-		typedef boost::dynamic_bitset<BlockType> Bitmap;
+		typedef boost::dynamic_bitset<AddrType> Bitmap;
 	
   public:
-        
-		Array();
-    Array(size_t size, std::string const& name);
-    ~Array();
-
-		bool 
-		is_assigned(AddrType index) const;
     
+    // @todo TODO: anonymous Array?
+    
+    Array(std::string const& name, BehaviorDB &bdb);
+    Array(size_t size, std::string const& name, BehaviorDB &bdb);
+    ~Array();
+  
+  /*
     AddrType
     put(char const* data, size_t size);
 
@@ -42,76 +36,82 @@ namespace BDB {
     size_t
     get(char *buffer, size_t size, AddrType index, size_t offset);
     
-		bool 
-		avail() const;
-
 	  bool 
 		del(AddrType index);
 		
     AddrType
     update(char const* data, size_t size, AddrType index);
+*/
+    void
+    resize(size_t size);
 
 		/** Find the first acquired ID from cur which is included
 		 * @param cur Current index
 		 * @remark The cur will be tested also.
 		 */
-		AddrType 
-		next_used(AddrType cur) const;
+		//AddrType 
+		//next_used(AddrType cur) const;
 		
 		/** The maximum count of used IDs */
 		AddrType
-		max_used() const;
+		max_used() const
+    { return max_used_; }
 
 		size_t 
 		size() const;
-		
-    /*
-		AddrType 
-    begin() const;
-
-		AddrType 
-    end() const;
-		*/
-	protected:
-		void 
-		replay_transaction(char const* transaction_file);
+	
+  //protected:
+    
+    void 
+		replay_transaction(std::string const& file);
 		
 		void 
-		init_transaction(char const* transaction_file);
+		init_transaction(std::string const& file);
 
-		int 
-		write_transaction(char const* data, size_t size);
-		
-		/** Extend bitmap size to 1.5 times large
-		 *  @throw std::bad_alloc
-		 */
-		void extend(Bitmap::size_type new_size=0);
+		//int 
+		//write_transaction(char const* data, size_t size);
     
-  private:
+  //private:
     
+    AddrType
+    acquire();
+
+    bool
+    acquire(AddrType index, AddrType addr);
+
+    void
+    release(AddrType index);
+  
     bool
 		commit(AddrType index);
 
 		void
-		lock(AddrType index);
+		lock(AddrType index)
+    { lock_[index] = true; }
 
-		void
-		unlock(AddrType index);
-		
-		bool
-		is_locked(AddrType index) const;
+    void
+    unlock(AddrType index)
+    { lock_[index] = false; }
 
     void
     remap_address(AddrType index, AddrType internal);
 
-    size_t const size_;
-		FILE*  file_;
-		Bitmap bm_;
+    // --------- Oberservers ----------
+		bool 
+		is_acquired(AddrType index) const
+    { return bm_[index] == false; }
+    
+		bool
+    is_locked(AddrType index) const
+    { return lock_[index]; }
+
+	  std::ofstream *ofs_;
+    Bitmap bm_;
 		Bitmap lock_;
 		AddrType max_used_;
 		char filebuf_[128];
     
-    AddrType *arr_;
+    std::vector<AddrType> arr_;
     BehaviorDB &bdb_;
 
 	};

@@ -79,7 +79,7 @@ namespace BDB {
 			if(0 != setvbuf(acc_log_, acc_log_buf_, _IOFBF, 4096))
 				throw std::runtime_error("setvbuf to log file failed\n");
 		}
-
+    
 		// init IDValPool
 		sprintf(fname, "%sglobal_id.trans", conf.root_dir);
 		global_id_ = new IDValPool(fname, conf.beg, conf.end);

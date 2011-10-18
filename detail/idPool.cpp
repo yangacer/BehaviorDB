@@ -132,7 +132,9 @@ namespace BDB {
 		// the one behind pos of (max_used() - 1)  >
 		// the one behind pos of (max_used() - 1) after extension
 		// the one is located before pos
-		rt = (max_used_) ? bm_.find_next(max_used_ - 1) : bm_.find_first() ;
+		rt = (max_used_) ? 
+      bm_.find_next(max_used_ - 1) : 
+      bm_.find_first() ;
 		if((AddrType)Bitmap::npos == rt){
 			if( !full_alloc_){
 				try {

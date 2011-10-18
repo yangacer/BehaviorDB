@@ -8,6 +8,7 @@
 #include "boost/unordered_map.hpp"
 #include "boost/unordered_set.hpp"
 #include "boost/pool/object_pool.hpp"
+#include "boost/noncopyable.hpp"
 
 namespace BDB {
 	
@@ -16,6 +17,7 @@ namespace BDB {
 	struct AddrIterator;	
 
 	struct BDBImpl 
+  : boost::noncopyable
 	{
 		friend struct bdbStater;
     friend struct AddrIterator;
@@ -66,6 +68,46 @@ namespace BDB {
 
 		size_t
 		del(AddrType addr, size_t off, size_t size);
+    
+    // ------------ Transparent Interfaces --------------
+    // nt stands for no internal/external address translation is performed
+
+		AddrType
+		nt_put(char const *data, size_t size);
+
+		AddrType
+		nt_put(char const *data, size_t size, AddrType addr, size_t off=npos);
+			
+		AddrType
+		nt_put(std::string const& data)
+		{ return put(data.data(), data.size()); }
+		
+		AddrType
+		nt_put(std::string const& data, AddrType addr, size_t off=npos)
+		{ return put(data.data(), data.size(), addr, off); }
+		
+		AddrType
+		nt_update(char const *data, size_t size, AddrType addr);
+		
+		AddrType
+		nt_update(std::string const& data, AddrType addr)
+		{ return update(data.data(), data.size(), addr); }
+
+		size_t
+		nt_get(char *output, size_t size, AddrType addr, size_t off=0);
+		
+		size_t
+		nt_get(std::string *output, size_t max, AddrType addr, size_t off=0);
+
+		size_t
+		nt_del(AddrType addr);
+
+		size_t
+		nt_del(AddrType addr, size_t off, size_t size);
+    
+    // TODO nt_ for BDB::i/ostream function
+
+    // ------------ Transparent Interfaces End ----------
 
 		// streaming interface
 		stream_state const*
@@ -110,10 +152,6 @@ namespace BDB {
 		void stat(Stat* s) const;
 		
 		bool full() const;
-
-	private: // disable interfaces
-		BDBImpl(BDBImpl const& cp);
-		BDBImpl& operator=(BDBImpl const &cp);
 
 	protected:
     
