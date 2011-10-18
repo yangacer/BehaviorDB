@@ -1,12 +1,11 @@
-#ifndef _IDPOOL_HPP
-#define _IDPOOL_HPP
+#ifndef _BDB_ARRAY_HPP
+#define _BDB_ARRAY_HPP
 
 #include <string>
 #include <vector>
 #include <iosfwd>
 #include "boost/dynamic_bitset.hpp"
 #include "boost/noncopyable.hpp"
-#include "common.hpp"
 #include "bdb.hpp"
 
 namespace BDB {
@@ -24,7 +23,7 @@ namespace BDB {
     
     Array(std::string const& name, BehaviorDB &bdb);
     Array(size_t size, std::string const& name, BehaviorDB &bdb);
-    ~Array();
+    virtual ~Array();
   
   
     AddrType
@@ -33,14 +32,29 @@ namespace BDB {
 		AddrType 
 		put(char const *data, size_t size, AddrType index, AddrType offset=npos);
     
+    AddrType
+    put(std::string const& data)
+    { return put(data.data(), data.size()); }
+  
+    AddrType
+    put(std::string const& data, AddrType index, AddrType offset=npos)
+    { return put(data.data(), data.size(), index, offset); }
+    
     size_t
     get(char *buffer, size_t size, AddrType index, size_t offset=0);
     
+    size_t
+    get(std::string *buffer, size_t max, AddrType index, size_t offset=0);
+
 	  bool 
 		del(AddrType index);
 		
     AddrType
     update(char const* data, size_t size, AddrType index);
+    
+    AddrType
+    update(std::string const& data, AddrType index)
+    { return update(data.data(), data.size(), index); }
 
     void
     resize(size_t size);

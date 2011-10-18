@@ -4,6 +4,7 @@ cmake_minimum_required(VERSION 2.8)
 add_subdirectory( detail )
 
 include_directories( ${PROJECT_SOURCE_DIR}/bdb ${PROJECT_SOURCE_DIR}/detail /usr/local/include)
+link_directories ( /usr/local/lib)
 
 add_executable (bdb_test ${PROJECT_SOURCE_DIR}/tests/bdb.cpp)
 target_link_libraries(bdb_test bdb)
@@ -14,6 +15,9 @@ target_link_libraries(bdb_simulator bdb)
 
 add_executable (bdb_array ${PROJECT_SOURCE_DIR}/tests/array.cpp)
 target_link_libraries(bdb_array bdb)
+
+add_executable (bdb_typed_array ${PROJECT_SOURCE_DIR}/tests/typed_array.cpp)
+target_link_libraries(bdb_typed_array bdb boost_serialization)
 
 add_executable (logcvt ${PROJECT_SOURCE_DIR}/tools/logcvt.cpp)
 

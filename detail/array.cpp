@@ -96,6 +96,14 @@ namespace BDB {
     return bdb_.impl()->nt_get(buffer, size, arr_[index], offset);
   }
 
+  size_t
+  Array::get(std::string *buffer, size_t max, AddrType index, size_t offset)
+  {
+    if(!is_acquired(index))
+      return 0;
+    return bdb_.impl()->nt_get(buffer, max, arr_[index], offset);
+  }
+
   bool
   Array::del(AddrType index)
   {
@@ -142,9 +150,9 @@ namespace BDB {
 
     if((AddrType)Bitmap::npos == index){
       try{
-        resize((unsigned int)((size() + 1)*1.5)); 
-        index = bm_.find_next(max_used_ -1);
-        max_used_ ++;
+        resize((unsigned int)((size() + 1)<<1)); 
+        index = max_used_;
+        max_used_++;
       }catch(std::bad_alloc const& e){
         index = bm_.find_first();
         if((AddrType)Bitmap::npos == index)
