@@ -57,7 +57,7 @@ public:
   bool
   get(T *object, AddrType index)
   {
-    std::string buf;
+    static std::string buf;
     if(0 == ArrayImpl::get(&buf, -1, index))
       return false;
     
