@@ -189,6 +189,10 @@ namespace BDB {
          *  @see Stat
          */
 		void stat(Stat * ms) const;
+    
+    BDBImpl *
+    impl()
+    { return impl_; }
 
 	private:
 		BehaviorDB(BehaviorDB const& cp);

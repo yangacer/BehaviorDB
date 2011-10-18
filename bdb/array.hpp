@@ -26,22 +26,22 @@ namespace BDB {
     Array(size_t size, std::string const& name, BehaviorDB &bdb);
     ~Array();
   
-  /*
+  
     AddrType
     put(char const* data, size_t size);
 
 		AddrType 
-		put(char const *data, size_t size, AddrType index);
+		put(char const *data, size_t size, AddrType index, AddrType offset=npos);
     
     size_t
-    get(char *buffer, size_t size, AddrType index, size_t offset);
+    get(char *buffer, size_t size, AddrType index, size_t offset=0);
     
 	  bool 
 		del(AddrType index);
 		
     AddrType
     update(char const* data, size_t size, AddrType index);
-*/
+
     void
     resize(size_t size);
 
@@ -59,9 +59,11 @@ namespace BDB {
 
 		size_t 
 		size() const;
-	
-  //protected:
-    
+
+#ifndef _BDB_TESTING_
+  protected:
+#endif   
+
     void 
 		replay_transaction(std::string const& file);
 		
@@ -70,14 +72,15 @@ namespace BDB {
 
 		//int 
 		//write_transaction(char const* data, size_t size);
-    
-  //private:
-    
+#ifndef _BDB_TESTING_
+  private:
+#endif
+
     AddrType
     acquire();
 
     bool
-    acquire(AddrType index, AddrType addr);
+    acquire(AddrType index);
 
     void
     release(AddrType index);

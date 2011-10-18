@@ -1,5 +1,7 @@
+#define _BDB_TESTING_
 #include "array.hpp"
 #include <iostream>
+#include <cstring>
 
 int main(int argc, char** argv)
 {
@@ -15,17 +17,17 @@ int main(int argc, char** argv)
 
   Array arr(100, "my_arr", bdb);
   cerr<<"is_acquired: "<<arr.is_acquired(1)<<endl;
+  
+  char buf[100];
+  AddrType off = arr.put("aceryang", 8);
+  assert(off != -1);
 
-  AddrType addr = arr.acquire();
-  if(-1 != addr )
-    arr.commit(addr);
+  arr.get(buf, 100, off);
+  assert(0 == strncmp(buf, "aceryang", 8));
+  
+  off = arr.put("specified", 9, 1u);
+  assert(off != -1);
 
-  if(arr.acquire(1, 1234))
-    arr.commit(1);
-  else
-    cerr<<"acquire address 1 failed\n";
-
-  arr.release(addr);
-  arr.commit(addr);
-
+  arr.get(buf, 100, 1u);
+  assert(0 == strncmp(buf, "specified", 9));
 }

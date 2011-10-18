@@ -2,6 +2,7 @@
 #include <stdexcept>
 #include <fstream>
 #include "boost/lexical_cast.hpp"
+#include "bdbImpl.hpp"
 
 namespace BDB {
 
@@ -38,6 +39,88 @@ namespace BDB {
     ofs_->close();
     delete ofs_;
   }
+  
+  
+  AddrType
+  Array::put(char const* data, size_t size)
+  {
+    AddrType index = acquire(), addr(-1);
+    if(-1 == index)
+      return -1;
+    addr = bdb_.impl()->nt_put(data, size);
+    if(-1 == addr){
+      release(index);
+      return -1;
+    }
+    arr_[index] = addr;
+    if(!commit(index)){
+      release(index);
+      return -1;
+    }
+    return index;
+  }
+  
+  
+  AddrType 
+  Array::put(char const *data, size_t size, AddrType index, AddrType offset)
+  {
+    AddrType addr;
+    if(!is_acquired(index)){
+      if(!acquire(index))
+        return -1;
+      addr = bdb_.impl()->nt_put(data, size);
+      if(-1 == addr){
+        release(index);
+        return -1;
+      } 
+    }else{
+      addr = bdb_.impl()->nt_put(data, size, arr_[index], offset);
+      if(-1 == addr)
+        return -1;
+    }
+    
+    AddrType p_addr(arr_[index]);
+    if(addr != p_addr){
+      arr_[index] = addr;
+      if(!commit(index)){
+          arr_[index] = p_addr;
+      }
+    }
+    return index;
+  }
+
+  size_t
+  Array::get(char *buffer, size_t size, AddrType index, size_t offset)
+  {
+    if(!is_acquired(index)) return 0;
+    return bdb_.impl()->nt_get(buffer, size, arr_[index], offset);
+  }
+
+  bool
+  Array::del(AddrType index)
+  {
+    if(!is_acquired(index)) return false;
+    return 0 == bdb_.impl()->nt_del(arr_[index]);
+  }
+
+  AddrType
+  Array::update(char const* data, size_t size, AddrType index)
+  {
+    if(!is_acquired(index))
+      return put(data, size, index);
+    
+    AddrType addr, p_addr = arr_[index];
+    addr = bdb_.impl()->nt_update(data, size, arr_[index]);
+    
+    if(-1 == addr)
+      return -1;
+    
+    if(p_addr != addr){
+      arr_[index] = addr;
+      commit(index);
+    }
+    return index;
+  }
 
   void
   Array::resize(size_t size)
@@ -73,7 +156,7 @@ namespace BDB {
   }
   
   bool
-  Array::acquire(AddrType index, AddrType addr)
+  Array::acquire(AddrType index)
   {
     if(index < size()){
       if(!bm_[index]) return false;
@@ -86,7 +169,6 @@ namespace BDB {
       }
     }
     bm_[index] = false;
-    arr_[index] = addr;
     return true;
   }
 
@@ -116,9 +198,8 @@ namespace BDB {
     }
     
     buf += "\n";
-    ofs_->write(buf.c_str(), buf.size());    
+    return (void*)ofs_->write(buf.c_str(), buf.size());    
 
-    return true;
   }
   
   void
