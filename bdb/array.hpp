@@ -84,8 +84,6 @@ namespace BDB {
 		void 
 		init_transaction(std::string const& file);
 
-		//int 
-		//write_transaction(char const* data, size_t size);
 #ifndef _BDB_TESTING_
   private:
 #endif
