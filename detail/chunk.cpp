@@ -19,14 +19,8 @@ operator>>(std::istream &is, ChunkHeader &ch)
 	buf[8] = 0;
 
 	is.read(buf, 8);
-	//ch.liveness = *buf;
-	ch.size = strtoul(&buf[1], 0, 16);
-	/*
-	std::cout<<"cheader: "<<
-			(unsigned short)ch.liveness<<"-"<<
-			ch.size<<"\n";
-		*/
-	return is;	
+	ch.size = strtoul(buf, 0, 16);
+  return is;	
 }
 
 std::ostream& 
@@ -37,8 +31,6 @@ operator<<(std::ostream &os, ChunkHeader const &ch)
 	using std::setfill;
 	using std::setw;
 	
-	//os.write((char*)&ch.liveness, 1);
-
 	ios::fmtflags oldflag = os.flags();
 	os.unsetf(oldflag);
 	os<<setfill('0')<<setw(8)<<hex<<ch.size;
@@ -52,11 +44,10 @@ operator>>(FILE* fp, ChunkHeader &ch)
 {
 	static char buf[9];
 	buf[8] = 0;
-	// first byte is preserved
 	if(8 != fread(buf, 1, 8, fp)){
 		return 0;
 	}
-	ch.size = strtoul(&buf[1], 0, 16);
+	ch.size = strtoul(buf, 0, 16);
 	return fp;
 }
 
@@ -69,11 +60,7 @@ operator<<(FILE* fp, ChunkHeader const &ch)
 
 	if( 8 != fwrite(cvt.str().c_str(), 1, 8, fp))
 		return 0;
-	/*
-	if(0 >  fprintf(fp, "%08x", ch.size)){
-		return 0;
-	}
-	*/
+	
 	return fp;
 
 }
@@ -84,11 +71,10 @@ read_header(FILE* fp, ChunkHeader &ch)
 {
 	static char buf[9];
 	buf[8] = 0;
-	// first byte is preserved
 	if(8 != fread(buf, 1, 8, fp)){
 		return -1;
 	}
-	ch.size = strtoul(&buf[1], 0, 16);
+	ch.size = strtoul(buf, 0, 16);
 	return 0;
 }
 

@@ -55,7 +55,7 @@ namespace BDB {
 		if(*header_dir && PATH_DELIM != header_dir[strlen(header_dir)-1])
 			throw invalid_argument("Config: non-empty header_dir should be ended with a path delimiter");
 
-		if(*log_dir && PATH_DELIM != log_dir[strlen(log_dir)-1])
+		if(log_dir && *log_dir && PATH_DELIM != log_dir[strlen(log_dir)-1])
 			throw invalid_argument("Config: non-empty log_dir should be ended with a path delimiter");
 		
 		if( (*cse_func)(0, min_size) >= (*cse_func)(1, min_size) )
