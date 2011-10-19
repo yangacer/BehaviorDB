@@ -84,6 +84,7 @@ namespace BDB {
       arr_[index] = addr;
       if(!commit(index)){
           arr_[index] = p_addr;
+          return -1;
       }
     }
     return index;

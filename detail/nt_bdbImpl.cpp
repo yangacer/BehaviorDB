@@ -56,8 +56,8 @@ namespace BDB {
 			}
 			rt = addrEval.global_addr(next_dir, next_loc_addr);
 			if(acc_log_)fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", 
-				"nt_insert", size, addr, off);
-			return addr;
+				"nt_insert", size, rt, off);
+			return rt;
 		}
 
 		// no migration
@@ -75,9 +75,9 @@ namespace BDB {
 		rt = addrEval.global_addr(dir, loc_addr);
 
 		if(acc_log_)fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", 
-			"nt_insert", size, addr, off);
+			"nt_insert", size, rt, off);
 
-		return addr;
+		return rt;
 	}
   
   /// TODO this method should called "replace"
@@ -108,7 +108,7 @@ namespace BDB {
 
 			if(acc_log_) 
         fprintf(acc_log_, "%-12s\t%08x\t%08x\n", "nt_upd_put", size, new_addr);
-			return addr;
+			return new_addr;
 		}
 		
 		if(-1 == (loc_addr = 
@@ -133,7 +133,7 @@ namespace BDB {
 		
 		if(-1 == (rt = pools_[dir].read(output, size, loc_addr, off))){
 			error(dir);
-			return 0;
+			return -1;
 		}
 
 		if(acc_log_) 
@@ -153,7 +153,7 @@ namespace BDB {
 		
 		if( -1 == (rt = pools_[dir].read(output, max, loc_addr, off))){
 			error(dir);
-			return 0;
+			return -1;
 		}
 		if(acc_log_) 
       fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", "nt_strget", max, addr, off);
