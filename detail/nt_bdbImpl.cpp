@@ -172,7 +172,7 @@ namespace BDB {
 		}
 
 		if(acc_log_) 
-      fprintf(acc_log_, "%-12s\t%08x\n", "del", addr);
+      fprintf(acc_log_, "%-12s\t%08x\n", "nt_del", addr);
 		return 0;
 	}
 

@@ -14,20 +14,39 @@ int main(int argc, char** argv)
   conf.root_dir = argv[1];
 
   BehaviorDB bdb(conf);
-
-  Array arr(100, "my_arr", bdb);
-  cerr<<"is_acquired: "<<arr.is_acquired(1)<<endl;
-  
   char buf[100];
-  AddrType off = arr.put("aceryang", 8);
-  assert(off != -1);
 
-  arr.get(buf, 100, off);
-  assert(0 == strncmp(buf, "aceryang", 8));
+  {
+    Array arr(100, "my_arr", bdb);
+    cerr<<"is_acquired: "<<arr.is_acquired(1)<<endl;
   
-  off = arr.put("specified", 9, 1u);
-  assert(off != -1);
+    AddrType off = arr.put("aceryang", 8);
+    assert(off != -1);
 
-  arr.get(buf, 100, 1u);
-  assert(0 == strncmp(buf, "specified", 9));
+    arr.get(buf, 100, off);
+    assert(0 == strncmp(buf, "aceryang", 8));
+    
+    assert(true == arr.del(off));
+
+    off = arr.put("specified", 9, 1u);
+    assert(off != -1);
+
+    size_t rt = arr.get(buf, 100, 1u);
+    assert(rt != -1 && 
+      0 == strncmp(buf, "specified", 9));
+    
+
+  }
+  
+  
+  {
+    Array arr(200, "my_arr2", bdb);
+
+    AddrType off = arr.put("tech", 4);
+    assert(off != -1);
+    
+    arr.get(buf, 100, off);
+    assert(0 == strncmp(buf, "tech", 4));
+  }
+  
 }

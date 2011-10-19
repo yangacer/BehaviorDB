@@ -54,6 +54,8 @@ namespace BDB {
     }
     arr_[index] = addr;
     if(!commit(index)){
+      if(-1 == bdb_.impl()->nt_del(addr))
+        throw std::runtime_error("Rollback failure");
       release(index);
       return -1;
     }
@@ -109,7 +111,15 @@ namespace BDB {
   Array::del(AddrType index)
   {
     if(!is_acquired(index)) return false;
-    return 0 == bdb_.impl()->nt_del(arr_[index]);
+    
+    if(-1 == bdb_.impl()->nt_del(arr_[index]))
+      return false;
+    
+    release(index);
+
+    if(!commit(index))
+      throw std::runtime_error("Commit error");
+    return true;  
   }
 
   AddrType
@@ -126,7 +136,10 @@ namespace BDB {
     
     if(p_addr != addr){
       arr_[index] = addr;
-      commit(index);
+      if(!commit(index)){
+        arr_[index] = p_addr;
+        return -1;
+      }
     }
     return index;
   }
