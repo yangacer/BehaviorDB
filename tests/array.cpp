@@ -7,6 +7,7 @@ int main(int argc, char** argv)
 {
   using namespace std;
   using namespace BDB;
+  using BDB::Structure::Array;
 
   Config conf;
   conf.beg = 1;
@@ -45,8 +46,10 @@ int main(int argc, char** argv)
     AddrType off = arr.put("tech", 4);
     assert(off != -1);
     
+    arr.update("technology", 10, off);
+
     arr.get(buf, 100, off);
-    assert(0 == strncmp(buf, "tech", 4));
+    assert(0 == strncmp(buf, "technology", 10));
   }
   
 }
