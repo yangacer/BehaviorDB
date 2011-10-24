@@ -9,6 +9,7 @@
 #include "bdb.hpp"
 
 namespace BDB {
+namespace Structure {
 
 	/// @todo TODO: Transaction file compression (snapshot).
   class Array : boost::noncopyable
@@ -16,7 +17,7 @@ namespace BDB {
 
 	protected:
 		typedef boost::dynamic_bitset<AddrType> Bitmap;
-	
+	  typedef std::vector<AddrType> AddrContainer;
   public:
     
     // @todo TODO: anonymous Array?
@@ -73,7 +74,6 @@ namespace BDB {
 
 		size_t 
 		size() const;
-
 #ifndef _BDB_TESTING_
   protected:
 #endif   
@@ -131,8 +131,9 @@ namespace BDB {
 
 	};
 
+} // namespace Structure
 } // end of namespace BDB
 
-#endif
+#endif // header guard
 
 

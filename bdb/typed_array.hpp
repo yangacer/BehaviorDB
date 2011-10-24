@@ -7,12 +7,12 @@
 #include "boost/archive/binary_iarchive.hpp"
 
 namespace BDB {
+namespace Structure {
 
 template<class T, class ArrayImpl=Array>
 struct TypedArray 
 : private ArrayImpl
 {
-public:
   using ArrayImpl::resize;
   using ArrayImpl::max_used;
   using ArrayImpl::size;
@@ -88,7 +88,7 @@ private:
 
   // TODO cache? tuning via partial reading?
 };
-
+} // namespace Structure
 } // namespace BDB 
 
 #endif

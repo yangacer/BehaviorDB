@@ -5,6 +5,7 @@
 #include "bdbImpl.hpp"
 
 namespace BDB {
+namespace Structure {
 
   Array::Array(std::string const& name, BehaviorDB &bdb)
   : ofs_(0), bm_(), lock_(), max_used_(0), filebuf_(),
@@ -287,4 +288,5 @@ namespace BDB {
     return bm_.size();  
   }
 
+} // namespace Structure
 } // namespace BDB
