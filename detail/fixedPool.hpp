@@ -20,11 +20,11 @@ namespace BDB {
 		typedef T value_type;
 		
 		fixed_pool() 
-		: id_(0), work_dir_(""), file_(0)
+		: id_(0), work_dir_(""), file_(0), fbuf_(0)
 		{}
 
 		fixed_pool(unsigned int id, char const* work_dir)
-		: id_(0), work_dir_(""), file_(0)
+		: id_(0), work_dir_(""), file_(0), fbuf_(0)
 		{
 			open(id, work_dir);
 		}
@@ -32,6 +32,7 @@ namespace BDB {
 		~fixed_pool()
 		{
 			if(file_) fclose(file_);	
+      delete []fbuf_;
 		}
 		
 		operator void const *() const
@@ -61,6 +62,8 @@ namespace BDB {
 				throw length_error("fixed_pool: length of pool_dir string is too long");
 			
 			sprintf(fname, "%s%04x.fpo", work_dir_.c_str(), id_);
+      
+      fbuf_ = new char[4096];
 
 			if(0 == (file_ = fopen(fname, "r+b"))){
 				if(0 == (file_ = fopen(fname, "w+b"))){
@@ -110,7 +113,7 @@ namespace BDB {
 		unsigned int id_;
 		std::string work_dir_;
 		FILE* file_;
-		char fbuf_[4096];
+		char *fbuf_;//[4096];
 	};
 }
 
