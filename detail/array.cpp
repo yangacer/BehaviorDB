@@ -6,6 +6,12 @@
 
 namespace BDB {
 namespace Structure {
+  
+  /*
+  AddrHandle::AddrHandle()
+  : idx_(index), arr_(array)
+  {}
+  */
 
   Array::Array(std::string const& name, BehaviorDB &bdb)
   : ofs_(0), bm_(), lock_(), max_used_(0), filebuf_(),
@@ -41,7 +47,15 @@ namespace Structure {
     delete ofs_;
   }
   
-  
+  /*
+  bool
+  is_in(AddrHandle const& handle) const
+  { 
+    return handle.arr_ == this && 
+      true == is_acquired(handle.idx_); 
+  }
+  */
+
   AddrType
   Array::put(char const* data, size_t size)
   {

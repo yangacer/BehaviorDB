@@ -12,6 +12,8 @@ target_link_libraries(bdb_test bdb)
 add_executable (bdb_simulator ${PROJECT_SOURCE_DIR}/tools/simulator.cpp)
 target_link_libraries(bdb_simulator bdb)
 
+add_executable (bdb_hashmap ${PROJECT_SOURCE_DIR}/tests/hash_map.cpp)
+target_link_libraries(bdb_hashmap bdb)
 
 add_executable (bdb_array ${PROJECT_SOURCE_DIR}/tests/array.cpp)
 target_link_libraries(bdb_array bdb)

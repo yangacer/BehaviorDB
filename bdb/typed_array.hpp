@@ -17,6 +17,7 @@ struct TypedArray
   using ArrayImpl::max_used;
   using ArrayImpl::size;
   using ArrayImpl::del;
+  using ArrayImpl::is_acquired;
 
   TypedArray(std::string const &name, BehaviorDB &bdb)
   : ArrayImpl(name, bdb)

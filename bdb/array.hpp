@@ -11,6 +11,21 @@
 namespace BDB {
 namespace Structure {
 
+  struct Array;
+  
+  // TODO: Shared Array issue
+  // Replace all return type with AddrHandle?
+  /*
+  struct AddrHandle
+  {
+    friend struct Array;
+  private:  
+    AddrHandle(AddrType index, Array const* array);
+    AddrType idx_;
+    Array const* arr_;
+  };
+  */
+
 	/// @todo TODO: Transaction file compression (snapshot).
   class Array : boost::noncopyable
 	{
@@ -20,12 +35,12 @@ namespace Structure {
 	  typedef std::vector<AddrType> AddrContainer;
   public:
     
-    // @todo TODO: anonymous Array?
-    
     Array(std::string const& name, BehaviorDB &bdb);
     Array(size_t size, std::string const& name, BehaviorDB &bdb);
     virtual ~Array();
-  
+    
+    //bool
+    //is_in(AddrHandle const& handle) const;
   
     AddrType
     put(char const* data, size_t size);
@@ -74,6 +89,16 @@ namespace Structure {
 
 		size_t 
 		size() const;
+
+    // --------- Oberservers ----------
+		bool 
+		is_acquired(AddrType index) const
+    { return bm_[index] == false; }
+    
+		bool
+    is_locked(AddrType index) const
+    { return lock_[index]; }
+
 #ifndef _BDB_TESTING_
   protected:
 #endif   
@@ -111,15 +136,7 @@ namespace Structure {
     void
     remap_address(AddrType index, AddrType internal);
 
-    // --------- Oberservers ----------
-		bool 
-		is_acquired(AddrType index) const
-    { return bm_[index] == false; }
     
-		bool
-    is_locked(AddrType index) const
-    { return lock_[index]; }
-
 	  std::ofstream *ofs_;
     Bitmap bm_;
 		Bitmap lock_;

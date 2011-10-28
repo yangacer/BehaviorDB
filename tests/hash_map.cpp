@@ -5,7 +5,7 @@ int main()
 {
   using namespace std;
   using namespace BDB;
-  using BDB::Structure::HashMap;
+  using namespace BDB::Structure;
   
   Config conf;
   conf.beg = 1;
@@ -13,8 +13,10 @@ int main()
   conf.root_dir = argv[1];
 
   BehaviorDB bdb(conf);
+  
+  Array arr("my_arr", bdb);
 
-  HashMap<int> hmap("my_map", bdb);
+  HashMap hmap("my_hmap", arr, bdb);
 
   string buf;  
 
@@ -24,22 +26,7 @@ int main()
 
   hmap.get("key", &buf);
 
-  hmap.get_bucket("key");
+  hmap.del("key");
 
-  size_t hv = hmap.hash_function("key");
-  
-  HashMap<int>::BucketType bucket;
-
-  hmap.get_bucket(hv, &bucket);
-
-  for(HashMap<int>::BucketType::iterator it = bucket.begin();
-    it != bucket.end(); ++it)
-    cout<<it->first<<":"<<it->second<<"\n";
-
-  bucket.erase(bucket.begin());
-
-  hmap.update_bucket("key", bucket);
-
-  
   return 0;
 }

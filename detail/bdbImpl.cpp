@@ -115,6 +115,7 @@ namespace BDB {
 	BDBImpl::put(char const* data, size_t size, AddrType addr, size_t off)
 	{
 		// assert(0 != *this && "BDBImpl is not proper initiated");
+    if(-1 == addr ) return -1;
 
     if( !global_id_->isAcquired(addr) ){
       
@@ -209,6 +210,8 @@ namespace BDB {
 	{
 		// assert(0 != *this && "BDBImpl is not proper initiated");
 
+    if(-1 == addr ) return -1;
+
 		AddrType internal_addr;
 		if( !global_id_->isAcquired(addr) )
 			return -1;
@@ -261,6 +264,8 @@ namespace BDB {
 	size_t
 	BDBImpl::get(char *output, size_t size, AddrType addr, size_t off)
 	{
+
+    if(-1 == addr ) return -1;
 		// assert(0 != *this && "BDBImpl is not proper initiated");
 		
 		if( !global_id_->isAcquired(addr) )
@@ -303,6 +308,8 @@ namespace BDB {
 	size_t
 	BDBImpl::del(AddrType addr)
 	{
+
+    if(-1 == addr ) return -1;
 		// assert(0 != *this && "BDBImpl is not proper initiated");
 	
 		AddrType internal_addr;
@@ -390,6 +397,8 @@ namespace BDB {
 	stream_state const*
 	BDBImpl::ostream(size_t stream_size, AddrType addr, size_t off)
 	{
+    if(-1 == addr ) return 0;
+
 		if( global_id_->isLocked(addr) )
 			return 0;
 
@@ -463,6 +472,8 @@ namespace BDB {
 	stream_state const*
 	BDBImpl::istream(size_t stream_size, AddrType addr, size_t off)
 	{
+    if(-1 == addr ) return 0;
+
 		/// TODO Consider allow reader when a chunk is been written
 		if(!global_id_->isAcquired(addr) || global_id_->isLocked(addr))
 			return 0;
