@@ -26,7 +26,7 @@ add_executable (logcvt ${PROJECT_SOURCE_DIR}/tools/logcvt.cpp)
 include (CTest)
 set (CTEST_PROJECT_NAME "BehaviorDB-Testing")
 #add_test (basic_op bdb_test)
-add_test (hashmap bdb_hashmap)
+add_test (hashmap bdb_hashmap tmp/ )
 
 #install (FILES bdb.hpp common.hpp addr_iter.hpp DESTINATION include/bdb)
 install (DIRECTORY bdb/ DESTINATION include/bdb)
