@@ -30,7 +30,7 @@ int main(int argc, char** argv)
   assert(true == hmap.del("key") && "del by hashmap failed");
   
   
-  //assert(false == hmap.is_in("non-existed"));
+  assert(false == hmap.is_in("non-existed"));
   
   assert(-1 == hmap.get("key", &buf) && "del is not correct");
   
