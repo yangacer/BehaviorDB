@@ -3,11 +3,14 @@
 
 #include <string>
 
-#include "boost/unordered_map.hpp"
+//#include "boost/unordered_map.hpp"
 #include "boost/noncopyable.hpp"
-#include "boost_serialize_unordered_map.hpp"
+//#include "boost_serialize_unordered_map.hpp"
 
+#include <map>
 #include "common.hpp"
+#include "boost/serialization/map.hpp"
+#include "boost/functional/hash.hpp"
 #include "typed_array.hpp"
 
 namespace BDB {
@@ -35,12 +38,12 @@ struct HashMap
 : boost::noncopyable
 {
 private:
-  typedef boost::unordered_map<std::string, AddrType> BucketType;
+  typedef std::map<std::string, AddrType> BucketType;
   typedef TypedArray<BucketType> BucketsContType;
   
 public:
   
-  HashMap(std::string const& name, Array &array, BehaviorDB &bdb);
+  //HashMap(std::string const& name, Array &array, BehaviorDB &bdb);
   HashMap(size_t size, std::string const& name, Array &array, BehaviorDB &bdb);
   ~HashMap();
 
@@ -87,11 +90,7 @@ protected:
 
   AddrType
   put_bucket(std::string const& key, BucketType *bucket);
-  /*
-  AddrType
-  get_index(std::string const& key);
-  */
-
+  
   size_t hash_value(std::string const& key) const
   { return boost::hash<std::string>()(key) % buckets_.size(); }
 

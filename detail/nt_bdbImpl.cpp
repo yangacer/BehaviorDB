@@ -156,7 +156,7 @@ namespace BDB {
 			return -1;
 		}
 		if(acc_log_) 
-      fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", "nt_strget", max, addr, off);
+      fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", "nt_strget", output->size(), addr, off);
 		return rt;
 	}
   

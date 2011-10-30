@@ -1,7 +1,7 @@
 #include "hash_map.hpp"
 #include <iostream>
 
-int main()
+int main(int argc, char** argv)
 {
   using namespace std;
   using namespace BDB;
@@ -16,17 +16,25 @@ int main()
   
   Array arr("my_arr", bdb);
 
-  HashMap hmap("my_hmap", arr, bdb);
+  HashMap hmap(20, "my_hmap", arr, bdb);
 
   string buf;  
 
-  hmap.put("key", "value");
+  assert(-1 != hmap.put("key", "value") && "put by hashmap failed");
 
-  hmap.is_in("key");
+  assert(false != hmap.is_in("key") && "is_in test failed");
 
   hmap.get("key", &buf);
+  assert(buf == "value" && "get by hashmap failed");
 
-  hmap.del("key");
+  assert(true == hmap.del("key") && "del by hashmap failed");
+  
+  
+  //assert(false == hmap.is_in("non-existed"));
+  
+  assert(-1 == hmap.get("key", &buf) && "del is not correct");
+  
+  
 
   return 0;
 }

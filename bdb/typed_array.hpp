@@ -5,6 +5,8 @@
 #include "array.hpp"
 #include "boost/archive/binary_oarchive.hpp"
 #include "boost/archive/binary_iarchive.hpp"
+#include "boost/archive/text_oarchive.hpp"
+#include "boost/archive/text_iarchive.hpp"
 
 namespace BDB {
 namespace Structure {
@@ -19,12 +21,16 @@ struct TypedArray
   using ArrayImpl::del;
   using ArrayImpl::is_acquired;
 
+  typedef boost::archive::text_oarchive oarchiver;
+  typedef boost::archive::text_iarchive iarchiver;
+
+  
   TypedArray(std::string const &name, BehaviorDB &bdb)
-  : ArrayImpl(name, bdb)
+  : ArrayImpl(name, bdb), cvt()
   {}
 
   TypedArray(size_t size, std::string const &name, BehaviorDB &bdb)
-  : ArrayImpl(size, name, bdb)
+  : ArrayImpl(size, name, bdb), cvt()
   {}
   
   ~TypedArray()
@@ -36,7 +42,7 @@ struct TypedArray
     cvt.clear();
     cvt.str("");
 
-    boost::archive::binary_oarchive oa(cvt);
+    oarchiver oa(cvt);
 
     oa << object;
     
@@ -49,7 +55,7 @@ struct TypedArray
     cvt.clear();
     cvt.str("");
 
-    boost::archive::binary_oarchive oa(cvt);
+    oarchiver oa(cvt);
     oa << object;
 
     return ArrayImpl::put(cvt.str(), index);
@@ -58,14 +64,14 @@ struct TypedArray
   bool
   get(T *object, AddrType index)
   {
-    static std::string buf;
+    std::string buf;
     if(0 == ArrayImpl::get(&buf, -1, index))
       return false;
     
     cvt.clear();
     cvt.str(buf);
 
-    boost::archive::binary_iarchive ia(cvt);
+    iarchiver ia(cvt);
     
     ia >> (*object);
     
@@ -78,8 +84,8 @@ struct TypedArray
     cvt.clear();
     cvt.str("");
 
-    boost::archive::binary_oarchive oa(cvt);
-    oa & object;
+    oarchiver oa(cvt);
+    oa << object;
 
     return ArrayImpl::update(cvt.str(), index);
   }

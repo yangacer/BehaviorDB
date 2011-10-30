@@ -3,13 +3,17 @@
 namespace BDB {
 namespace Structure {
   
+  /*
   HashMap::HashMap(std::string const& name, Array &array, BehaviorDB &bdb)
   : arr_(&array) , buckets_(name, bdb), cvt(), prev_index_(-1)
   {}
+  */
 
   HashMap::HashMap(size_t size, std::string const& name, Array &array, BehaviorDB &bdb)
   : arr_(&array), buckets_(size, name, bdb), cvt(), prev_index_(-1)
-  {}
+  {
+    assert(size != 0 && "hashmap size can not be zero"); 
+  }
   
   HashMap::~HashMap()
   {}
@@ -31,8 +35,10 @@ namespace Structure {
       bucket->clear();
     else if(prev_index_ == hv)
       return true;
-    else
+    else{
       prev_index_ = hv;
+      bucket->clear();
+    }
     return buckets_.get(bucket, hv);
   }
 
@@ -43,26 +49,6 @@ namespace Structure {
     return buckets_.update(*bucket, hv);
   }
 
-  /*
-  AddrType
-  HashMap::get_index(std::string const& key)
-  {
-    size_t hv = hash_value(key);
-
-    cvt.clear();
-    if(-1 == buckets_.get(&cvt, hv))
-      return -1;
-    else{
-      AddrType index;
-      BucketType::iterator i = cvt.find(key);
-      if(cvt.end() == i)
-        return -1;
-      else
-        return i->second;
-    } 
-  }
-  */
-
   AddrType
   HashMap::put(std::string const& key, char const* value, size_t size)
   {
@@ -71,8 +57,7 @@ namespace Structure {
     }
     AddrType rt = arr_->put(value, size);
     cvt.insert(std::make_pair(key, rt));
-    buckets_.update(cvt, prev_index_);
-    return rt;
+    return buckets_.update(cvt, prev_index_);
   }
 
   size_t
@@ -101,7 +86,11 @@ namespace Structure {
     if(!arr_->del(i->second))
       return false;
     cvt.erase(i);
-    if(-1 == buckets_.update(cvt, prev_index_))
+    // TODO empty case is not handled
+    if(cvt.empty()){
+      if(!buckets_.del(prev_index_))
+        return false;
+    }else  if(-1 == buckets_.update(cvt, prev_index_))
       return false;
     return true;
   }
@@ -113,8 +102,6 @@ namespace Structure {
       return put(key, value, size);
     BucketType::iterator i = cvt.find(key);
     if(-1 == arr_->update(value, size, i->second))
-      return -1;
-    if(-1 == buckets_.update(cvt, prev_index_))
       return -1;
     return i->second;
   }
