@@ -26,13 +26,13 @@ namespace Structure {
   };
   */
 
-	/// @todo TODO: Transaction file compression (snapshot).
+  /// @todo TODO: Transaction file compression (snapshot).
   class Array : boost::noncopyable
-	{
+  {
 
-	protected:
-		typedef boost::dynamic_bitset<AddrType> Bitmap;
-	  typedef std::vector<AddrType> AddrContainer;
+  protected:
+    typedef boost::dynamic_bitset<AddrType> Bitmap;
+    typedef std::vector<AddrType> AddrContainer;
   public:
     
     Array(std::string const& name, BehaviorDB &bdb);
@@ -45,8 +45,8 @@ namespace Structure {
     AddrType
     put(char const* data, size_t size);
 
-		AddrType 
-		put(char const *data, size_t size, AddrType index, AddrType offset=npos);
+    AddrType 
+    put(char const *data, size_t size, AddrType index, AddrType offset=npos);
     
     AddrType
     put(std::string const& data)
@@ -62,9 +62,9 @@ namespace Structure {
     size_t
     get(std::string *buffer, size_t max, AddrType index, size_t offset=0);
 
-	  bool 
-		del(AddrType index);
-		
+    bool 
+    del(AddrType index);
+
     AddrType
     update(char const* data, size_t size, AddrType index);
     
@@ -75,27 +75,27 @@ namespace Structure {
     void
     resize(size_t size);
 
-		/** Find the first acquired ID from cur which is included
-		 * @param cur Current index
-		 * @remark The cur will be tested also.
-		 */
-		//AddrType 
-		//next_used(AddrType cur) const;
-		
-		/** The maximum count of used IDs */
-		AddrType
-		max_used() const
+    /** Find the first acquired ID from cur which is included
+     * @param cur Current index
+     * @remark The cur will be tested also.
+     */
+    //AddrType 
+    //next_used(AddrType cur) const;
+
+    /** The maximum count of used IDs */
+    AddrType
+    max_used() const
     { return max_used_; }
 
-		size_t 
-		size() const;
+    size_t 
+    size() const;
 
     // --------- Oberservers ----------
-		bool 
-		is_acquired(AddrType index) const
+    bool 
+    is_acquired(AddrType index) const
     { return bm_[index] == false; }
-    
-		bool
+
+    bool
     is_locked(AddrType index) const
     { return lock_[index]; }
 
@@ -104,10 +104,10 @@ namespace Structure {
 #endif   
 
     void 
-		replay_transaction(std::string const& file);
-		
-		void 
-		init_transaction(std::string const& file);
+    replay_transaction(std::string const& file);
+
+    void 
+    init_transaction(std::string const& file);
 
 #ifndef _BDB_TESTING_
   private:
@@ -123,10 +123,10 @@ namespace Structure {
     release(AddrType index);
   
     bool
-		commit(AddrType index);
+    commit(AddrType index);
 
-		void
-		lock(AddrType index)
+    void
+    lock(AddrType index)
     { lock_[index] = true; }
 
     void
@@ -137,16 +137,16 @@ namespace Structure {
     remap_address(AddrType index, AddrType internal);
 
     
-	  std::ofstream *ofs_;
+    std::ofstream *ofs_;
     Bitmap bm_;
-		Bitmap lock_;
-		AddrType max_used_;
-		char filebuf_[128];
+    Bitmap lock_;
+    AddrType max_used_;
+    char filebuf_[128];
     
     std::vector<AddrType> arr_;
     BehaviorDB &bdb_;
 
-	};
+  };
 
 } // namespace Structure
 } // end of namespace BDB

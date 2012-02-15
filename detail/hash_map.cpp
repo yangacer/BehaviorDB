@@ -1,22 +1,20 @@
 #include "hash_map.hpp"
+#include <stdexcept>
 
 namespace BDB {
 namespace Structure {
-  
-  /*
-  HashMap::HashMap(std::string const& name, Array &array, BehaviorDB &bdb)
-  : arr_(&array) , buckets_(name, bdb), cvt(), prev_index_(-1)
-  {}
-  */
+
 
   HashMap::HashMap(
     size_t size, 
     std::string const& name, 
     Array &array, 
     BehaviorDB &bdb)
-  : arr_(&array), buckets_(size, name, bdb), cvt(), prev_index_(-1)
+  : arr_(&array), buckets_(size, name, bdb), cvt(), curr_index_(-1), nopos(-1)
   {
-    assert(size != 0 && "hashmap size can not be zero"); 
+    if(size == 0)
+      throw std::invalid_argument("hashmap size can not be zero");
+    
   }
   
   HashMap::~HashMap()
@@ -37,10 +35,10 @@ namespace Structure {
     
     if(bucket != &cvt) 
       bucket->clear();
-    else if(prev_index_ == hv) // what if prev_index is deleted?
+    else if(curr_index_ == hv)
       return true;
     else{
-      prev_index_ = hv;
+      curr_index_ = hv;
       bucket->clear();
     }
     return buckets_.get(bucket, hv);
@@ -61,7 +59,7 @@ namespace Structure {
     }
     AddrType rt = arr_->put(value, size);
     cvt.insert(std::make_pair(key, rt));
-    return buckets_.update(cvt, prev_index_);
+    return buckets_.update(cvt, curr_index_);
   }
 
   size_t
@@ -92,12 +90,11 @@ namespace Structure {
     cvt.erase(i);
     
     if(cvt.empty()){
-      if(!buckets_.del(prev_index_)){
-        // FIXME is this really need
-        // prev_index_ = -1;
+      if(!buckets_.del(curr_index_)){
+        curr_index_ = npos;
         return false;
       }
-    }else  if(-1 == buckets_.update(cvt, prev_index_))
+    }else  if(-1 == buckets_.update(cvt, curr_index_))
       return false;
     return true;
   }
@@ -118,7 +115,7 @@ namespace Structure {
   { 
     if(!is_in(key)){
       cvt.insert(std::make_pair(key, index));
-      return -1 != buckets_.update(cvt, prev_index_);
+      return -1 != buckets_.update(cvt, curr_index_);
     }
     return false;  
   }
@@ -129,7 +126,7 @@ namespace Structure {
     if(!is_in(key))
       return false; 
     cvt.erase(key);
-    return -1 != buckets_.update(cvt, prev_index_);
+    return -1 != buckets_.update(cvt, curr_index_);
   }
 
 } // namespace Structure

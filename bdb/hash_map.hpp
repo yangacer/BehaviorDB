@@ -103,7 +103,8 @@ private:
   Array *arr_;
   BucketsContType buckets_;
   BucketType cvt;
-  size_t prev_index_;
+  size_t curr_index_;
+  size_t const nopos;
 };
 
   
