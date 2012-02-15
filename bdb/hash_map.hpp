@@ -34,6 +34,10 @@ struct HashFunction
 
 struct Array;
 
+/** TODO Should we provide struct PartionMap<T> 
+ *  and make HashMap as a
+ *  specialize template class?
+ */
 struct HashMap 
 : boost::noncopyable
 {
@@ -43,7 +47,6 @@ private:
   
 public:
   
-  //HashMap(std::string const& name, Array &array, BehaviorDB &bdb);
   HashMap(size_t size, std::string const& name, Array &array, BehaviorDB &bdb);
   ~HashMap();
 
@@ -74,6 +77,7 @@ public:
   update(std::string const& key, std::string const& value)
   { return update(key, value.data(), value.size()); }
 
+  // TODO What about dead link problem?
   bool
   link(std::string const& key, AddrType index);
 

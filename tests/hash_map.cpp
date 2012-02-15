@@ -19,6 +19,8 @@ int main(int argc, char** argv)
   HashMap hmap(20, "my_hmap", arr, bdb);
 
   string buf;  
+  
+  assert(false == hmap.is_in("key") && "empty test failure");
 
   assert(-1 != hmap.put("key", "value") && "put by hashmap failed");
 

@@ -9,7 +9,11 @@ namespace Structure {
   {}
   */
 
-  HashMap::HashMap(size_t size, std::string const& name, Array &array, BehaviorDB &bdb)
+  HashMap::HashMap(
+    size_t size, 
+    std::string const& name, 
+    Array &array, 
+    BehaviorDB &bdb)
   : arr_(&array), buckets_(size, name, bdb), cvt(), prev_index_(-1)
   {
     assert(size != 0 && "hashmap size can not be zero"); 
@@ -33,7 +37,7 @@ namespace Structure {
     
     if(bucket != &cvt) 
       bucket->clear();
-    else if(prev_index_ == hv)
+    else if(prev_index_ == hv) // what if prev_index is deleted?
       return true;
     else{
       prev_index_ = hv;
@@ -86,10 +90,13 @@ namespace Structure {
     if(!arr_->del(i->second))
       return false;
     cvt.erase(i);
-    // TODO empty case is not handled
+    
     if(cvt.empty()){
-      if(!buckets_.del(prev_index_))
+      if(!buckets_.del(prev_index_)){
+        // FIXME is this really need
+        // prev_index_ = -1;
         return false;
+      }
     }else  if(-1 == buckets_.update(cvt, prev_index_))
       return false;
     return true;
