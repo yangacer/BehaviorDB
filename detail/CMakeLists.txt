@@ -1,11 +1,11 @@
 
-option(BUILD_SHARED_LIB "Build shared library" OFF)
+option(BDB_BUILD_SHARED_LIB "Build shared library" OFF)
 
 if(MINGW)
 	add_definitions (-D__MINGW__)
 endif()
 
-if(BUILD_SHARED_LIB)
+if(BDB_BUILD_SHARED_LIB)
 	set(LIB_TYPE SHARED)
 	add_definitions (-DBDB_MAKE_DLL)
 else()

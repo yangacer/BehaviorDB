@@ -1,14 +1,14 @@
 project (BehaviorDB)
 cmake_minimum_required(VERSION 2.8)
 
-option( DEVEL_MODE OFF )
+option( BDB_DEVEL_MODE OFF )
 
 add_subdirectory( detail )
 
 include_directories( ${PROJECT_SOURCE_DIR}/bdb ${PROJECT_SOURCE_DIR}/detail /usr/local/include)
 link_directories ( /usr/local/lib)
 
-if(DEVEL_MODE)
+if(BDB_DEVEL_MODE)
   add_executable (bdb_test ${PROJECT_SOURCE_DIR}/tests/bdb.cpp)
   target_link_libraries(bdb_test bdb)
 
