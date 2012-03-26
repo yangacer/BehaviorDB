@@ -8,7 +8,7 @@
 
 CTOR of the pool class should hold conditions as follows:
 
-1. file_  for storing chunks has ben initiated
+1. file_  for storing chunks has been initiated
 2. addr_eval<AddrType> has been initiated
 3. idPool_ for managing chunk id has been initiated
 4. headerPool_ for accessing headers has been initiated
