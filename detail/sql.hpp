@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <boost/variant.hpp>
+#include "sql_expr.hpp"
 
 namespace BehaviorDB {
 namespace SQL {
@@ -44,7 +45,15 @@ struct insert
   bool replace;
   std::string tab_name;
   default_or_col default_or_col_name;
-  str_list_t exprs;   
+  std::vector<expr> expr_list;   
+};
+
+// --------------- Delete Operation -------------------
+
+struct deletion
+{
+  std::string tab_name;
+  expr where;
 };
 
 // --------------- Select Operation --------------------
@@ -68,7 +77,7 @@ struct select_core
   bool distinct;
   std::vector<result_column> res_col;
   str_list_t sources;
-  std::string where_expr;
+  expr where;
 };
 
 // ---------------- Index Operation --------------------
