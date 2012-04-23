@@ -6,52 +6,52 @@
 
 namespace BDB {
 
-	struct BDBImpl;
-	
-    /** @brief Iterating addresses
-     */
-	struct BDB_EXPORT AddrIterator 
-	{
-		friend struct BDBImpl;
+  struct BDBImpl;
 
-        /// ctor
-		AddrIterator();
+  /** @brief Iterating addresses
+  */
+  struct BDB_EXPORT AddrIterator 
+  {
+    friend struct BDBImpl;
 
-        /// copy ctor
-		AddrIterator(AddrIterator const &cp);
-		
-        /// Assignment operator
-		AddrIterator& 
-		operator=(AddrIterator const& cp);
+    /// ctor
+    AddrIterator();
 
-        /// prefix increment operator
-		AddrIterator &
-		operator++();
-		
-		/** Get the address on iterating
-		 */
-		AddrType
-		operator*() const;
-		
-        /// equality binary operator
-		bool 
-		operator==(AddrIterator const& rhs) const;
-		
-        /// in-equality binary operator
-		bool 
-		operator!=(AddrIterator const& rhs) const
-		{ return !(*this == rhs); }
+    /// copy ctor
+    AddrIterator(AddrIterator const &cp);
 
-	protected:
-		
-        /// internal ctor
-        AddrIterator(BDBImpl const &bdb, AddrType cur);
+    /// Assignment operator
+    AddrIterator& 
+    operator=(AddrIterator const& cp);
 
-	private:
-		AddrType cur_;
-		BDBImpl const *bdb_;
+    /// prefix increment operator
+    AddrIterator &
+    operator++();
 
-	};
+    /** Get the address on iterating
+    */
+    AddrType
+    operator*() const;
+
+    /// equality binary operator
+    bool 
+    operator==(AddrIterator const& rhs) const;
+
+    /// in-equality binary operator
+    bool 
+    operator!=(AddrIterator const& rhs) const
+      { return !(*this == rhs); }
+
+    protected:
+
+    /// internal ctor
+    AddrIterator(BDBImpl const &bdb, AddrType cur);
+
+  private:
+    AddrType cur_;
+    BDBImpl const *bdb_;
+
+  };
 } // end of namespace BDB
 
 #endif // end of header
