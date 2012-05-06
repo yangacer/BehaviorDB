@@ -370,7 +370,6 @@ namespace BDB {
 
     if(toRead != (rcnt = fread(buffer, 1, toRead, file_))){
       //on_error(SYSTEM_ERROR, __LINE__);
-      errno = ferror(file_);
       throw std::runtime_error(SRC_POS);
       return -1;
     }
