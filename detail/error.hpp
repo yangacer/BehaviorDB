@@ -2,7 +2,11 @@
 #define BDB_ERROR_HPP
 
 #ifndef NDBUG
-#define SRC_POS __FILE__":"__FUNCTION__":"__LINE__
+#define STRINGIZE(x) STRINGIZE2(x)
+#define STRINGIZE2(x) #x
+//#define LINE_POS STRINGIZE(__LINE__)
+//#define FILE_POS STRINGIZE(__FILE__)
+#define SRC_POS STRINGIZE(__FILE__) ":" STRINGIZE(__LINE__)
 #else
 #define SRC_POS
 #endif
