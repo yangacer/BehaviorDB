@@ -79,15 +79,17 @@ namespace BDB {
       return -1;
     }
     // allow data = 0 to act as allocation
-    if(0 != data && 
-       size != fwrite(data, 1, size, file_) && 
-       0 != fflush(file_))
+    if(0 != data && size != fwrite(data, 1, size, file_))
     {
       idPool_->Release(loc_addr);
       //on_error(SYSTEM_ERROR, __LINE__);
       throw std::runtime_error(SRC_POS);
       return -1;
     }
+    
+    if(fflush(file_))
+      throw std::runtime_error(SRC_POS);
+    
 
     if(-1 == headerPool_.write(header, loc_addr)){
       idPool_->Release(loc_addr);
@@ -364,8 +366,11 @@ namespace BDB {
       loc_header.size - off 
       : size;
 
-    if(toRead != fread(buffer, 1, toRead, file_)){
+    size_t rcnt = 0;
+
+    if(toRead != (rcnt = fread(buffer, 1, toRead, file_))){
       //on_error(SYSTEM_ERROR, __LINE__);
+      errno = ferror(file_);
       throw std::runtime_error(SRC_POS);
       return -1;
     }

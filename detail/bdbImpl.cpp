@@ -203,60 +203,60 @@ namespace BDB {
 		return addr;
 	}
 	
-	/// TODO this method should called "replace"
-	AddrType
-	BDBImpl::update(char const *data, size_t size, AddrType addr)
-	{
-		// assert(0 != *this && "BDBImpl is not proper initiated");
+  /// TODO this method should called "replace"
+  AddrType
+  BDBImpl::update(char const *data, size_t size, AddrType addr)
+  {
+    // assert(0 != *this && "BDBImpl is not proper initiated");
 
-		AddrType internal_addr;
-		if( !global_id_->isAcquired(addr) )
-			return -1;
-		internal_addr = global_id_->Find(addr);
+    AddrType internal_addr;
+    if( !global_id_->isAcquired(addr) )
+      return -1;
+    internal_addr = global_id_->Find(addr);
 
-		unsigned int dir = addrEval.addr_to_dir(internal_addr);
-		AddrType loc_addr = addrEval.local_addr(internal_addr);
-		
-		// check size
-		if( !addrEval.capacity_test(dir, size) ){
-			
+    unsigned int dir = addrEval.addr_to_dir(internal_addr);
+    AddrType loc_addr = addrEval.local_addr(internal_addr);
+
+    // check size
+    if( !addrEval.capacity_test(dir, size) ){
+
       unsigned int old_dir = dir;
-			
+
       AddrType old_loc_addr = loc_addr;
 
-			AddrType new_internal_addr =
-			  write_pool(data, size);
+      AddrType new_internal_addr =
+        write_pool(data, size);
 
-			if(-1 == new_internal_addr)
+      if(-1 == new_internal_addr)
         return -1;  
-      
-			global_id_->Update(addr, new_internal_addr);
 
-			if(!global_id_->Commit(addr)){
-				global_id_->Update(addr, internal_addr);
-				error(COMMIT_FAILURE, __LINE__);	
-				return -1;
-			}
-			
-			if(-1 == pools_[old_dir].free(old_loc_addr)){
-				error(old_dir);
-				return -1;
-			}
+      global_id_->Update(addr, new_internal_addr);
 
-			if(acc_log_) fprintf(acc_log_, "%-12s\t%08x\t%08x\n", "update_put", size, addr);
-			return addr;
-		}
-		
-		if(-1 == (loc_addr = 
-			pools_[dir].replace(data, size, loc_addr)) )
-		{
-			error(dir);
-			return -1;	
-		}
+      if(!global_id_->Commit(addr)){
+        global_id_->Update(addr, internal_addr);
+        error(COMMIT_FAILURE, __LINE__);	
+        return -1;
+      }
 
-		if(acc_log_) fprintf(acc_log_, "%-12s\t%08x\t%08x\n", "update", size, addr);
-		return addr;
-	}
+      if(-1 == pools_[old_dir].free(old_loc_addr)){
+        error(old_dir);
+        return -1;
+      }
+
+      if(acc_log_) fprintf(acc_log_, "%-12s\t%08x\t%08x\n", "update_put", size, addr);
+      return addr;
+    }
+
+    if(-1 == (loc_addr = 
+              pools_[dir].replace(data, size, loc_addr)) )
+    {
+      error(dir);
+      return -1;	
+    }
+
+    if(acc_log_) fprintf(acc_log_, "%-12s\t%08x\t%08x\n", "update", size, addr);
+    return addr;
+  }
 
 	size_t
 	BDBImpl::get(char *output, size_t size, AddrType addr, size_t off)

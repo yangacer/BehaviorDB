@@ -55,7 +55,7 @@ struct BDB_EXPORT BehaviorDB
   /** @brief std::string version put-to-address method 
   */
   AddrType
-    put(std::string const& data, AddrType addr, size_t off=npos);
+  put(std::string const& data, AddrType addr, size_t off=npos);
 
   /** @brief Replace specific address with new data
    *  @param data New data.
