@@ -1,11 +1,18 @@
 
-option(BUILD_SHARED_LIB "Build shared library" OFF)
+option(BDB_SHARED_LIB "Build shared library" OFF)
 
 if(MINGW)
 	add_definitions (-D__MINGW__)
 endif()
 
-if(BUILD_SHARED_LIB)
+set (Boost_ADDITIONAL_VERSIONS "1.47" "1.47.0" )
+find_package ( Boost 1.45.0 )
+
+if(Boost_FOUND)
+  include_directories(${Boost_INCLUDE_DIRS})
+endif()
+
+if(BDB_SHARED_LIB)
 	set(LIB_TYPE SHARED)
 	add_definitions (-DBDB_MAKE_DLL)
 else()
@@ -13,7 +20,7 @@ else()
 	add_definitions (-DBDB_STATIC)
 endif()
 
-include_directories( ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/bdb /usr/local/include )
+include_directories( ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/bdb  )
 
 add_library( bdb ${LIB_TYPE}
 	common.cpp chunk.cpp 
