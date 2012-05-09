@@ -4,16 +4,17 @@
 #include <cstring>
 #include <string>
 #include <exception>
+#include <stdexcept>
 #include <cassert>
 #include <cstdlib>
 #include <cmath>
 
 void print_in_proper_unit(unsigned long long size)
-{	
-	char const * units = " KMGT";
-	unsigned int i=0;
-	while(size > 1024){
-    size>>=10;	
+{ 
+  char const * units = " KMGT";
+  unsigned int i=0;
+  while(size > 1024){
+    size>>=10;  
     ++i;
   }
   printf("%u", size);
@@ -50,22 +51,22 @@ int main(int argc, char** argv)
   printf("\n==== write 4 bytes to two chunks ====\n");
   printf("write \"%s\"\n", data);
   printf("should: 00000001\n");
-  printf("result: %08x\n", addr);	
+  printf("result: %08x\n", addr); 
   printf("write \"%s\"\n", data);
   printf("should: 00000002\n");
-  printf("result: %08x\n", addr2);	
+  printf("result: %08x\n", addr2);  
 
   // write to specific chunk
-  AddrType addr3 = bdb.put("good", 4, 3u);
+  AddrType addr3 = bdb.put("good", 4, 4u);
   printf("\n=== write to address 3 which does not exist currently ====\n");
-  printf("should: 00000003\n");
+  printf("should: 00000004\n");
   printf("result: %08x\n", addr3);
 
   // read
   char read[5] = {};
   char read2[5] = {};
 
-  bdb.get(read, 4, addr);	
+  bdb.get(read, 4, addr); 
   bdb.get(read2,4, addr2);
   printf("\n==== read 4 bytes from two chunks ====\n");
   printf("should: %s\n", data);
@@ -79,7 +80,7 @@ int main(int argc, char** argv)
   printf("\n==== append 40 bytes ====\n");
   printf("append \"%s\" after \"%s\"\n", data2, data);
   printf("should: 00000001\n");
-  printf("result: %08x\n", addr);	
+  printf("result: %08x\n", addr); 
 
   // prepend
   char const *data3 = "yang";
@@ -149,7 +150,7 @@ int main(int argc, char** argv)
   while(iter != bdb.end()){
     printf("should: %08x\n", addrs[i]);
     printf("result: %08x\n", *iter);
-    ++iter;	
+    ++iter; 
     ++i;
   }
 
@@ -160,7 +161,7 @@ int main(int argc, char** argv)
   try{
     *iter;
   }catch(std::exception const &e){
-    printf("exception: %s\n", e.what());	
+    printf("exception: %s\n", e.what());  
   }
 
   // erase all again
@@ -212,5 +213,5 @@ int main(int argc, char** argv)
   printf("result: %s\n", rec.c_str());
   bdb.del(addr);
 
-  return 0;	
+  return 0; 
 }
