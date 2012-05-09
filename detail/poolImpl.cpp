@@ -6,6 +6,7 @@
 #include <cassert>
 #include <cstdio>
 #include <stdexcept>
+#include "addr_handle.hpp"
 
 namespace BDB {
 
@@ -65,46 +66,30 @@ namespace BDB {
   pool::write(char const* data, size_t size)
   {
     assert(0 != *this && "pool is not proper initiated");
+    
+    addr_handle ah(*idPool_);
 
-    AddrType loc_addr = idPool_->Acquire();
     ChunkHeader header;
     header.size = size;
     
     error_code ec;
 
-    if(-1 == seek(loc_addr)){
-      idPool_->Release(loc_addr);
-      // on_error(SYSTEM_ERROR, __LINE__);
+    if(-1 == seek(ah.addr()))
       throw std::runtime_error(SRC_POS);
-      return -1;
-    }
+
     // allow data = 0 to act as allocation
     if(0 != data && size != fwrite(data, 1, size, file_))
-    {
-      idPool_->Release(loc_addr);
-      //on_error(SYSTEM_ERROR, __LINE__);
       throw std::runtime_error(SRC_POS);
-      return -1;
-    }
     
     if(fflush(file_))
       throw std::runtime_error(SRC_POS);
+
+    if(-1 == headerPool_.write(header, ah.addr()))
+      throw std::runtime_error(SRC_POS);
     
+    ah.commit();
 
-    if(-1 == headerPool_.write(header, loc_addr)){
-      idPool_->Release(loc_addr);
-      //on_error(SYSTEM_ERROR, __LINE__);
-      throw std::runtime_error(SRC_POS);
-      return -1;
-    }
-
-    if(-1 == idPool_->Commit(loc_addr)){
-      idPool_->Release(loc_addr);
-      //on_error(COMMIT_FAILURE, __LINE__);
-      throw std::runtime_error(SRC_POS);
-      return -1;
-    }
-    return loc_addr;
+    return ah.addr();
 
   }
 
@@ -289,8 +274,6 @@ namespace BDB {
   AddrType
   pool::replace(char const *data, size_t size, AddrType addr, ChunkHeader const *header)
   {
-    assert(0 != *this && "pool is not proper initiated");
-
     if(!idPool_->isAcquired(addr)){
       on_error(NON_EXIST, __LINE__);
       return -1;
@@ -305,6 +288,7 @@ namespace BDB {
     }
 
     assert(size <= addrEval.chunk_size_estimation(dirID));
+    
     new_header.size = size;
 
     if(-1 == seek(addr, 0)){
@@ -336,31 +320,21 @@ namespace BDB {
   pool::read(char* buffer, size_t size, AddrType addr, size_t off, ChunkHeader const* header)
   {
     error_code ec;
-
-    assert(0 != *this && "pool is not proper initiated");
     
-    if(!idPool_->isAcquired(addr)){
-      //on_error(NON_EXIST, __LINE__);
+    if(!idPool_->isAcquired(addr))
       throw std::runtime_error(SRC_POS);
-      return -1;
-    }
 
     ChunkHeader loc_header;
     if(header)
       loc_header = *header;
-    else if(-1 == headerPool_.read(&loc_header, addr)) {
-      // on_error(SYSTEM_ERROR, __LINE__);
+    else if(-1 == headerPool_.read(&loc_header, addr))
       throw std::runtime_error(SRC_POS);
-      return -1;
-    }
+
     if(off > loc_header.size)
       return 0;
 
-    if(-1 == seek(addr, off)){
-      //on_error(SYSTEM_ERROR, __LINE__);
+    if(-1 == seek(addr, off))
       throw std::runtime_error(SRC_POS);
-      return -1;
-    }
 
     size_t toRead = (size > loc_header.size - off) ? 
       loc_header.size - off 
@@ -368,11 +342,8 @@ namespace BDB {
 
     size_t rcnt = 0;
 
-    if(toRead != (rcnt = fread(buffer, 1, toRead, file_))){
-      //on_error(SYSTEM_ERROR, __LINE__);
+    if(toRead != (rcnt = fread(buffer, 1, toRead, file_)))
       throw std::runtime_error(SRC_POS);
-      return -1;
-    }
 
     return toRead;
 
@@ -386,7 +357,7 @@ namespace BDB {
     if(buffer->size()) buffer->clear();
     size_t readCnt(0), total(0);
     while(0 < (readCnt = read(mig_buf_, MIGBUF_SIZ, addr, off))){
-      if(-1 == readCnt) return -1;
+      if((size_t)-1 == readCnt) return -1;
       if(total + readCnt > max) break;
       buffer->append(mig_buf_, readCnt);
       off += readCnt;
