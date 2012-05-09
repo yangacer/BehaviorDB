@@ -74,8 +74,7 @@ namespace BDB {
     
     error_code ec;
 
-    if(-1 == seek(ah.addr()))
-      throw std::runtime_error(SRC_POS);
+    seek(ah.addr());
 
     // allow data = 0 to act as allocation
     if(0 != data && size != fwrite(data, 1, size, file_))
@@ -99,20 +98,14 @@ namespace BDB {
   {
     assert(0 != *this && "pool is not proper initiated");
 
-    // TODO allow now!
-    if(!idPool_->isAcquired(addr)){
-      // error: do not support until bitmap idpool available
-      on_error(NON_EXIST, __LINE__);
-      return -1;
-    }
+    if(!idPool_->isAcquired(addr))
+      throw std::runtime_error(SRC_POS);
 
     ChunkHeader loc_header;
     if(header)
       loc_header = *header;
-    else if( -1 == headerPool_.read(&loc_header, addr)){
-      on_error(SYSTEM_ERROR, __LINE__);
-      return -1;
-    }
+    else if( -1 == headerPool_.read(&loc_header, addr))
+      throw std::runtime_error(SRC_POS);
 
     assert(size + loc_header.size <= addrEval.chunk_size_estimation(dirID) && 
            "data exceeds chunk size");
@@ -122,87 +115,66 @@ namespace BDB {
 
     off = (npos == off) ? loc_header.size : off;
 
-    // data need to be moved can not larger than move buffer
     size_t moved = loc_header.size - off;
     loc_header.size += size;
 
+    // copy merged result to a new chunk
     if(moved > MIGBUF_SIZ)
       return merge_move(data, size, addr, off, this, &loc_header); 
-
-    if(-1 == seek(addr, off)){
-      on_error(SYSTEM_ERROR, __LINE__);
-      return -1;
-    }
+    
+    // XXX should we always use merge_move?
+    // ---------- Do inplace merge ------------
+    seek(addr, off);
 
     // read data to be moved into mig_buf
-    if(moved && moved != fread(mig_buf_, 1, moved, file_)){
-      on_error(SYSTEM_ERROR, __LINE__);
-      return -1;
+    if(moved && moved != fread(mig_buf_, 1, moved, file_))
+      throw std::runtime_error(SRC_POS);
 
-    }
-
-    if(moved && -1 == seek(addr, off)){
-      on_error(SYSTEM_ERROR, __LINE__);
-      return -1;
-    }
+    if(moved)
+      seek(addr, off);
 
     size_t partial(0);
     // write new data
     if(size != (partial = fwrite(data, 1, size, file_))){
-      if(!partial){ // no data written
+      if(!partial) // no data written
         // abort directly	
-        on_error(SYSTEM_ERROR, __LINE__);
-        return -1;
-      }
+        throw std::runtime_error(SRC_POS);
+      
       // rollback to previous state
       clearerr(file_);
-      if(-1 == seek(addr, off)){
-        on_error(ROLLBACK_FAILURE, __LINE__);
-        return -1;
-      }
-      if( partial != fwrite(mig_buf_, 1, partial, file_)){
+      seek(addr, off);
+
+      if( partial != fwrite(mig_buf_, 1, partial, file_))
         // rollback failed, leave broken data alone
-        on_error(ROLLBACK_FAILURE, __LINE__);
-        return -1;
-      }
+        throw std::runtime_error(SRC_POS);
     }
 
     // write buffered data
     if(moved && moved != (partial = fwrite(mig_buf_, 1, moved, file_))){
       // rollback to previous state
       clearerr(file_);
-      if(-1 == seek(addr, off)){
-        on_error(ROLLBACK_FAILURE, __LINE__);
-        return -1;
-      }
-      if( partial != fwrite(mig_buf_, 1, moved, file_)){
+      seek(addr, off);
+        throw std::runtime_error(SRC_POS);
+
+      if( partial != fwrite(mig_buf_, 1, moved, file_))
         // rollback failed, leave broken data alone
-        on_error(ROLLBACK_FAILURE, __LINE__);
-        return -1;
-      }
+        throw std::runtime_error(SRC_POS);
 
     }
 
-    if(0 != fflush(file_)){
-      on_error(SYSTEM_ERROR, __LINE__);
-      return -1;
-    }
+    if(0 != fflush(file_))
+      throw std::runtime_error(SRC_POS);
 
     // update header 
     if(-1 == headerPool_.write(loc_header, addr)){
-      if(-1 == seek(addr, off)){
-        on_error(ROLLBACK_FAILURE, __LINE__);
-        return -1;
-      }
-      if( partial != fwrite(mig_buf_, 1, moved, file_)){
-        // rollback failed, leave broken data alone
-        on_error(ROLLBACK_FAILURE, __LINE__);
-        return -1;
-      }
-      on_error(SYSTEM_ERROR, __LINE__);
-      return -1;
-    }
+      seek(addr, off);
 
+      if( partial != fwrite(mig_buf_, 1, moved, file_))
+        // rollback failed, leave broken data alone
+        throw std::runtime_error(SRC_POS);
+
+      throw std::runtime_error(SRC_POS);
+    }
 
     return addr;
   }
@@ -214,7 +186,7 @@ namespace BDB {
 
     size_t total(0);
     for(size_t i=0; i<len; ++i){
-      total += vv[i].size;		
+      total += vv[i].size;
     }
 
     assert(total <= addrEval.chunk_size_estimation(dirID) && 
@@ -223,52 +195,37 @@ namespace BDB {
     ChunkHeader header;
     header.size = total;
 
+    addr_handle ah(*idPool_);
 
-    AddrType loc_addr = idPool_->Acquire();
-
-    if(-1 == headerPool_.write(header, loc_addr)){
-      idPool_->Release(loc_addr);
-      on_error(SYSTEM_ERROR, __LINE__);
-      return -1;
-    }
-
-    if( -1 == seek(loc_addr) ){
-      idPool_->Release(loc_addr);
-      on_error(SYSTEM_ERROR, __LINE__);
-      return -1;
-    }
+    seek(ah.addr());
+      throw std::runtime_error(SRC_POS);
 
     write_viov wv;
     wv.dest = file_;
-    wv.dest_pos = addr_off2tell(loc_addr, 0);
+    wv.dest_pos = addr_off2tell(ah.addr(), 0);
     wv.buf = mig_buf_;
     wv.bsize = MIGBUF_SIZ;
     off_t loopOff(0);
     for(size_t i=0; i<len; ++i){
       wv.size = vv[i].size;
       if( vv[i].size && 
-          0 == boost::apply_visitor(wv, vv[i].data)){
+          0 == boost::apply_visitor(wv, vv[i].data))
         // error handle
-        idPool_->Release(loc_addr);
-        on_error(SYSTEM_ERROR, __LINE__);
-        return -1;
-      }
+        throw std::runtime_error(SRC_POS);
+     
       wv.dest_pos += vv[i].size;
     }
 
-    if(0 != fflush(file_)){
-      idPool_->Release(loc_addr);
-      on_error(SYSTEM_ERROR, __LINE__);
-      return -1;
-    }
+    if(0 != fflush(file_))
+      throw std::runtime_error(SRC_POS);
+    
+    if(-1 == headerPool_.write(header, ah.addr()))
+      throw std::runtime_error(SRC_POS);
 
-    if( -1 == idPool_->Commit(loc_addr)){
-      idPool_->Release(loc_addr);
-      on_error(SYSTEM_ERROR, __LINE__);
-      return -1;
-    }
 
-    return loc_addr;
+    ah.commit();
+
+    return ah.addr();
   }
 
   AddrType
@@ -291,10 +248,7 @@ namespace BDB {
     
     new_header.size = size;
 
-    if(-1 == seek(addr, 0)){
-      on_error(SYSTEM_ERROR, __LINE__);
-      return -1;
-    }
+    seek(addr, 0);
 
     if(size != fwrite(data, 1, size, file_) &&
        0 != fflush(file_)){
@@ -333,7 +287,7 @@ namespace BDB {
     if(off > loc_header.size)
       return 0;
 
-    if(-1 == seek(addr, off))
+    seek(addr, off);
       throw std::runtime_error(SRC_POS);
 
     size_t toRead = (size > loc_header.size - off) ? 
@@ -492,19 +446,15 @@ namespace BDB {
 
     while(toRead > 0){
       readCnt = (toRead > MIGBUF_SIZ) ? MIGBUF_SIZ : toRead;
-      if(-1 == seek(addr, off + size + loopOff)){
-        on_error(SYSTEM_ERROR, __LINE__);
-        return -1;
-      }
+      seek(addr, off + size + loopOff);
 
       if(readCnt != fread(mig_buf_, 1, readCnt, file_)){
         on_error(SYSTEM_ERROR, __LINE__);
         return -1;
       }
-      if(-1 == seek(addr, off + loopOff)){
-        on_error(SYSTEM_ERROR, __LINE__);
-        return -1;
-      }
+      
+      seek(addr, off + loopOff);
+      
       if(readCnt != fwrite(mig_buf_, 1, readCnt, file_) &&
          0 != fflush(file_))
       {
@@ -527,10 +477,7 @@ namespace BDB {
     assert(off+size < addrEval.chunk_size_estimation(dirID)
            && "exceed chunk size");
 
-    if(-1 == seek(addr, off)){
-      on_error(SYSTEM_ERROR, __LINE__);
-      return -1;
-    }
+    seek(addr, off);
 
     if(size != fwrite(data, 1, size, file_) &&
        fflush(file_) )
@@ -557,14 +504,11 @@ namespace BDB {
   off_t
   pool::seek(AddrType addr, size_t off)
   {
-    assert(0 != *this && "pool is not proper initiated");
-
     off_t pos = addr;
     pos *= addrEval.chunk_size_estimation(dirID);
     pos += off;
-    if(-1 == fseeko(file_, pos, SEEK_SET)){
-      return -1;
-    }
+    if(-1 == fseeko(file_, pos, SEEK_SET))
+      throw std::runtime_error(SRC_POS);
     return pos;
   }
 
