@@ -8,7 +8,6 @@
 #include <cerrno>
 #include <cassert>
 #include <sstream>
-//#include "boost/system/error_code.hpp"
 
 namespace BDB { 
     

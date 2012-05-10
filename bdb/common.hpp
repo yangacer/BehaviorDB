@@ -4,6 +4,7 @@
 #ifdef __GNUC__ // GNU
 
 #define PATH_DELIM '/'
+#include <stdint.h>
 
 #ifdef __MINGW__ // MINGW
 
@@ -24,15 +25,18 @@
 #pragma warning( disable: 4251 ) // template export warning
 #pragma warning( disable: 4996 ) // allow POSIX 
 
+typedef unsigned __int32 uint32_t;
+
 #endif
 
 // TODO make sure this is OK in win
-#include <stddef.h>
-#include <tr1/cstdint>
+// #include <stddef.h>
+
+typedef uint32_t size_t;
 
 namespace BDB {
-
-  typedef std::tr1::uint32_t AddrType;
+  
+  typedef uint32_t AddrType;
   struct stream_state;
 
   /// Prototype of chunk size estimation callback.
