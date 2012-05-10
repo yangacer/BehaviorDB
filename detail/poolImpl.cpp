@@ -10,6 +10,19 @@
 
 namespace BDB {
 
+namespace detail {
+  AddrType 
+  max_addr(size_t chunk_size)
+  {
+    // consider 
+    // 1. max size of idpool (bitset) 0xffffffff
+    // 2. seek offset range: 2^63/chunk_size
+    
+    return 0;
+
+  }
+} // namespace detail
+
   pool::pool(pool::config const &conf, addr_eval<AddrType>& addrEval)
     : addrEval(addrEval),
     dirID(conf.dirID), 
@@ -42,6 +55,9 @@ namespace BDB {
 
     // setup idPool
     sprintf(fname, "%s%04x.tran", trans_dir.c_str(), dirID);
+    
+    // TODO IDPool should evaluate maximum seekable 
+    // address
     idPool_ = new IDPool(fname, 0);
 
 
@@ -198,7 +214,6 @@ namespace BDB {
     addr_handle ah(*idPool_);
 
     seek(ah.addr());
-      throw std::runtime_error(SRC_POS);
 
     write_viov wv;
     wv.dest = file_;
@@ -288,7 +303,6 @@ namespace BDB {
       return 0;
 
     seek(addr, off);
-      throw std::runtime_error(SRC_POS);
 
     size_t toRead = (size > loc_header.size - off) ? 
       loc_header.size - off 

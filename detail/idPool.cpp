@@ -8,7 +8,6 @@
 #include <cerrno>
 #include <cassert>
 #include <sstream>
-//#include "boost/system/error_code.hpp"
 
 namespace BDB { 
     
@@ -16,23 +15,14 @@ namespace BDB {
   int
   IDPool::write(char const* data, size_t size)
   {
-    // using namespace boost::system;
-    
     while(size>0){
       errno = 0;
       size_t written = fwrite(data, 1, size, file_);
       if(written != size){
-        //ECType ec_tmp = error_code(errno, system_category());
-        //if(errc::interrupted == ec_tmp) // EINTR
         if(errno == EINTR)
           continue;
         else if(errno != 0)
           return -1;
-        //else if(errc::no_space_on_device == ec_tmp) // ENOSP
-        //  *ec = make_error_code(bdb_errc::id_pool::disk_full);
-        //else // EIO || EFBIG || EFAULT
-        //  *ec = make_error_code(bdb_errc::id_pool::disk_failure);
-        //return -1;
       }
       data += written;
       size -= written;
@@ -297,6 +287,7 @@ namespace BDB {
   { return bm_.num_blocks(); }
 
   
+  // XXX extend should consider end_
   void IDPool::extend(Bitmap::size_type new_size)
   { 
     if(new_size){
@@ -307,9 +298,12 @@ namespace BDB {
 
     Bitmap::size_type size = bm_.size();
     size = (size<<1) -  (size>>1);
-
-    if( size < bm_.size() || size >= end_ - beg_)
+    
+    if( size < bm_.size())
       return;
+
+    if(size >= end_ - beg_)
+      size = end_ - beg_;
 
     bm_.resize(size, true); 
     lock_.resize(size, false);

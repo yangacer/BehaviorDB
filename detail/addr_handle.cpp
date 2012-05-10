@@ -9,7 +9,7 @@ namespace BDB {
   : idp_(idp), addr_(-1), commited_(false)
   {
     if(-1 == (addr_ = idp_.Acquire()))
-      throw std::runtime_error(SRC_POS);
+      throw addr_overflow();
   }
   
   /* XXX not sure to have this

@@ -48,8 +48,10 @@ namespace BDB  {
   struct error_code
   {
     error_code();
-    
   };
+
+  struct addr_overflow{};
+
 } // end of namespace BDB
 
 #endif // end of header

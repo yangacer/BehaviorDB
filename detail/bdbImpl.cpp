@@ -1239,12 +1239,16 @@ namespace BDB {
       }
       AddrType rt(0), loc_addr(0);
       while(dir < addrEval.dir_count()){
-        loc_addr = pools_[dir].write(data, size);
-        if(loc_addr != -1)  break;
-        dir++;
+        try{
+          loc_addr = pools_[dir].write(data, size);
+        }catch(addr_overflow & ao){
+          dir++;
+          continue;
+        }
+        break;
       }
 
-      if(-1 == loc_addr){
+      if(dir >= addrEval.dir_count()){
         error(dir-1);
         return -1;
       }
