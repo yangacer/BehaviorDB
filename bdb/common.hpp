@@ -28,10 +28,11 @@
 
 // TODO make sure this is OK in win
 #include <stddef.h>
+#include <tr1/cstdint>
 
 namespace BDB {
 
-  typedef unsigned int AddrType;
+  typedef std::tr1::uint32_t AddrType;
   struct stream_state;
 
   /// Prototype of chunk size estimation callback.
