@@ -761,7 +761,7 @@ namespace BDB {
         break;
       }
 
-      if(-1 == loc_addr){
+      if(dir >= addrEval.dir_count()){
         error(dir-1);
         return -1;
       }

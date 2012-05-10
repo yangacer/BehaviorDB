@@ -56,7 +56,7 @@ int main(int argc, char** argv)
   printf("result: %08x\n", addr2);  
 
   // write to specific chunk
-  AddrType addr3 = bdb.put("good", 4, 4u);
+  AddrType addr3 = bdb.put("good", 4, 3u);
   printf("\n=== write to address 3 which does not exist currently ====\n");
   printf("should: 00000004\n");
   printf("result: %08x\n", addr3);
