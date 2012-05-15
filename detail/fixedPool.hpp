@@ -19,27 +19,13 @@ namespace BDB {
   {
     typedef T value_type;
 
-    fixed_pool() 
-      : id_(0), work_dir_(""), file_(0), fbuf_(0)
-    {}
+    fixed_pool(); 
 
-    fixed_pool(unsigned int id, char const* work_dir)
-      : id_(0), work_dir_(""), file_(0), fbuf_(0)
-    {
-      open(id, work_dir);
-    }
+    fixed_pool(unsigned int id, char const* work_dir);
 
-    ~fixed_pool()
-    {
-      if(file_) fclose(file_);
-      delete []fbuf_;
-    }
+    ~fixed_pool();
 
-    operator void const *() const
-    { 
-      if(!file_) return 0;
-      return this;
-    }
+    operator void const *() const;
 
     /** Open pool file
      * @param id  
@@ -50,65 +36,13 @@ namespace BDB {
      * associated with a file "0001.fpo".
      */
     void
-    open(unsigned int id, char const* work_dir)
-    {
-      using namespace std;
+    open(unsigned int id, char const* work_dir);
 
-      id_ = id;
-      work_dir_ = work_dir;
+    int read(T* val, AddrType addr) const;
+    
+    int write(T const & val, AddrType addr);
 
-      char fname[256];
-      if(work_dir_.size() > 256) 
-        throw length_error("fixed_pool: length of pool_dir string is too long");
-
-      sprintf(fname, "%s%04x.fpo", work_dir_.c_str(), id_);
-
-      fbuf_ = new char[4096];
-
-      if(0 == (file_ = fopen(fname, "r+b"))){
-        if(0 == (file_ = fopen(fname, "w+b"))){
-          string msg("fixed_pool: Unable to create fix pool ");
-          msg += fname;
-          throw invalid_argument(msg.c_str());
-        }
-      }
-      setvbuf(file_, fbuf_, _IOFBF, 4096);
-
-    }
-
-    int read(T* val, AddrType addr) const
-    {
-      if(!*this) return -1;
-
-      off_t loc_addr = addr;
-      loc_addr *= TextSize;
-      if(-1 == fseeko(file_, loc_addr, SEEK_SET))
-        return -1;
-      if( 0 == file_>>*val)
-        return -1;
-      if(ferror(file_)) return -1;
-      return 0;
-    }
-
-    int write(T const & val, AddrType addr)
-    {
-      if(!*this) return -1;
-
-      off_t loc_addr = addr;
-      loc_addr *= TextSize;
-      if(-1 == fseeko(file_, loc_addr, SEEK_SET))
-        return -1;
-      if( 0 == file_<<val ) return -1;
-      if(ferror(file_)) return -1;
-      if(fflush(file_)) return -1;
-      return 0;
-    }
-
-    std::string
-    dir() const 
-    {
-      return work_dir_;
-    }
+    std::string dir() const;
 
   private:
     unsigned int id_;

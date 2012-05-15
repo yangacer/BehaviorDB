@@ -27,7 +27,10 @@ add_library( bdb ${LIB_TYPE}
   v_iovec.cpp idPool.cpp poolImpl.cpp 
   addr_iter.cpp bdbImpl.cpp 
   error.cpp bdb.cpp stat.cpp
-  addr_handle.cpp)
+  addr_handle.cpp
+  fixedPool.cpp array.cpp
+  nt_bdbImpl.cpp
+  hash_map.cpp)
 
 install (TARGETS bdb DESTINATION lib EXPORT bdb-targets )
 install (EXPORT bdb-targets DESTINATION lib)

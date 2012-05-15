@@ -189,6 +189,8 @@ struct BDB_EXPORT BehaviorDB
    *  @see Stat
    */
   void stat(Stat * ms) const;
+  
+  BDBImpl* impl();
 
 private:
   BehaviorDB(BehaviorDB const& cp);
