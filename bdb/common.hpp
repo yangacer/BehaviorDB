@@ -1,6 +1,7 @@
 #ifndef _COMMON_HPP
 #define _COMMON_HPP
 
+// TODO Move platform check to an internal header
 #ifdef __GNUC__ // GNU
 
 #define PATH_DELIM '/'
