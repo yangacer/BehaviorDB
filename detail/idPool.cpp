@@ -143,7 +143,6 @@ namespace BDB {
     return  beg_ + rt;
   }
   
->>>>>>> master
   AddrType
   IDPool::Acquire(AddrType const& id)
   {

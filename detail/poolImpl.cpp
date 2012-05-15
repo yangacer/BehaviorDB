@@ -521,8 +521,7 @@ namespace detail {
     off_t pos = addr;
     pos *= addrEval.chunk_size_estimation(dirID);
     pos += off;
-    if(-1 == fseeko(file_, pos, SEEK_SET))
-      throw std::runtime_error(SRC_POS);
+    fseeko(file_, pos, SEEK_SET);
     return pos;
   }
 
