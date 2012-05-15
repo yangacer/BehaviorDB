@@ -42,7 +42,7 @@ namespace BDB {
     }
 
     /** Open pool file
-     * @param id 		 
+     * @param id  
      * @param work_dir
      * @throw length_error For overflowed pathname
      * @throw invalid_argument For invalid pathname
@@ -50,31 +50,31 @@ namespace BDB {
      * associated with a file "0001.fpo".
      */
     void
-      open(unsigned int id, char const* work_dir)
-      {
-        using namespace std;
+    open(unsigned int id, char const* work_dir)
+    {
+      using namespace std;
 
-        id_ = id;
-        work_dir_ = work_dir;
+      id_ = id;
+      work_dir_ = work_dir;
 
-        char fname[256];
-        if(work_dir_.size() > 256) 
-          throw length_error("fixed_pool: length of pool_dir string is too long");
+      char fname[256];
+      if(work_dir_.size() > 256) 
+        throw length_error("fixed_pool: length of pool_dir string is too long");
 
-        sprintf(fname, "%s%04x.fpo", work_dir_.c_str(), id_);
+      sprintf(fname, "%s%04x.fpo", work_dir_.c_str(), id_);
 
-        fbuf_ = new char[4096];
+      fbuf_ = new char[4096];
 
-        if(0 == (file_ = fopen(fname, "r+b"))){
-          if(0 == (file_ = fopen(fname, "w+b"))){
-            string msg("fixed_pool: Unable to create fix pool ");
-            msg += fname;
-            throw invalid_argument(msg.c_str());
-          }
+      if(0 == (file_ = fopen(fname, "r+b"))){
+        if(0 == (file_ = fopen(fname, "w+b"))){
+          string msg("fixed_pool: Unable to create fix pool ");
+          msg += fname;
+          throw invalid_argument(msg.c_str());
         }
-        setvbuf(file_, fbuf_, _IOFBF, 4096);
-
       }
+      setvbuf(file_, fbuf_, _IOFBF, 4096);
+
+    }
 
     int read(T* val, AddrType addr) const
     {
@@ -105,10 +105,10 @@ namespace BDB {
     }
 
     std::string
-      dir() const 
-      {
-        return work_dir_;	
-      }
+    dir() const 
+    {
+      return work_dir_;
+    }
 
   private:
     unsigned int id_;
