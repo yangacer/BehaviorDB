@@ -38,9 +38,10 @@ int main(int argc, char** argv)
 
   Config conf;
   conf.root_dir = argv[1];
-
-  conf.min_size = 10 * 1024 * 1024;
-  conf.addr_prefix_len = 10;
+  
+  // Uncomment following two lines causes bad_alloc()
+  //conf.min_size = 10 * 1024 * 1024;
+  //conf.addr_prefix_len = 10;
   BehaviorDB bdb(conf);
 
 
