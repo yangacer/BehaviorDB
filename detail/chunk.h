@@ -7,11 +7,11 @@
 
 struct ChunkHeader
 {
-	size_t size;
-	
-	ChunkHeader()
-	:size(0)
-	{}
+  size_t size;
+  
+  ChunkHeader()
+  :size(0)
+  {}
 };
 
 std::istream& 
