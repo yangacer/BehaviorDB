@@ -3,7 +3,7 @@
 
 #include <boost/noncopyable.hpp>
 #include <boost/dynamic_bitset.hpp>
-#include <fstream>
+#include <cstdio>
 #include "common.hpp"
 
 namespace BDB
@@ -20,8 +20,9 @@ template<typename Array>
 class IDPool 
 : boost::noncopyable
 {
-  typedef typename Array::value_type Value;
-  
+  typedef typename Array::reference reference;
+  typedef typename Array::value_type value_type;
+
   //IDPool(AddrType beg, AddrTeyp end);
   IDPool(char const* file, AddrType beg, AddrType end, IDPoolAlloc alloc_policy);
   ~IDPool();
@@ -30,7 +31,7 @@ class IDPool
   AddrType Acquire(AddrType id);
 
   void Release(AddrType id);
-  void Commit(AddrType id);
+  bool Commit(AddrType id, value_type const &val);
 
   void Lock(AddrType id);
   void Unlock(AddrType id);
@@ -38,7 +39,7 @@ class IDPool
   bool isAcquired(AddrType id) const;
   bool isLocked(AddrType id) const;
 
-  Value Find(AddrType id) id;
+  reference Find(AddrType id);
 
   AddrType max_used() const;
 
@@ -52,10 +53,11 @@ class IDPool
   void init_transaction(char const* file);
 
 private:
+  
+  void extend(uint32_t new_size);
+
   typedef boost::dynamic_bitset<uint32_t> Bitmap;
 
-  void write(char const* data, size_t size);
-  void extend(uint32_t size);
 
   AddrType const beg_, end_;
   Bitmap bm_;
@@ -63,7 +65,7 @@ private:
   IDPoolAlloc full_alloc_;
   AddrType max_used_;
   
-  std::ofstream file_;
+  FILE* file_;
 
   Array arr_;
 };

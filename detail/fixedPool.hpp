@@ -14,7 +14,7 @@ namespace BDB {
    *  @tparam T data type
    *  @tparam TextSize Size of "serializaed" data
    */
-  template<typename T, size_t TextSize>
+  template<typename T, uint32_t TextSize>
   struct fixed_pool
   {
     typedef T value_type;

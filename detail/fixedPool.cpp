@@ -3,35 +3,35 @@
 
 namespace BDB {
 
-template<typename T, unsigned int TextSize>
+template<typename T, uint32_t TextSize>
 fixed_pool<T,TextSize>::fixed_pool() 
 : id_(0), work_dir_(""), file_(0), fbuf_(0)
 {}
 
-template<typename T, unsigned int TextSize>
-fixed_pool<T,TextSize>::fixed_pool(unsigned int id, char const* work_dir)
+template<typename T, uint32_t TextSize>
+fixed_pool<T,TextSize>::fixed_pool(uint32_t id, char const* work_dir)
   : id_(0), work_dir_(""), file_(0), fbuf_(0)
 {
   open(id, work_dir);
 }
 
-template<typename T, unsigned int TextSize>
+template<typename T, uint32_t TextSize>
 fixed_pool<T,TextSize>::~fixed_pool()
 {
   if(file_) fclose(file_);
   delete []fbuf_;
 }
 
-template<typename T, unsigned int TextSize>
+template<typename T, uint32_t TextSize>
 fixed_pool<T,TextSize>::operator void const *() const
 { 
   if(!file_) return 0;
   return this;
 }
 
-template<typename T, unsigned int TextSize>
+template<typename T, uint32_t TextSize>
 void
-fixed_pool<T,TextSize>::open(unsigned int id, char const* work_dir)
+fixed_pool<T,TextSize>::open(uint32_t id, char const* work_dir)
 {
   using namespace std;
 
@@ -57,7 +57,7 @@ fixed_pool<T,TextSize>::open(unsigned int id, char const* work_dir)
 
 }
 
-template<typename T, unsigned int TextSize>
+template<typename T, uint32_t TextSize>
 int fixed_pool<T,TextSize>::read(T* val, AddrType addr) const
 {
   if(!*this) return -1;
@@ -72,7 +72,7 @@ int fixed_pool<T,TextSize>::read(T* val, AddrType addr) const
   return 0;
 }
 
-template<typename T, unsigned int TextSize>
+template<typename T, uint32_t TextSize>
 int fixed_pool<T,TextSize>::write(T const & val, AddrType addr)
 {
   if(!*this) return -1;
@@ -87,7 +87,7 @@ int fixed_pool<T,TextSize>::write(T const & val, AddrType addr)
   return 0;
 }
 
-template<typename T, unsigned int TextSize>
+template<typename T, uint32_t TextSize>
 std::string
 fixed_pool<T,TextSize>::dir() const 
 {

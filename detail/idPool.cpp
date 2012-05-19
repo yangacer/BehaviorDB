@@ -202,12 +202,8 @@ namespace BDB {
       line[strlen(line)-1] = 0;
       off = strtoul(&line[1], 0, 10);
       if('+' == line[0]){
-        if(bm_.size() <= off){ 
-          if(full_alloc_)
-            throw std::runtime_error("ID in trans file does not fit into idPool");
-          else  
-            extend();
-        }
+        if(bm_.size() <= off)
+          extend(off+1);
         bm_[off] = false;
         if(max_used_ <= off) max_used_ = off+1;
       }else if('-' == line[0]){
