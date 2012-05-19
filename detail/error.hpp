@@ -51,7 +51,7 @@ namespace BDB  {
   };
 
   struct addr_overflow{};
-
+  struct invalid_addr{};
 } // end of namespace BDB
 
 #endif // end of header

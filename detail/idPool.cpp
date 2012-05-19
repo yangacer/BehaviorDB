@@ -1,5 +1,6 @@
 #include "idPool.hpp"
-
+#include "file_utils.hpp"
+#include "error.hpp"
 #include <stdexcept>
 #include <limits>
 #include <cstdlib>
@@ -11,26 +12,6 @@
 
 namespace BDB { 
     
-    
-  int
-  IDPool::write(char const* data, size_t size)
-  {
-    while(size>0){
-      errno = 0;
-      size_t written = fwrite(data, 1, size, file_);
-      if(written != size){
-        if(errno == EINTR)
-          continue;
-        else if(errno != 0)
-          return -1;
-      }
-      data += written;
-      size -= written;
-    }
-    return 0;
-  }
-
-  
   IDPool::IDPool()
   : beg_(0), end_(0), file_(0), bm_(), lock_(), 
     full_alloc_(dynamic), max_used_(0)
@@ -48,36 +29,21 @@ namespace BDB {
     assert( 0 != tfile );
     assert( beg_ <= end_ );
     assert((AddrType)-1 > end_);
-        
-        if(dynamic == full_alloc_){
-            size_t init = (end - beg) >> 16;
-            bm_.resize(init, true);
-            lock_.resize(init, false);
-        }else if(full == full_alloc_){
-            bm_.resize(end - beg_, true);
-            lock_.resize(end_ - beg_, false);
-        }
+    
+    Bitmap::size_type size = end - beg;
+
+    if(dynamic == full_alloc_){
+      size >>= 16;
+      bm_.resize(size, true);
+      lock_.resize(size, false);
+    }else if(full == full_alloc_){
+      bm_.resize(size, true);
+      lock_.resize(size, false);
+    }
 
     replay_transaction(tfile);
     init_transaction(tfile);
   }
-
-  /*
-  IDPool::IDPool(char const* tfile, AddrType beg, AddrType end)
-  : beg_(beg), end_(end), file_(0), bm_(), lock_(),
-    full_alloc_(full), max_used_(0)
-  {
-    assert(0 != tfile);
-    assert( beg_ <= end_ ); 
-    assert((AddrType)-1 > end_);
-
-    bm_.resize(end_- beg_, true);
-    lock_.resize(end_- beg_, false);
-
-    replay_transaction(tfile);
-    init_transaction(tfile);
-  }
-    */
   
   IDPool::IDPool(AddrType beg, AddrType end)
   : beg_(beg), end_(end), file_(0), bm_(), lock_(), 
@@ -109,7 +75,6 @@ namespace BDB {
     return bm_[id - beg_] == false;
 
   }
-
   
   AddrType
   IDPool::Acquire()
@@ -120,20 +85,17 @@ namespace BDB {
     
     // acquire priority: 
     // the one behind pos of (max_used() - 1)  >
-    // the one behind pos of (max_used() - 1) after extension
-    // the one is located before pos
+    // the one behind pos of (max_used() - 1) after extending >
+    // someone is located before pos
     rt = (max_used_) ? bm_.find_next(max_used_ - 1) : bm_.find_first() ;
     if((AddrType)Bitmap::npos == rt){
-      if( !full_alloc_){
-        try {
-          extend();  
-        }catch(std::bad_alloc const& e){ 
-          return -1;
-        }
+      try {
+        extend();  
         rt = bm_.find_next(max_used_ - 1);
-      }else if( (AddrType)Bitmap::npos == (rt = bm_.find_first()) ) {
-          return -1;
-      }   
+      }catch(addr_overflow const&){
+        if(Bitmap::npos == (rt = bm_.find_first()))
+          throw addr_overflow();
+      }
     }
     
     bm_[rt] = false;
@@ -148,20 +110,10 @@ namespace BDB {
   {
     AddrType off = id - beg_;
 
-    if(off < bm_.size()){
-        if(!bm_[off]) return -1;
-    }else if(full_alloc_)
-      return -1;
-    else{  
-      try{
-        extend(off+1); 
-      }catch(std::bad_alloc const &e){
-        return -1;
-      }  
-    }
+    if(off >= bm_.size())
+      extend(off+1); 
     bm_[off] = false;
     if(off >= max_used_) max_used_ = off + 1;
-    
     return id;
   }
   
@@ -170,13 +122,13 @@ namespace BDB {
   {
     assert(0 != this);
     assert(true == isAcquired(id) && "id is not acquired");
-
-    if(lock_[id - beg_]) return -1;
-
-    if(id - beg_ >= bm_.size())
-      return -1;
-
-    bm_[id - beg_] = true;
+    
+    AddrType off = id - beg_;
+#ifndef NDEBUG
+    if(off >= bm_.size() || lock_[off]) 
+      throw invalid_addr();
+#endif
+    bm_[off] = true;
     return 0;
   }
 
@@ -186,7 +138,9 @@ namespace BDB {
     std::stringstream ss;
     char symbol = bm_[id-beg_] ? '-' : '+';
     ss<<symbol<<(id-beg_)<<"\n";
-    return -1 != write(ss.str().c_str(), ss.str().size());
+
+    return ss.str().size() == 
+      detail::s_write(ss.str().c_str(), ss.str().size(), file_);
   }
 
   void
@@ -279,33 +233,43 @@ namespace BDB {
 
   }
 
-
-  
   size_t 
   IDPool::num_blocks() const
   { return bm_.num_blocks(); }
 
   
-  // XXX extend should consider end_
+  /// TODO Wrte testing case to generate exception
   void IDPool::extend(Bitmap::size_type new_size)
   { 
+    Bitmap::size_type max = end_ - beg_;
+    
+    if(full_alloc_ == full || max == bm_.size() )
+      throw addr_overflow();
+
     if(new_size){
-      bm_.resize(new_size, true);
-      lock_.resize(new_size, false);
+      if(new_size > end_ - beg_)
+        throw addr_overflow();
+      try{
+        bm_.resize(new_size, true);
+        lock_.resize(new_size, false);
+      }catch(std::bad_alloc const&){
+        throw addr_overflow();         
+      }
       return;
     }
 
     Bitmap::size_type size = bm_.size();
-    size = (size<<1) -  (size>>1);
+    new_size = (size<<1) -  (size>>1);
     
-    if( size < bm_.size())
-      return;
-
-    if(size >= end_ - beg_)
-      size = end_ - beg_;
-
-    bm_.resize(size, true); 
-    lock_.resize(size, false);
+    if( new_size < size || new_size > max) 
+      new_size = end_ - beg_;
+    
+    try{
+      bm_.resize(size, true); 
+      lock_.resize(size, false);
+    }catch(std::bad_alloc const&){
+      throw addr_overflow();
+    }
   }
   
 
@@ -344,11 +308,8 @@ namespace BDB {
   
   AddrType IDValPool::Acquire(AddrType const& id, AddrType const& val)
   {
-    AddrType rt;
-    if((AddrType)-1 == (rt = super::Acquire(id)))
-      return -1;
+    AddrType rt  = super::Acquire(id);
     arr_[rt - super::begin()] = val;
-
     return rt;
   }
 
@@ -367,7 +328,9 @@ namespace BDB {
 
     std::stringstream ss;
     ss<<"+"<<(off)<<"\t"<<arr_[off]<<"\n";
-    return -1 != write(ss.str().c_str(), ss.str().size());
+
+    return ss.str().size() == 
+      detail::s_write(ss.str().c_str(), ss.str().size(), file_);
   }
   
   AddrType IDValPool::Find(AddrType const & id) const

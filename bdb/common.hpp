@@ -1,26 +1,11 @@
 #ifndef _COMMON_HPP
 #define _COMMON_HPP
 
-// TODO Move platform check to an internal header
 #ifdef __GNUC__ // GNU
 
-#define PATH_DELIM '/'
 #include <stdint.h>
 
-#ifdef __MINGW__ // MINGW
-
-#define ftello(X) ftello64(X)
-#define fseeko(X,Y,Z) fseeko64(X,Y,Z)
-
-#endif
-
 #elif defined(_WIN32) // MSVC
-
-#define PATH_DELIM '\\'
-
-// ftello/fseeko
-#define ftello(X) _ftelli64(X)
-#define fseeko(X,Y,Z) _fseeki64(X,Y,Z)
 
 #pragma warning( disable: 4290 ) // exception specification non-implmented
 #pragma warning( disable: 4251 ) // template export warning
@@ -29,9 +14,6 @@
 typedef unsigned __int32 uint32_t;
 
 #endif
-
-// TODO make sure this is OK in win
-// #include <stddef.h>
 
 typedef uint32_t size_t;
 

@@ -53,20 +53,7 @@ public:
          AddrType beg, 
          AddrType end = std::numeric_limits<AddrType>::max()-1, 
          IDPoolAlloc alloc_policy = dynamic);
-
-  /** Constructor for being given begin and end
-   * @desc Construct a IDPool that manages numerical ID.
-   * @param trans_file name of a transaction file
-   * @param beg user-defined ID begin number 
-   * @param end user-defined ID end number 
-   * @pre beg <= end
-   * @post A IDPool that its storage is a partially allocated 
-   * dynamic bitmap. Legal ID range of this IDPool is
-   * (beg, end]. 
-   * @throw std::bad_alloc
-   */	
-  // IDPool(char const* trans_file, AddrType beg, AddrType end);
-
+  
   ~IDPool();
 
   operator void const*() const;
@@ -77,9 +64,8 @@ public:
   bool 
   isAcquired(AddrType const& id) const;
 
-  /** Acquire an ID from a IDPool.
-   * @throw A write transaction error of type 
-   * std::runtime_error.
+  /** To acquire an ID from a IDPool.
+   *  @throw no throw
    */
   AddrType 
   Acquire();
@@ -88,8 +74,7 @@ public:
   Acquire(AddrType const &id);
 
   /** Release an ID
-   *  @throw A write transaction error of type
-   *  std::runtime_error
+   *  @throw no throw
    */
   int 
   Release(AddrType const &id);
@@ -135,10 +120,7 @@ protected:
 
   void 
   init_transaction(char const* transaction_file);
-
-  int 
-  write(char const *data, size_t size);
-
+  
   /** Extend bitmap size to 1.5 times large
    *  @throw std::bad_alloc
    */

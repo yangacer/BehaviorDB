@@ -8,8 +8,7 @@ namespace BDB {
   addr_handle::addr_handle(IDPool &idp)
   : idp_(idp), addr_(-1), commited_(false)
   {
-    if(-1 == (addr_ = idp_.Acquire()))
-      throw addr_overflow();
+    addr_ = idp_.Acquire();
   }
   
   /* XXX not sure to have this
