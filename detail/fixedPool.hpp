@@ -4,9 +4,7 @@
 #include "common.hpp"
 #include <string>
 #include <cstdio>
-#include <cstring>
-#include <stdexcept>
-#include <cassert>
+#include <vector>
 
 namespace BDB {
 
@@ -18,9 +16,11 @@ namespace BDB {
   struct fixed_pool
   {
     typedef T value_type;
+    typedef T& reference;
 
-    fixed_pool(); 
-
+    fixed_pool(uint32_t /*dummy*/); 
+    
+    // TODO deprecate this
     fixed_pool(unsigned int id, char const* work_dir);
 
     ~fixed_pool();
@@ -35,9 +35,14 @@ namespace BDB {
      * @remark If id is 1, then this object will be 
      * associated with a file "0001.fpo".
      */
-    void
-    open(unsigned int id, char const* work_dir);
-
+    void open(unsigned int id, char const* work_dir);
+    
+    T operator[](AddrType addr) const;
+    
+    void init(T const &val, AddrType off){}
+    
+    void store(T const &val, AddrType off);
+    
     int read(T* val, AddrType addr) const;
     
     int write(T const & val, AddrType addr);
@@ -50,6 +55,34 @@ namespace BDB {
     FILE* file_;
     char *fbuf_;//[4096];
   };
+  
+  
+  template<typename T>
+  struct vec_wrapper
+  {
+    typedef T value_type;
+    typedef T& reference;
+
+    vec_wrapper(uint32_t size)
+    : vec_(size)
+    {}
+
+    void open(unsigned int id, char const* work_dir)
+    {}
+
+    T operator[](AddrType addr) const
+    { return vec_[addr]; }
+
+    void init(T const &val, AddrType off)
+    { vec_[off] = val; }
+
+    void store(T const &val, AddrType off)
+    { vec_[off] = val; }
+
+  private:
+    std::vector<T> vec_;
+  };
+  
 }
 
 #endif // end of header

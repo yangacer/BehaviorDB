@@ -20,11 +20,17 @@ template<typename Array>
 class IDPool 
 : boost::noncopyable
 {
+public:
+
   typedef typename Array::reference reference;
   typedef typename Array::value_type value_type;
 
   //IDPool(AddrType beg, AddrTeyp end);
-  IDPool(char const* file, AddrType beg, AddrType end, IDPoolAlloc alloc_policy);
+  IDPool(
+    unsigned int id, char const* work_dir,
+    AddrType beg, 
+    AddrType end, 
+    IDPoolAlloc alloc_policy);
   ~IDPool();
   
   AddrType Acquire();
@@ -39,7 +45,7 @@ class IDPool
   bool isAcquired(AddrType id) const;
   bool isLocked(AddrType id) const;
 
-  reference Find(AddrType id);
+  value_type Find(AddrType id);
 
   AddrType max_used() const;
 
@@ -54,7 +60,7 @@ class IDPool
 
 private:
   
-  void extend(uint32_t new_size);
+  void extend(uint32_t new_size=0);
 
   typedef boost::dynamic_bitset<uint32_t> Bitmap;
 

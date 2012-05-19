@@ -1,10 +1,15 @@
 #include "id_pool.hpp"
+#include <sstream>
+#include "error.hpp"
+#include "file_utils.hpp"
+#include "chunk.h"
+#include "fixedPool.hpp"
 
 namespace BDB {
 
 template<typename Array>
 IDPool<Array>::IDPool(
-  char const* file, 
+  unsigned int id, char const* work_dir,
   AddrType beg, AddrType end, 
   IDPoolAlloc alloc_policy)
 : beg_(beg), end_(end), 
@@ -12,9 +17,9 @@ IDPool<Array>::IDPool(
   full_alloc_(alloc_policy), max_used_(0),
   arr_(end - beg)
 {
-  assert( 0 != file );
   assert( beg_ <= end_ );
-
+  
+  arr_.template open(id, work_dir);
   Bitmap::size_type size = end - beg;
 
   if(dynamic == full_alloc_){
@@ -26,8 +31,10 @@ IDPool<Array>::IDPool(
     lock_.resize(size, false);
   }
 
-  replay_transaction(file);
-  init_transaction(file);
+  char fname[256];
+  sprintf(fname, "%s%04x.tran", work_dir, id);
+  replay_transaction(fname);
+  init_transaction(fname);
 }
 
 template<typename Array>
@@ -56,7 +63,6 @@ AddrType IDPool<Array>::Acquire()
   }
   bm_[rt] = false;
   if(rt >= max_used_) max_used_ = rt + 1;
-
   return  beg_ + rt;
 }
 
@@ -78,9 +84,11 @@ void IDPool<Array>::Release(AddrType id)
   assert(true == isAcquired(id) && "id is not acquired");
   AddrType off = id - beg_;
 #ifndef NDEBUG
-  if(off >= bm_.size() || lock_[off]) 
+  if(off >= bm_.size())
     throw invalid_addr();
 #endif
+  if(lock_[off])
+    return;
   bm_[off] = true;
 }
 
@@ -94,8 +102,8 @@ bool IDPool<Array>::Commit(
   if(bm_[off]){
     ss<<'-'<<off<<"\n";
   }else{
-    ss<<'+'<<off<<"\n";
-    arr_[off] = val;
+    ss<<'+'<<off<<val<<"\n";
+    arr_.template store(val, off);
   }
   return ss.str().size() == 
     detail::s_write(ss.str().c_str(), ss.str().size(), file_);
@@ -128,7 +136,7 @@ bool IDPool<Array>::isLocked(AddrType id) const
 { return lock_[id - beg_];  }
 
 template<typename Array>
-typename IDPool<Array>::reference 
+typename IDPool<Array>::value_type 
 IDPool<Array>::Find(AddrType id)
 { return arr_[id - beg_]; }
 
@@ -156,7 +164,6 @@ template<typename Array>
 void IDPool<Array>::replay_transaction(char const* file)
 {
   assert(0 != file);
-
   assert(0 == file_ && "disallow replay when file_ has been initiated");
 
   FILE *tfile = fopen(file, "rb");
@@ -166,13 +173,19 @@ void IDPool<Array>::replay_transaction(char const* file)
 
   char line[21] = {0};    
   AddrType off;
+  value_type val;
+  std::stringstream cvt;
   while(fgets(line, 20, tfile)){
     line[strlen(line)-1] = 0;
-    off = strtoul(&line[1], 0, 10);
+    cvt.clear();
+    cvt.str(line + 1);
+    cvt>>off;
     if('+' == line[0]){
+      cvt>>val;
       if(bm_.size() <= off)
         extend(off+1);
       bm_[off] = false;
+      arr_.template init(val, off);
       if(max_used_ <= off) max_used_ = off+1;
     }else if('-' == line[0]){
       bm_[off] = true;
@@ -188,7 +201,7 @@ void IDPool<Array>::init_transaction(char const* file)
   if(0 == (file_ = fopen(file,"ab")))
     throw std::runtime_error("IDPool: Fail to open transaction file");
 
-  if(0 != setvbuf(file_, filebuf_, _IOLBF, 128))
+  if(0 != setvbuf(file_, 0, _IONBF, 0))
     throw std::runtime_error("IDPool: Fail to set zero buffer on transaction_file");
 }
 
@@ -225,5 +238,8 @@ void IDPool<Array>::extend(uint32_t new_size)
     throw addr_overflow();
   }
 }
+
+template class IDPool<fixed_pool<ChunkHeader, 8> >;
+template class IDPool<vec_wrapper<AddrType> >;
 
 }// namespace BDB

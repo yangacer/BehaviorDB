@@ -1,10 +1,15 @@
 #include "fixedPool.hpp"
 #include "chunk.h"
+#include "file_utils.hpp"
+#include <stdexcept>
+#include <cassert>
+#include <cstring>
+#include "error.hpp"
 
 namespace BDB {
 
 template<typename T, uint32_t TextSize>
-fixed_pool<T,TextSize>::fixed_pool() 
+fixed_pool<T,TextSize>::fixed_pool(uint32_t) 
 : id_(0), work_dir_(""), file_(0), fbuf_(0)
 {}
 
@@ -64,11 +69,9 @@ int fixed_pool<T,TextSize>::read(T* val, AddrType addr) const
 
   off_t loc_addr = addr;
   loc_addr *= TextSize;
-  if(-1 == fseeko(file_, loc_addr, SEEK_SET))
-    return -1;
-  if( 0 == file_>>*val)
-    return -1;
-  if(ferror(file_)) return -1;
+  fseeko(file_, loc_addr, SEEK_SET);
+  if( 0 == file_>>*val || ferror(file_))
+    throw std::runtime_error(SRC_POS);
   return 0;
 }
 
@@ -79,11 +82,9 @@ int fixed_pool<T,TextSize>::write(T const & val, AddrType addr)
 
   off_t loc_addr = addr;
   loc_addr *= TextSize;
-  if(-1 == fseeko(file_, loc_addr, SEEK_SET))
-    return -1;
-  if( 0 == file_<<val ) return -1;
-  if(ferror(file_)) return -1;
-  if(fflush(file_)) return -1;
+  fseeko(file_, loc_addr, SEEK_SET);
+  if( 0 == file_<<val || ferror(file_) || fflush(file_) ) 
+    throw std::runtime_error(SRC_POS);
   return 0;
 }
 
@@ -93,6 +94,20 @@ fixed_pool<T,TextSize>::dir() const
 {
   return work_dir_;
 }
+
+
+template<typename T, uint32_t TextSize>
+T fixed_pool<T,TextSize>::operator[](AddrType addr) const
+{
+  T rt;
+  read(&rt, addr);
+  return rt;
+}
+
+template<typename T, uint32_t TextSize>
+void fixed_pool<T,TextSize>::store(T const &val, AddrType off)
+{ write(val, off); }
+
 
 template struct fixed_pool<ChunkHeader, 8>;
 

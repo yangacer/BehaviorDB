@@ -17,7 +17,6 @@ operator>>(std::istream &is, ChunkHeader &ch)
 {
   static char buf[9];
   buf[8] = 0;
-
   is.read(buf, 8);
   ch.size = strtoul(buf, 0, 16);
   return is;  
@@ -44,9 +43,8 @@ operator>>(FILE* fp, ChunkHeader &ch)
 {
   static char buf[9];
   buf[8] = 0;
-  if(8 != fread(buf, 1, 8, fp)){
+  if(8 != fread(buf, 1, 8, fp))
     return 0;
-  }
   ch.size = strtoul(buf, 0, 16);
   return fp;
 }

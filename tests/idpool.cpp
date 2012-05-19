@@ -1,26 +1,15 @@
-#include "idPool.hpp"
+#include "id_pool.hpp"
+#include "fixedPool.hpp"
+#include "chunk.h"
 
-int main()
+int main(int argc, char **argv)
 {
-	IDPool<unsigned int> idp(2);
-	idp.init_transaction("idpool.trans");
+  using namespace BDB;
 
-	unsigned int id = idp.Acquire();
-	printf("acquired id: %lu\n", id);
-	printf("after acquire: %d\n", idp.isAcquired(id));
-	idp.Release(id);
-	printf("after release: %d\n", idp.isAcquired(id));
+  char const *work_dir = argv[1];
+  
+  IDPool<fixed_pool<ChunkHeader,8> > header_pool(0, work_dir, 1, 101, BDB::full);
+  IDPool<vec_wrapper<AddrType> > addr_pool(0, work_dir, 1, 100, BDB::full);
 
-	printf("%d\n", idp.avail());
-	printf("%lu\n", idp.size());
-	printf("%lu\n", idp.max_size());
-	
-	IDValPool<unsigned int, unsigned int> idvp(1, 11);
-	idvp.replay_transaction("idvpool.trans");
-	idvp.init_transaction("idvpool.trans");
-
-	unsigned int id2 = idvp.Acquire(123);
-	idvp.Release(id2);
-
-	idp.Release(id);
+  return 0;
 }

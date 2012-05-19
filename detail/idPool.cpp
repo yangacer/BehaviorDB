@@ -16,7 +16,6 @@ namespace BDB {
   : beg_(0), end_(0), file_(0), bm_(), lock_(), 
     full_alloc_(dynamic), max_used_(0)
   {}
-
   
   IDPool::IDPool(char const* tfile, 
         AddrType beg, 
@@ -54,7 +53,6 @@ namespace BDB {
     bm_.resize(end_- beg_, true);
     lock_.resize(end_ - beg_, false);
   }
-
   
   IDPool::~IDPool()
   { if(file_) fclose(file_); }
@@ -65,7 +63,6 @@ namespace BDB {
     if(!this || !file_) return 0;
     return this;
   }
-
   
   bool 
   IDPool::isAcquired(AddrType const& id) const
@@ -73,16 +70,12 @@ namespace BDB {
     if(id - beg_ >= bm_.size()) 
       return false;
     return bm_[id - beg_] == false;
-
   }
   
   AddrType
   IDPool::Acquire()
   {
-    assert(0 != this);
-    
     AddrType rt;
-    
     // acquire priority: 
     // the one behind pos of (max_used() - 1)  >
     // the one behind pos of (max_used() - 1) after extending >
@@ -97,11 +90,8 @@ namespace BDB {
           throw addr_overflow();
       }
     }
-    
     bm_[rt] = false;
-
     if(rt >= max_used_) max_used_ = rt + 1;
-
     return  beg_ + rt;
   }
   
@@ -172,17 +162,14 @@ namespace BDB {
     }
     return curID;
   }
-
   
   AddrType
   IDPool::max_used() const
   { return max_used_; }
-
   
   size_t
   IDPool::size() const
   { return bm_.size(); }
-
   
   void 
   IDPool::replay_transaction(char const* transaction_file)
@@ -217,22 +204,18 @@ namespace BDB {
   void 
   IDPool::init_transaction(char const* transaction_file)
   {
-    
     assert(0 != transaction_file);
 
     if(0 == (file_ = fopen(transaction_file,"ab")))
       throw std::runtime_error("IDPool: Fail to open transaction file");
     
-    
     if(0 != setvbuf(file_, filebuf_, _IOLBF, 128))
       throw std::runtime_error("IDPool: Fail to set zero buffer on transaction_file");
-
   }
 
   size_t 
   IDPool::num_blocks() const
   { return bm_.num_blocks(); }
-
   
   /// TODO Wrte testing case to generate exception
   void IDPool::extend(Bitmap::size_type new_size)
@@ -267,10 +250,8 @@ namespace BDB {
       throw addr_overflow();
     }
   }
-  
 
   // ------------ IDValPool Impl ----------------
-
   
   IDValPool::IDValPool(char const* tfile, AddrType beg, AddrType end)
   : super(beg, end), arr_(0)
@@ -281,23 +262,16 @@ namespace BDB {
     replay_transaction(tfile);
     super::init_transaction(tfile);
   }
-
   
   IDValPool::~IDValPool()
-  {
-    delete [] arr_; 
-  }
+  {  delete [] arr_;  }
 
   
   AddrType IDValPool::Acquire(AddrType const &val)//, error_code *ec)
   {
-    if(!*this) return -1;
-
     AddrType rt;
-    if((AddrType)-1 == (rt = super::Acquire()))
-      return -1;
+    rt = super::Acquire();
     arr_[rt - super::begin()] = val;
-    
     return rt;
     
   }
@@ -334,19 +308,13 @@ namespace BDB {
     assert(true == super::isAcquired(id) && "IDValPool: Test isAcquired before Find!");
     return arr_[ id - super::beg_ ];
   }
-
-
   
   void IDValPool::Update(AddrType const& id, AddrType const& val)
   {
     assert(true == super::isAcquired(id) && "IDValPool: Test isAcquired before Update!");
-    
     if(val == Find(id)) return;
-    
     arr_[id - super::beg_] = val;
-
   }
-
   
   void IDValPool::replay_transaction(char const* transaction_file)
   {
@@ -357,7 +325,6 @@ namespace BDB {
 
     if(0 == tfile) // no transaction files for replaying
       return;
-    
 
     char line[21] = {0};    
     AddrType off; 
@@ -382,8 +349,6 @@ namespace BDB {
       assert(0 != cvt && "IDValPool: Read id-val pair failed");
     }
     fclose(tfile);
-    
   }
-
 } // end of namespace BDB
 

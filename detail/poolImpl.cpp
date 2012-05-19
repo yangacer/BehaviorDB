@@ -61,7 +61,6 @@ namespace detail {
     // address
     idPool_ = new IDPool(fname, 0);
 
-
   }
 
   pool::~pool()
