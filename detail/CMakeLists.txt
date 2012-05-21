@@ -1,4 +1,6 @@
 
+include (rpath.cmake)
+
 option(BDB_SHARED_LIB "Build shared library" OFF)
 
 if(MINGW)
