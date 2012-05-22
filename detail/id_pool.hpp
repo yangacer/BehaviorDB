@@ -21,7 +21,6 @@ class IDPool
 {
 public:
 
-  typedef typename Array::reference reference;
   typedef typename Array::value_type value_type;
 
   //IDPool(AddrType beg, AddrTeyp end);
@@ -43,13 +42,14 @@ public:
   
   bool isAcquired(AddrType id) const;
   bool isLocked(AddrType id) const;
-
+  
   value_type Find(AddrType id);
 
   AddrType max_used() const;
 
   uint32_t size() const;
   uint32_t num_blocks() const;
+  bool avail() const;
 
   AddrType begin() const;
   AddrType end() const;

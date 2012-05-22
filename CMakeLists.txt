@@ -34,7 +34,7 @@ if(BDB_DEVEL_MODE)
   add_executable (bdb_typed_array ${PROJECT_SOURCE_DIR}/tests/typed_array.cpp)
   target_link_libraries(bdb_typed_array bdb ${Boost_LIBRARIES})
 
-  add_executable (bdb_sql ${PROJECT_SOURCE_DIR}/tests/sql.cpp)
+#add_executable (bdb_sql ${PROJECT_SOURCE_DIR}/tests/sql.cpp)
   
   add_executable (bdb_idp 
                   ${PROJECT_SOURCE_DIR}/tests/idpool.cpp

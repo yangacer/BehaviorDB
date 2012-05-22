@@ -19,7 +19,7 @@ int main(int argc, char **argv)
     prefix.append("gid_");
     IDPool<vec_wrapper<AddrType> > addr_pool(0, prefix.c_str(), 1, 101, BDB::full);
 
-    addr = header_pool.Acquire();
+    addr = header_pool.Acquire(4u);
     ChunkHeader ch;
     ch.size = 1024;
     header_pool.Commit(addr, ch);

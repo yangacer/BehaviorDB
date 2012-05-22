@@ -154,6 +154,13 @@ uint32_t IDPool<Array>::num_blocks() const
 { return bm_.num_blocks();  }
 
 template<typename Array>
+bool IDPool<Array>::avail() const
+{
+  if(max_used() < end()) return true;
+  return bm_.any();
+}
+
+template<typename Array>
 AddrType IDPool<Array>::begin() const
 { return beg_; }
 

@@ -7,12 +7,12 @@ if(MINGW)
   add_definitions (-D__MINGW__)
 endif()
 
-set (Boost_ADDITIONAL_VERSIONS "1.47" "1.47.0" )
-find_package ( Boost 1.45.0 )
+#set (Boost_ADDITIONAL_VERSIONS "1.47" "1.47.0" )
+#find_package ( Boost 1.45.0 )
 
-if(Boost_FOUND)
-  include_directories(${Boost_INCLUDE_DIRS})
-endif()
+#if(Boost_FOUND)
+#  include_directories(${Boost_INCLUDE_DIRS})
+#endif()
 
 if(BDB_SHARED_LIB)
   set(LIB_TYPE SHARED)
