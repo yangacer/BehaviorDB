@@ -1,12 +1,22 @@
 project (BehaviorDB)
 cmake_minimum_required(VERSION 2.8)
 
+include (rpath.cmake)
+
 option( BDB_DEVEL_MODE OFF )
+
+set (Boost_ADDITIONAL_VERSIONS "1.47" "1.47.0" )
+find_package ( Boost 1.45.0 COMPONENTS 
+               serialization)
+
+if(Boost_FOUND)
+  include_directories(${Boost_INCLUDE_DIRS})
+endif()
 
 add_subdirectory( detail )
 
-include_directories( ${PROJECT_SOURCE_DIR}/bdb ${PROJECT_SOURCE_DIR}/detail /usr/local/include)
-link_directories ( /usr/local/lib)
+include_directories( ${PROJECT_SOURCE_DIR}/bdb ${PROJECT_SOURCE_DIR}/detail )
+#link_directories ( /usr/local/lib)
 
 if(BDB_DEVEL_MODE)
   add_executable (bdb_test ${PROJECT_SOURCE_DIR}/tests/bdb.cpp)
@@ -16,13 +26,13 @@ if(BDB_DEVEL_MODE)
   target_link_libraries(bdb_simulator bdb)
 
   add_executable (bdb_hashmap ${PROJECT_SOURCE_DIR}/tests/hash_map.cpp)
-  target_link_libraries(bdb_hashmap bdb boost_serialization)
+  target_link_libraries(bdb_hashmap bdb ${Boost_LIBRARIES})
 
   add_executable (bdb_array ${PROJECT_SOURCE_DIR}/tests/array.cpp)
   target_link_libraries(bdb_array bdb)
 
   add_executable (bdb_typed_array ${PROJECT_SOURCE_DIR}/tests/typed_array.cpp)
-  target_link_libraries(bdb_typed_array bdb boost_serialization)
+  target_link_libraries(bdb_typed_array bdb ${Boost_LIBRARIES})
 
   add_executable (bdb_sql ${PROJECT_SOURCE_DIR}/tests/sql.cpp)
   

@@ -15,7 +15,6 @@ enum IDPoolAlloc {
 };
 
 
-// TODO Intergrate IDPool and IDValPool into this
 template<typename Array>
 class IDPool 
 : boost::noncopyable

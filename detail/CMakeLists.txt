@@ -1,5 +1,5 @@
 
-include (rpath.cmake)
+include ( ${PROJECT_SOURCE_DIR}/rpath.cmake )
 
 option(BDB_SHARED_LIB "Build shared library" OFF)
 
@@ -33,6 +33,8 @@ add_library( bdb ${LIB_TYPE}
   fixedPool.cpp array.cpp
   nt_bdbImpl.cpp
   hash_map.cpp)
+
+target_link_libraries ( bdb ${Boost_LIBRARIES} )
 
 install (TARGETS bdb DESTINATION lib EXPORT bdb-targets )
 install (EXPORT bdb-targets DESTINATION lib)

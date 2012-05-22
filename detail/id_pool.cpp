@@ -23,7 +23,8 @@ IDPool<Array>::IDPool(
   Bitmap::size_type size = end - beg;
 
   if(dynamic == full_alloc_){
-    size >>= 16;
+    while(size > 1024)
+      size >>= 1;
     bm_.resize(size, true);
     lock_.resize(size, false);
   }else if(full == full_alloc_){
@@ -102,7 +103,7 @@ bool IDPool<Array>::Commit(
   if(bm_[off]){
     ss<<'-'<<off<<"\n";
   }else{
-    ss<<'+'<<off<<val<<"\n";
+    ss<<'+'<<off<<"\t"<<val<<"\n";
     arr_.template store(val, off);
   }
   return ss.str().size() == 
