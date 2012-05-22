@@ -1,6 +1,8 @@
 #ifndef BDB_ERROR_HPP
 #define BDB_ERROR_HPP
 
+#include "exception.hpp"
+
 #ifndef NDBUG
 #define STRINGIZE(x) STRINGIZE2(x)
 #define STRINGIZE2(x) #x
@@ -50,8 +52,6 @@ namespace BDB  {
     error_code();
   };
 
-  struct addr_overflow{};
-  struct invalid_addr{};
 } // end of namespace BDB
 
 #endif // end of header

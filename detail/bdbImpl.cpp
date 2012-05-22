@@ -89,23 +89,17 @@ namespace BDB {
   BDBImpl::put(char const *data, size_t size)
   {
     // assert(0 != *this && "BDBImpl is not proper initiated");
+    if(!global_id_->avail()) 
+      throw addr_overflow();
     
-    if(!global_id_->avail()){
-      error(ADDRESS_OVERFLOW, __LINE__);
-      return -1;
-    }
-
     AddrType rt = write_pool(data, size);
-    if(-1 == rt) return -1;
-
     rt = global_id_->Acquire(rt);
     
-    if( !global_id_->Commit(rt) ){
-      error(COMMIT_FAILURE, __LINE__);
-      return -1;
-    }
+    if( !global_id_->Commit(rt) )
+      throw std::runtime_error(SRC_POS);
     
-    if(acc_log_) fprintf(acc_log_, "%-12s\t%08x\n", "put", size);
+    if(acc_log_) 
+      fprintf(acc_log_, "%-12s\t%08x\n", "put", size);
 
     return rt;
   }
@@ -119,16 +113,14 @@ namespace BDB {
     if( !global_id_->isAcquired(addr) ){
       
       AddrType rt = write_pool(data, size);
-      if(-1 == rt) return -1;
 
       rt = global_id_->Acquire(addr, rt);
       
-      if( !global_id_->Commit(rt) ){
-        error(COMMIT_FAILURE, __LINE__);
-        return -1;
-      } 
-      
-      if(acc_log_)fprintf(acc_log_, "%-12s\t%08x\t%08x\n", "put-spec", size, addr);
+      if( !global_id_->Commit(rt) )
+        throw std::runtime_error(SRC_POS);
+
+      if(acc_log_)
+        fprintf(acc_log_, "%-12s\t%08x\t%08x\n", "put-spec", size, addr);
     }
 
     AddrType internal_addr;
@@ -137,7 +129,8 @@ namespace BDB {
     unsigned int dir = addrEval.addr_to_dir(internal_addr);
     AddrType loc_addr = addrEval.local_addr(internal_addr);
     AddrType rt;
-
+    
+    // TODO use new IDPool
     ChunkHeader header;
     if(-1 == pools_[dir].head(&header, loc_addr)){
       error(dir); 
@@ -746,25 +739,22 @@ namespace BDB {
   BDBImpl::write_pool(char const*data, size_t size)
   {
       unsigned int dir = addrEval.directory(size);
-      if((unsigned int)-1 == dir){
-        error(DATA_TOO_BIG, __LINE__);
-        return -1;
-      }
+      if((unsigned int)-1 == dir)
+        throw std::length_error(SRC_POS);
+
       AddrType rt(0), loc_addr(0);
       while(dir < addrEval.dir_count()){
         try{
           loc_addr = pools_[dir].write(data, size);
-        }catch(addr_overflow & ao){
+        }catch(addr_overflow const &){
           dir++;
           continue;
         }
         break;
       }
 
-      if(dir >= addrEval.dir_count()){
-        error(dir-1);
-        return -1;
-      }
+      if(dir >= addrEval.dir_count())
+        throw addr_overflow();
 
       rt = addrEval.global_addr(dir, loc_addr);
       return rt;

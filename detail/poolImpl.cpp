@@ -506,8 +506,6 @@ namespace detail {
   int
   pool::head(ChunkHeader *header, AddrType addr) const
   { 
-    assert(0 != *this && "pool is not proper initiated");
-
     if(-1 == headerPool_.read(header, addr)){
       const_cast<pool*>(this)->on_error(SYSTEM_ERROR, __LINE__);
       return -1;

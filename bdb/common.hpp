@@ -1,6 +1,8 @@
 #ifndef _COMMON_HPP
 #define _COMMON_HPP
 
+#include "export.hpp"
+
 #ifdef __GNUC__ // GNU
 
 #include <stdint.h>
@@ -50,7 +52,7 @@ namespace BDB {
   }
 
   /** @brief Configuration of BehaviorDB */
-  struct Config
+  struct BDB_EXPORT Config
   {
     /// Begin number of global IDs of BehaviorDB
     AddrType beg;

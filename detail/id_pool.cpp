@@ -17,8 +17,9 @@ IDPool<Array>::IDPool(
   full_alloc_(alloc_policy), max_used_(0),
   arr_(end - beg)
 {
-  assert( beg_ <= end_ );
-  
+  if(beg >= end)
+    throw std::invalid_argument(SRC_POS);
+
   arr_.template open(id, work_dir);
   Bitmap::size_type size = end - beg;
 
