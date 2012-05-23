@@ -81,7 +81,7 @@ namespace detail {
   AddrType
   pool::write(char const* data, size_t size)
   {
-    assert(0 != *this && "pool is not proper initiated");
+    using namespace detail;
     
     addr_handle ah(*idPool_);
 
@@ -93,7 +93,7 @@ namespace detail {
     seek(ah.addr());
 
     // allow data = 0 to act as allocation
-    if(0 != data && size != fwrite(data, 1, size, file_))
+    if(0 != data && size != s_write(data, size, file_))
       throw std::runtime_error(SRC_POS);
     
     if(fflush(file_))
@@ -110,21 +110,18 @@ namespace detail {
 
   // off == npos represents an append write
   AddrType
-  pool::write(char const* data, size_t size, AddrType addr, size_t off, ChunkHeader const* header)
+  pool::write(char const* data, uint32_t size, AddrType addr, size_t off)
   {
-    assert(0 != *this && "pool is not proper initiated");
+    using namespace detail;
 
     if(!idPool_->isAcquired(addr))
       throw std::runtime_error(SRC_POS);
 
     ChunkHeader loc_header;
-    if(header)
-      loc_header = *header;
-    else if( -1 == headerPool_.read(&loc_header, addr))
-      throw std::runtime_error(SRC_POS);
+    headerPool_.read(&loc_header, addr);
 
-    assert(size + loc_header.size <= addrEval.chunk_size_estimation(dirID) && 
-           "data exceeds chunk size");
+    if(size + loc_header.size <= addrEval.chunk_size_estimation(dirID))
+      throw internal_chunk_overflow((internal_chunk_overflow){size});
 
     assert((off == npos || off <= loc_header.size) && 
            "invalid offset for put");
@@ -143,7 +140,7 @@ namespace detail {
     seek(addr, off);
 
     // read data to be moved into mig_buf
-    if(moved && moved != fread(mig_buf_, 1, moved, file_))
+    if(moved && moved != s_read(mig_buf_, moved, file_))
       throw std::runtime_error(SRC_POS);
 
     if(moved)
@@ -151,7 +148,7 @@ namespace detail {
 
     size_t partial(0);
     // write new data
-    if(size != (partial = fwrite(data, 1, size, file_))){
+    if(size != (partial = s_write(data, size, file_))){
       if(!partial) // no data written
         // abort directly	
         throw std::runtime_error(SRC_POS);
@@ -160,22 +157,20 @@ namespace detail {
       clearerr(file_);
       seek(addr, off);
 
-      if( partial != fwrite(mig_buf_, 1, partial, file_))
+      if( partial != s_write(mig_buf_, partial, file_))
         // rollback failed, leave broken data alone
         throw std::runtime_error(SRC_POS);
     }
 
     // write buffered data
-    if(moved && moved != (partial = fwrite(mig_buf_, 1, moved, file_))){
+    if(moved && moved != (partial = s_write(mig_buf_, moved, file_))){
       // rollback to previous state
       clearerr(file_);
       seek(addr, off);
-        throw std::runtime_error(SRC_POS);
 
-      if( partial != fwrite(mig_buf_, 1, moved, file_))
-        // rollback failed, leave broken data alone
+      // rollback failed, leave broken data alone
+      if( partial != s_write(mig_buf_, moved, file_))
         throw std::runtime_error(SRC_POS);
-
     }
 
     if(0 != fflush(file_))
@@ -184,8 +179,7 @@ namespace detail {
     // update header 
     if(-1 == headerPool_.write(loc_header, addr)){
       seek(addr, off);
-
-      if( partial != fwrite(mig_buf_, 1, moved, file_))
+      if( partial != s_write(mig_buf_, moved, file_))
         // rollback failed, leave broken data alone
         throw std::runtime_error(SRC_POS);
 
@@ -198,12 +192,9 @@ namespace detail {
   AddrType
   pool::write(viov* vv, size_t len)
   {
-    assert(0 != *this && "pool is not proper initiated");
-
     size_t total(0);
-    for(size_t i=0; i<len; ++i){
+    for(size_t i=0; i<len; ++i)
       total += vv[i].size;
-    }
 
     assert(total <= addrEval.chunk_size_estimation(dirID) && 
            "data exceeds chunk size");
@@ -225,7 +216,6 @@ namespace detail {
       wv.size = vv[i].size;
       if( vv[i].size && 
           0 == boost::apply_visitor(wv, vv[i].data))
-        // error handle
         throw std::runtime_error(SRC_POS);
      
       wv.dest_pos += vv[i].size;
@@ -234,9 +224,7 @@ namespace detail {
     if(0 != fflush(file_))
       throw std::runtime_error(SRC_POS);
     
-    if(-1 == headerPool_.write(header, ah.addr()))
-      throw std::runtime_error(SRC_POS);
-
+    headerPool_.write(header, ah.addr());
 
     ah.commit();
 
@@ -244,20 +232,15 @@ namespace detail {
   }
 
   AddrType
-  pool::replace(char const *data, size_t size, AddrType addr, ChunkHeader const *header)
+  pool::replace(char const *data, size_t size, AddrType addr)
   {
-    if(!idPool_->isAcquired(addr)){
-      on_error(NON_EXIST, __LINE__);
-      return -1;
-    }
+    using namespace detail;
+
+    if(!idPool_->isAcquired(addr))
+      throw invalid_addr();
 
     ChunkHeader loc_header, new_header;
-    if(header)
-      loc_header = *header;
-    else if(-1 == headerPool_.read(&loc_header, addr)) {
-      on_error(SYSTEM_ERROR, __LINE__);
-      return -1;
-    }
+    headerPool_.read(&loc_header, addr);
 
     assert(size <= addrEval.chunk_size_estimation(dirID));
     
@@ -265,20 +248,21 @@ namespace detail {
 
     seek(addr, 0);
 
-    if(size != fwrite(data, 1, size, file_) &&
-       0 != fflush(file_)){
+    if(size != s_write(data, size, file_) &&
+       0 != fflush(file_))
+    {
       idPool_->Release(addr);
       idPool_->Commit(addr);
-      on_error(SYSTEM_ERROR, __LINE__);
-      return -1;
+      throw std::runtime_error(SRC_POS);
     }
 
     // update header 
-    if(-1 == headerPool_.write(new_header, addr)){
+    try{
+      headerPool_.write(new_header, addr);
+    }catch(std::runtime_error const &){
       idPool_->Release(addr);
       idPool_->Commit(addr);
-      on_error(SYSTEM_ERROR, __LINE__);
-      return -1;
+      throw std::runtime_error(SRC_POS);
     }
 
     return addr;
@@ -286,18 +270,15 @@ namespace detail {
 
 
   size_t
-  pool::read(char* buffer, size_t size, AddrType addr, size_t off, ChunkHeader const* header)
+  pool::read(char* buffer, size_t size, AddrType addr, size_t off)
   {
-    error_code ec;
-    
+    using namespace detail;
+
     if(!idPool_->isAcquired(addr))
       throw std::runtime_error(SRC_POS);
 
     ChunkHeader loc_header;
-    if(header)
-      loc_header = *header;
-    else if(-1 == headerPool_.read(&loc_header, addr))
-      throw std::runtime_error(SRC_POS);
+    headerPool_.read(&loc_header, addr);
 
     if(off > loc_header.size)
       return 0;
@@ -310,17 +291,15 @@ namespace detail {
 
     size_t rcnt = 0;
 
-    if(toRead != (rcnt = fread(buffer, 1, toRead, file_)))
+    if(toRead != (rcnt = s_read(buffer, toRead, file_)))
       throw std::runtime_error(SRC_POS);
 
     return toRead;
-
   }
 
   size_t
-  pool::read(std::string *buffer, size_t max, AddrType addr, size_t off, ChunkHeader const* header)
+  pool::read(std::string *buffer, size_t max, AddrType addr, size_t off)
   {
-    assert(0 != *this && "pool is not proper initiated");
     if(!buffer) return 0;
     if(buffer->size()) buffer->clear();
     size_t readCnt(0), total(0);
@@ -335,19 +314,18 @@ namespace detail {
   }
 
   AddrType
-  pool::merge_copy(char const* data, size_t size, AddrType src_addr, size_t off, 
-                   pool *dest_pool, ChunkHeader const* header)
+  pool::merge_copy(char const* data, 
+                   size_t size, 
+                   AddrType src_addr, 
+                   size_t off, 
+                   pool *dest_pool,
+                   ChunkHeader const* header)
   {
-    assert(0 != *this && "pool is not proper initiated");
-    assert(0 != *dest_pool && "dest pool is not proper initiated");
-
     ChunkHeader loc_header;
     if(header)
       loc_header = *header;
-    else if( -1 == headerPool_.read(&loc_header, src_addr) ){
-      on_error(SYSTEM_ERROR, __LINE__);
-      return -1;
-    }
+    else
+      headerPool_.read(&loc_header, src_addr);
 
     viov vv[3];
     file_src fs;
@@ -356,7 +334,7 @@ namespace detail {
     if(0 == off){ // prepend
       if(0 == data)
         vv[0].data = nds;
-      else	
+      else
         vv[0].data = data;
       vv[0].size = size;
       fs.fp = file_;
@@ -399,11 +377,13 @@ namespace detail {
   }
 
   AddrType
-  pool::merge_move(char const*data, size_t size, AddrType src_addr, size_t off, 
-                   pool *dest_pool, ChunkHeader const* header)
+  pool::merge_move(char const*data, 
+                   size_t size, 
+                   AddrType src_addr, 
+                   size_t off, 
+                   pool *dest_pool, 
+                   ChunkHeader const *header)
   {
-    assert(0 != *this && "pool is not proper initiated");
-    assert(0 != *dest_pool && "dest pool is not proper initiated");
 
     AddrType loc_addr = 
       merge_copy(data, size, src_addr, off, dest_pool, header);
@@ -417,32 +397,26 @@ namespace detail {
   size_t
   pool::free(AddrType addr)
   { 
-    assert(0 != *this && "pool is not proper initiated");
+    if(!idPool_->isAcquired(addr))
+      throw invalid_addr();
 
-    if(idPool_->isAcquired(addr)){
-      idPool_->Release(addr);
-      idPool_->Commit(addr);
-    } else {
-      on_error(NON_EXIST, __LINE__);
-      return -1;
-    }
+    idPool_->Release(addr);
+    idPool_->Commit(addr);
+    
     return 0;
   }
 
   size_t
   pool::erase(AddrType addr, size_t off, size_t size)
   { 
-    assert(0 != *this && "pool is not proper initiated");
+    using namespace detail;
 
-    if(!idPool_->isAcquired(addr)){
-      on_error(NON_EXIST, __LINE__);
-      return -1;
-    }
+    if(!idPool_->isAcquired(addr))
+      throw invalid_addr();
 
     ChunkHeader header;
     headerPool_.read(&header, addr);
 
-    // TODO exception(error) ?
     if(off > header.size) return header.size;
 
     // overflow check
@@ -451,30 +425,24 @@ namespace detail {
       : header.size - off;
 
     size_t toRead = header.size - size - off;
+    size_t readCnt, loopOff(0);
 
     header.size -= size;
-
     headerPool_.write(header, addr);
-
-    size_t readCnt, loopOff(0);
 
     while(toRead > 0){
       readCnt = (toRead > MIGBUF_SIZ) ? MIGBUF_SIZ : toRead;
       seek(addr, off + size + loopOff);
 
-      if(readCnt != fread(mig_buf_, 1, readCnt, file_)){
-        on_error(SYSTEM_ERROR, __LINE__);
-        return -1;
-      }
-      
+      if(readCnt != s_read(mig_buf_, readCnt, file_))
+        throw std::runtime_error(SRC_POS);
+
       seek(addr, off + loopOff);
       
-      if(readCnt != fwrite(mig_buf_, 1, readCnt, file_) &&
+      if(readCnt != s_write(mig_buf_, readCnt, file_) &&
          0 != fflush(file_))
-      {
-        on_error(SYSTEM_ERROR, __LINE__);
-        return -1;
-      }
+        throw std::runtime_error(SRC_POS);
+
       loopOff += readCnt;
       toRead -= readCnt;
     }
@@ -485,20 +453,16 @@ namespace detail {
   size_t
   pool::overwrite(char const* data, size_t size, AddrType addr, size_t off)
   {
-    assert(true == idPool_->isAcquired(addr) && 
-           "overwrite to invalid address");
-
-    assert(off+size < addrEval.chunk_size_estimation(dirID)
-           && "exceed chunk size");
+    using namespace detail;
+    
+    if(!idPool_->isAcquired(addr))
+      throw invalid_addr();
 
     seek(addr, off);
 
-    if(size != fwrite(data, 1, size, file_) &&
+    if(size != s_write(data, size, file_) &&
        fflush(file_) )
-    {
-      on_error(SYSTEM_ERROR, __LINE__);
-      return -1;
-    }
+      throw std::runtime_error(SRC_POS);
 
     return size;
   }

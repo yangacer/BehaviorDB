@@ -2,6 +2,7 @@
 #define BDB_EXCEPTION_HPP_
 
 #include "export.hpp"
+#include "common.hpp"
 
 namespace BDB {
 

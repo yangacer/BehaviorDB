@@ -52,6 +52,9 @@ namespace BDB  {
     error_code();
   };
 
+  struct internal_chunk_overflow
+  {  uint32_t current_size;  };
+
 } // end of namespace BDB
 
 #endif // end of header

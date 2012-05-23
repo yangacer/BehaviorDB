@@ -56,19 +56,19 @@ namespace BDB
     
     // off=-1 represent an append write
     AddrType
-    write(char const* data, size_t size, AddrType addr, size_t off=npos, ChunkHeader const* header=0);
+    write(char const* data, uint32_t size, AddrType addr, size_t off=npos);
     
     AddrType
     write(viov *vv, size_t len);
     
     AddrType
-    replace(char const *data, size_t size, AddrType addr, ChunkHeader const *header=0);
+    replace(char const *data, size_t size, AddrType addr);
 
     size_t
-    read(char* buffer, size_t size, AddrType addr, size_t off=0, ChunkHeader const* header=0);
+    read(char* buffer, size_t size, AddrType addr, size_t off=0);
     
     size_t
-    read(std::string *buffer, size_t max, AddrType addr, size_t off=0, ChunkHeader const* header=0);
+    read(std::string *buffer, size_t max, AddrType addr, size_t off=0);
     
     AddrType
     merge_copy(char const* data, size_t size, AddrType src_addr, 
@@ -76,7 +76,7 @@ namespace BDB
 
     AddrType
     merge_move(char const* data, size_t size, AddrType src_addr, 
-      size_t off, pool *dest_pool, ChunkHeader const* header=0);
+      size_t off, pool *dest_pool, ChunkHeader const *header=0);
 
     size_t
     free(AddrType addr);
