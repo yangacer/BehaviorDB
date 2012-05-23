@@ -22,6 +22,7 @@ class IDPool
 public:
 
   typedef typename Array::value_type value_type;
+  typedef AddrType size_type;
 
   //IDPool(AddrType beg, AddrTeyp end);
   IDPool(
@@ -47,8 +48,8 @@ public:
 
   AddrType max_used() const;
 
-  uint32_t size() const;
-  uint32_t num_blocks() const;
+  size_type size() const;
+  size_type num_blocks() const;
   bool avail() const;
 
   AddrType begin() const;
