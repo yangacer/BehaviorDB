@@ -17,10 +17,7 @@ namespace BDB {
   BDBImpl::BDBImpl(Config const & conf)
   : pools_(0), err_log_(0), acc_log_(0), global_id_(0)
   {
-    using namespace std;
-
     conf.validate();
-    
     init_(conf); 
   }
   
@@ -108,8 +105,6 @@ namespace BDB {
   AddrType
   BDBImpl::put(char const* data, size_t size, AddrType addr, size_t off)
   {
-    // assert(0 != *this && "BDBImpl is not proper initiated");
-
     if( !global_id_->isAcquired(addr) ){
       AddrType rt = write_pool(data, size);
       rt = global_id_->Acquire(addr, rt);

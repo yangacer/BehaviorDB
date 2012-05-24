@@ -24,7 +24,6 @@ public:
   typedef typename Array::value_type value_type;
   typedef AddrType size_type;
 
-  //IDPool(AddrType beg, AddrTeyp end);
   IDPool(
     unsigned int id, char const* work_dir,
     AddrType beg, 

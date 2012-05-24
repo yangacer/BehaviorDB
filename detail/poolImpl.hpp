@@ -10,8 +10,9 @@
 #include <deque>
 #include <utility>
 
+// TODO Add total size control of this buffer size
+// , or not to use buffer ...
 #define MIGBUF_SIZ 2*1024*1024
-
 
 namespace BDB
 {
@@ -32,12 +33,10 @@ namespace BDB
       char const* work_dir;
       char const* trans_dir;
       char const* header_dir;
-      //addr_eval<AddrType> * addrEval;
       
       config()
       : dirID(0), 
-        work_dir(""), trans_dir(""), header_dir("")//,
-        //addrEval(0)
+        work_dir(""), trans_dir(""), header_dir("")
       {}
     };
 
@@ -52,43 +51,44 @@ namespace BDB
      *  @return Address
      */
     AddrType
-    write(char const* data, size_t size);
+    write(char const* data, uint32_t size);
     
-    // off=-1 represent an append write
+    /** off = BDB::npos represents an append write
+     */
     AddrType
-    write(char const* data, uint32_t size, AddrType addr, size_t off=npos);
-    
-    AddrType
-    write(viov *vv, size_t len);
+    write(char const* data, uint32_t size, AddrType addr, uint32_t off=npos);
     
     AddrType
-    replace(char const *data, size_t size, AddrType addr);
+    write(viov *vv, uint32_t len);
+    
+    AddrType
+    replace(char const *data, uint32_t size, AddrType addr);
 
-    size_t
-    read(char* buffer, size_t size, AddrType addr, size_t off=0);
+    uint32_t
+    read(char* buffer, uint32_t size, AddrType addr, uint32_t off=0);
     
-    size_t
-    read(std::string *buffer, size_t max, AddrType addr, size_t off=0);
+    uint32_t
+    read(std::string *buffer, uint32_t max, AddrType addr, uint32_t off=0);
     
     AddrType
-    merge_copy(char const* data, size_t size, AddrType src_addr, 
-      size_t off, pool* dest_pool, ChunkHeader const* header=0);
+    merge_copy(char const* data, uint32_t size, AddrType src_addr, 
+      uint32_t off, pool* dest_pool, ChunkHeader const* header=0);
 
     AddrType
-    merge_move(char const* data, size_t size, AddrType src_addr, 
-      size_t off, pool *dest_pool, ChunkHeader const *header=0);
+    merge_move(char const* data, uint32_t size, AddrType src_addr, 
+      uint32_t off, pool *dest_pool, ChunkHeader const *header=0);
 
-    size_t
+    uint32_t
     free(AddrType addr);
 
-    size_t
-    erase(AddrType addr, size_t off, size_t size);
+    uint32_t
+    erase(AddrType addr, uint32_t off, uint32_t size);
   
     /** Overwrite chunk data
      *  @remark This method ONLY checks the written 
-     *  data be in a chunk area. It does NOT change
+     *  data do not exceed chunk boundary. It does NOT change
      *  chunk header (for data size). For better data
-     *  integrate, this method should be used
+     *  integrity, this method should be used
      *  with merge_copy(...).
      *  i.e.
      *  @code
@@ -96,18 +96,19 @@ namespace BDB
      *  // one can control position of the room by 'off' param
      *  // here we use 'data_end' to perform an 'append' operation
      *  // caller should determine which pool to place the copy
-     *  size_t data_end = end_position_of_the_original_data;
+     *  uint32_t data_end = end_position_of_the_original_data;
      *  AddrType addr = merge_copy(0, 128, exist_addr, data_end, dest_pool);
-     *  if(128 != overwrite(new_data, 128, addr, data_end)){
-     *  free(addr); // abort, no change to the original chunk
-     *  }
+     *  if(128 != overwrite(new_data, 128, addr, data_end))
+     *    free(addr); // abort, no change to the original chunk
+     *  
      *  // success
      *  @endcode
+     *  @throw invalid_addr
      */
-    size_t
-    overwrite(char const* data, size_t size, AddrType addr, size_t off);
+    uint32_t
+    overwrite(char const* data, uint32_t size, AddrType addr, uint32_t off);
 
-    // misc 
+    // --------- misc -----------
 
     int
     head(ChunkHeader *header, AddrType addr) const;
@@ -126,18 +127,13 @@ namespace BDB
     
     bool
     is_pinned(AddrType addr);
-
-    /* TODO: To be considered
-    std::pair<AddrType, size_t>
-    tell2addr_off(off_t fpos) const;
-    */
     
   private:
     off_t
-    seek(AddrType addr, size_t off =0);
+    seek(AddrType addr, uint32_t off =0);
 
     off_t
-    addr_off2tell(AddrType addr, size_t off) const;
+    addr_off2tell(AddrType addr, uint32_t off) const;
     
     /*
     void lock_acq();

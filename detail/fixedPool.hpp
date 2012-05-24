@@ -17,7 +17,7 @@ namespace BDB {
   {
     typedef T value_type;
     typedef T& reference;
-
+    
     fixed_pool(uint32_t /*dummy*/); 
     
     // TODO deprecate this
@@ -43,6 +43,8 @@ namespace BDB {
     
     void store(T const &val, AddrType off);
     
+    void resize(uint32_t size){};
+
     int read(T* val, AddrType addr) const;
     
     int write(T const & val, AddrType addr);
@@ -62,7 +64,8 @@ namespace BDB {
   {
     typedef T value_type;
     typedef T& reference;
-
+    typedef typename std::vector<T>::size_type size_type;
+      
     vec_wrapper(uint32_t size)
     : vec_(size)
     {}
@@ -78,6 +81,9 @@ namespace BDB {
 
     void store(T const &val, AddrType off)
     { vec_[off] = val; }
+    
+    void resize(size_type size)
+    { vec_.resize(size); }
 
   private:
     std::vector<T> vec_;

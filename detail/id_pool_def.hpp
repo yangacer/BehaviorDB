@@ -229,6 +229,7 @@ void IDPool<Array>::extend(uint32_t new_size)
     try{
       bm_.resize(new_size, true);
       lock_.resize(new_size, false);
+      arr_.template resize(new_size);
     }catch(std::bad_alloc const&){
       throw addr_overflow();         
     }
@@ -244,6 +245,7 @@ void IDPool<Array>::extend(uint32_t new_size)
   try{
     bm_.resize(size, true); 
     lock_.resize(size, false);
+    arr_.resize(size);
   }catch(std::bad_alloc const&){
     throw addr_overflow();
   }

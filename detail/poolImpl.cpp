@@ -13,7 +13,7 @@ namespace BDB {
 
 namespace detail {
   AddrType 
-  max_addr(size_t chunk_size)
+  max_addr(uint32_t chunk_size)
   {
     // consider 
     // 1. max size of idpool (bitset) 0xffffffff
@@ -57,7 +57,6 @@ namespace detail {
     // setup idPool
     sprintf(fname, "%s%04x.tran", trans_dir.c_str(), dirID);
     
-    // TODO IDPool should evaluate maximum seekable 
     // address
     idPool_ = new IDPool(fname, 0);
 
@@ -79,7 +78,7 @@ namespace detail {
   }
 
   AddrType
-  pool::write(char const* data, size_t size)
+  pool::write(char const* data, uint32_t size)
   {
     using namespace detail;
     
@@ -110,7 +109,7 @@ namespace detail {
 
   // off == npos represents an append write
   AddrType
-  pool::write(char const* data, uint32_t size, AddrType addr, size_t off)
+  pool::write(char const* data, uint32_t size, AddrType addr, uint32_t off)
   {
     using namespace detail;
 
@@ -128,7 +127,7 @@ namespace detail {
 
     off = (npos == off) ? loc_header.size : off;
 
-    size_t moved = loc_header.size - off;
+    uint32_t moved = loc_header.size - off;
     loc_header.size += size;
 
     // copy merged result to a new chunk
@@ -146,7 +145,7 @@ namespace detail {
     if(moved)
       seek(addr, off);
 
-    size_t partial(0);
+    uint32_t partial(0);
     // write new data
     if(size != (partial = s_write(data, size, file_))){
       if(!partial) // no data written
@@ -190,10 +189,10 @@ namespace detail {
   }
 
   AddrType
-  pool::write(viov* vv, size_t len)
+  pool::write(viov* vv, uint32_t len)
   {
-    size_t total(0);
-    for(size_t i=0; i<len; ++i)
+    uint32_t total(0);
+    for(uint32_t i=0; i<len; ++i)
       total += vv[i].size;
 
     assert(total <= addrEval.chunk_size_estimation(dirID) && 
@@ -212,7 +211,7 @@ namespace detail {
     wv.buf = mig_buf_;
     wv.bsize = MIGBUF_SIZ;
     off_t loopOff(0);
-    for(size_t i=0; i<len; ++i){
+    for(uint32_t i=0; i<len; ++i){
       wv.size = vv[i].size;
       if( vv[i].size && 
           0 == boost::apply_visitor(wv, vv[i].data))
@@ -232,7 +231,7 @@ namespace detail {
   }
 
   AddrType
-  pool::replace(char const *data, size_t size, AddrType addr)
+  pool::replace(char const *data, uint32_t size, AddrType addr)
   {
     using namespace detail;
 
@@ -269,8 +268,8 @@ namespace detail {
   }
 
 
-  size_t
-  pool::read(char* buffer, size_t size, AddrType addr, size_t off)
+  uint32_t
+  pool::read(char* buffer, uint32_t size, AddrType addr, uint32_t off)
   {
     using namespace detail;
 
@@ -285,11 +284,11 @@ namespace detail {
 
     seek(addr, off);
 
-    size_t toRead = (size > loc_header.size - off) ? 
+    uint32_t toRead = (size > loc_header.size - off) ? 
       loc_header.size - off 
       : size;
 
-    size_t rcnt = 0;
+    uint32_t rcnt = 0;
 
     if(toRead != (rcnt = s_read(buffer, toRead, file_)))
       throw std::runtime_error(SRC_POS);
@@ -297,14 +296,14 @@ namespace detail {
     return toRead;
   }
 
-  size_t
-  pool::read(std::string *buffer, size_t max, AddrType addr, size_t off)
+  uint32_t
+  pool::read(std::string *buffer, uint32_t max, AddrType addr, uint32_t off)
   {
     if(!buffer) return 0;
     if(buffer->size()) buffer->clear();
-    size_t readCnt(0), total(0);
+    uint32_t readCnt(0), total(0);
     while(0 < (readCnt = read(mig_buf_, MIGBUF_SIZ, addr, off))){
-      if((size_t)-1 == readCnt) return -1;
+      if((uint32_t)-1 == readCnt) return -1;
       if(total + readCnt > max) break;
       buffer->append(mig_buf_, readCnt);
       off += readCnt;
@@ -315,9 +314,9 @@ namespace detail {
 
   AddrType
   pool::merge_copy(char const* data, 
-                   size_t size, 
+                   uint32_t size, 
                    AddrType src_addr, 
-                   size_t off, 
+                   uint32_t off, 
                    pool *dest_pool,
                    ChunkHeader const* header)
   {
@@ -378,9 +377,9 @@ namespace detail {
 
   AddrType
   pool::merge_move(char const*data, 
-                   size_t size, 
+                   uint32_t size, 
                    AddrType src_addr, 
-                   size_t off, 
+                   uint32_t off, 
                    pool *dest_pool, 
                    ChunkHeader const *header)
   {
@@ -394,7 +393,7 @@ namespace detail {
     return loc_addr;
   }
 
-  size_t
+  uint32_t
   pool::free(AddrType addr)
   { 
     if(!idPool_->isAcquired(addr))
@@ -406,8 +405,8 @@ namespace detail {
     return 0;
   }
 
-  size_t
-  pool::erase(AddrType addr, size_t off, size_t size)
+  uint32_t
+  pool::erase(AddrType addr, uint32_t off, uint32_t size)
   { 
     using namespace detail;
 
@@ -424,8 +423,8 @@ namespace detail {
       (off + size > header.size) ? header.size - off : size
       : header.size - off;
 
-    size_t toRead = header.size - size - off;
-    size_t readCnt, loopOff(0);
+    uint32_t toRead = header.size - size - off;
+    uint32_t readCnt, loopOff(0);
 
     header.size -= size;
     headerPool_.write(header, addr);
@@ -450,8 +449,8 @@ namespace detail {
     return header.size;
   }
 
-  size_t
-  pool::overwrite(char const* data, size_t size, AddrType addr, size_t off)
+  uint32_t
+  pool::overwrite(char const* data, uint32_t size, AddrType addr, uint32_t off)
   {
     using namespace detail;
     
@@ -478,7 +477,7 @@ namespace detail {
   }
 
   off_t
-  pool::seek(AddrType addr, size_t off)
+  pool::seek(AddrType addr, uint32_t off)
   {
     off_t pos = addr;
     pos *= addrEval.chunk_size_estimation(dirID);
@@ -489,7 +488,7 @@ namespace detail {
 
 
   off_t
-  pool::addr_off2tell(AddrType addr, size_t off) const
+  pool::addr_off2tell(AddrType addr, uint32_t off) const
   {
     assert(0 != *this && "pool is not proper initiated");
 
