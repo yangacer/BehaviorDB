@@ -65,8 +65,8 @@ namespace detail {
   pool::~pool()
   {
     delete idPool_;
-    delete file_buf_;
-    delete mig_buf_;
+    delete [] file_buf_;
+    delete [] mig_buf_;
     fclose(file_);
   }
 
