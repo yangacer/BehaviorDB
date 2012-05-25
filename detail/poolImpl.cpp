@@ -87,8 +87,6 @@ namespace detail {
     ChunkHeader header;
     header.size = size;
     
-    error_code ec;
-
     seek(ah.addr());
 
     // allow data = 0 to act as allocation
@@ -126,7 +124,11 @@ namespace detail {
            "invalid offset for put");
 
     off = (npos == off) ? loc_header.size : off;
+    
+    return merge_move(data, size, addr, off, this, &loc_header);
 
+    /* In-place merge maybe save some cost, though.
+     * I may re-enable this if it's a critical bottleneck
     uint32_t moved = loc_header.size - off;
     loc_header.size += size;
 
@@ -134,7 +136,6 @@ namespace detail {
     if(moved > MIGBUF_SIZ)
       return merge_move(data, size, addr, off, this, &loc_header); 
     
-    // XXX should we always use merge_move?
     // ---------- Do inplace merge ------------
     seek(addr, off);
 
@@ -151,11 +152,9 @@ namespace detail {
       if(!partial) // no data written
         // abort directly	
         throw std::runtime_error(SRC_POS);
-      
       // rollback to previous state
       clearerr(file_);
       seek(addr, off);
-
       if( partial != s_write(mig_buf_, partial, file_))
         // rollback failed, leave broken data alone
         throw std::runtime_error(SRC_POS);
@@ -166,7 +165,6 @@ namespace detail {
       // rollback to previous state
       clearerr(file_);
       seek(addr, off);
-
       // rollback failed, leave broken data alone
       if( partial != s_write(mig_buf_, moved, file_))
         throw std::runtime_error(SRC_POS);
@@ -181,11 +179,11 @@ namespace detail {
       if( partial != s_write(mig_buf_, moved, file_))
         // rollback failed, leave broken data alone
         throw std::runtime_error(SRC_POS);
-
       throw std::runtime_error(SRC_POS);
     }
 
     return addr;
+    */
   }
 
   AddrType
@@ -194,9 +192,6 @@ namespace detail {
     uint32_t total(0);
     for(uint32_t i=0; i<len; ++i)
       total += vv[i].size;
-
-    assert(total <= addrEval.chunk_size_estimation(dirID) && 
-           "data exceeds chunk size");
 
     ChunkHeader header;
     header.size = total;
@@ -367,11 +362,7 @@ namespace detail {
       vv[2].size = loc_header.size - off;
       loc_addr = dest_pool->write(vv, 3);
     }
-
-    if(-1 == loc_addr){
-      on_error(SYSTEM_ERROR, __LINE__);
-      return -1;
-    }
+    
     return loc_addr;
   }
 
@@ -469,10 +460,7 @@ namespace detail {
   int
   pool::head(ChunkHeader *header, AddrType addr) const
   { 
-    if(-1 == headerPool_.read(header, addr)){
-      const_cast<pool*>(this)->on_error(SYSTEM_ERROR, __LINE__);
-      return -1;
-    }
+    headerPool_.read(header, addr);
     return 0;
   }
 
@@ -490,8 +478,6 @@ namespace detail {
   off_t
   pool::addr_off2tell(AddrType addr, uint32_t off) const
   {
-    assert(0 != *this && "pool is not proper initiated");
-
     off_t pos = addr;
     pos *= addrEval.chunk_size_estimation(dirID);
     pos += off;
@@ -501,8 +487,6 @@ namespace detail {
   void
   pool::on_error(int errcode, int line)
   {
-    assert(0 != *this && "pool is not proper initiated");
-
     // TODO: lock for mutli proc/thread
     err_.push_back(std::make_pair<int, int>(errcode, line));	
     // unlock
