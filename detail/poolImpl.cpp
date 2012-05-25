@@ -125,7 +125,16 @@ namespace detail {
 
     off = (npos == off) ? loc_header.size : off;
     
-    return merge_move(data, size, addr, off, this, &loc_header);
+    if(npos == off){
+      fseeko(file_, addr_off2tell(addr, loc_header.size), SEEK_SET);
+      if(size != s_write(data,size,file_) || fflush(file_))
+       throw std::runtime_error(SRC_POS);
+      loc_header.size += size;
+      headerPool_.write(loc_header, addr);
+    }else{
+      addr = merge_move(data, size, addr, off, this, &loc_header);
+    }
+    return addr;
 
     /* In-place merge maybe save some cost, though.
      * I may re-enable this if it's a critical bottleneck
@@ -242,7 +251,7 @@ namespace detail {
 
     seek(addr, 0);
 
-    if(size != s_write(data, size, file_) &&
+    if(size != s_write(data, size, file_) ||
        0 != fflush(file_))
     {
       idPool_->Release(addr);
@@ -429,7 +438,7 @@ namespace detail {
 
       seek(addr, off + loopOff);
       
-      if(readCnt != s_write(mig_buf_, readCnt, file_) &&
+      if(readCnt != s_write(mig_buf_, readCnt, file_) ||
          0 != fflush(file_))
         throw std::runtime_error(SRC_POS);
 
@@ -450,7 +459,7 @@ namespace detail {
 
     seek(addr, off);
 
-    if(size != s_write(data, size, file_) &&
+    if(size != s_write(data, size, file_) ||
        fflush(file_) )
       throw std::runtime_error(SRC_POS);
 

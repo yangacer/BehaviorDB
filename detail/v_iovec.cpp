@@ -25,7 +25,7 @@ namespace BDB {
       if( fsrc.fp == dest && -1 == fseeko(dest, dest_pos + loopOff, SEEK_SET))
         return 0;
       //write
-      if(readCnt != fwrite(buf, 1, readCnt, dest))
+      if(readCnt != fwrite(buf, 1, readCnt, dest) || fflush(dest))
         return 0;
       loopOff += readCnt;
       toRead -= readCnt;
@@ -36,7 +36,7 @@ namespace BDB {
   size_t
   write_viov::operator()(char const* str)
   {
-    if(size != fwrite(str, 1, size, dest))
+    if(size != fwrite(str, 1, size, dest) || fflush(dest))
       return 0;
     return size;
   }
