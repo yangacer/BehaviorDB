@@ -43,7 +43,8 @@ int main(int argc, char** argv)
   //conf.min_size = 10 * 1024 * 1024;
   //conf.addr_prefix_len = 10;
   BehaviorDB bdb(conf);
-
+  std::string should;
+  size_t off;
 
   // write
   char const* data = "acer";
@@ -77,36 +78,47 @@ int main(int argc, char** argv)
 
   // append include migration
   char const *data2 = "1234567890asdfghjkl;12345678901234567890";
+  std::string rec;
   addr = bdb.put(data2, strlen(data2), addr);
+  bdb.get(&rec, 50, addr);
   printf("\n==== append 40 bytes ====\n");
   printf("append \"%s\" after \"%s\"\n", data2, data);
-  printf("should: 00000001\n");
-  printf("result: %08x\n", addr); 
+  printf("should: acer1234567890asdfghjkl;12345678901234567890\n");
+  printf("result: %s\n", rec.c_str()); 
+
 
   // prepend
   char const *data3 = "yang";
+  should = data3;
+  should += rec;
+
   addr = bdb.put(data3, 4, addr, 0);
+  rec.clear();
+  bdb.get(&rec, 100, addr);
+
+  printf("\n==== insertion then read====\n");
+  printf("prepend \"yang\" and read result into a c-string\n");
+  printf("should:\t%s\n", should.c_str());
+  printf("result:\t%s\n", rec.c_str());
 
   // insert
   char const *data4 = " made";
   addr = bdb.put(data4, 5, addr, 8);
 
-  std::string should;
-  should = data3;
-  should += data;
-  should += data4;
-  should += data2;
-
+  should.insert(8, data4);
+  rec.clear();
   // read loop
   char buf[4];
-  std::string rec;
+  /*
   size_t off(0), readCnt(0);
   while(0 < (readCnt = bdb.get(buf, 4, addr, off))){
     rec.append(buf, readCnt);
     off += readCnt;
   }
+  */
+  bdb.get(&rec, 100, addr);
   printf("\n==== insertion then read====\n");
-  printf("prepend \"yang\" at 0, insert \" made\" at 8, and read result into a c-string\n");
+  printf("insert \" made\" at 8, and read result into a c-string\n");
   printf("should:\t%s\n", should.c_str());
   printf("result:\t%s\n", rec.c_str());
 

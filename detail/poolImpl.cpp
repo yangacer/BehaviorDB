@@ -117,11 +117,8 @@ namespace detail {
     ChunkHeader loc_header;
     headerPool_.read(&loc_header, addr);
 
-    if(size + loc_header.size <= addrEval.chunk_size_estimation(dirID))
-      throw internal_chunk_overflow((internal_chunk_overflow){size});
-
-    assert((off == npos || off <= loc_header.size) && 
-           "invalid offset for put");
+    if(size + loc_header.size > addrEval.chunk_size_estimation(dirID))
+      throw internal_chunk_overflow((internal_chunk_overflow){loc_header.size});
 
     off = (npos == off) ? loc_header.size : off;
     
@@ -207,7 +204,7 @@ namespace detail {
 
     addr_handle ah(*idPool_);
 
-    seek(ah.addr());
+    //seek(ah.addr());
 
     write_viov wv;
     wv.dest = file_;
@@ -217,10 +214,8 @@ namespace detail {
     off_t loopOff(0);
     for(uint32_t i=0; i<len; ++i){
       wv.size = vv[i].size;
-      if( vv[i].size && 
-          0 == boost::apply_visitor(wv, vv[i].data))
+      if(0 == boost::apply_visitor(wv, vv[i].data))
         throw std::runtime_error(SRC_POS);
-     
       wv.dest_pos += vv[i].size;
     }
 

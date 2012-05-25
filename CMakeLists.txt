@@ -41,6 +41,11 @@ if(BDB_DEVEL_MODE)
                   detail/fixedPool.cpp
                   detail/id_pool.cpp
                   detail/chunk.cpp)
+
+  add_executable (bdb_iov
+                  ${PROJECT_SOURCE_DIR}/tests/v_iovec.cpp
+                  detail/v_iovec.cpp)
+
 endif()
 
 add_executable (logcvt ${PROJECT_SOURCE_DIR}/tools/logcvt.cpp)
