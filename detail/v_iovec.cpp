@@ -14,16 +14,10 @@ namespace BDB {
     size_t readCnt, loopOff(0);
     while(toRead){
       readCnt = (bsize > toRead) ? toRead : bsize;
-
-      // seek if src == dest
-      if( fsrc.fp == dest && -1 == fseeko(fsrc.fp, fsrc.off + loopOff, SEEK_SET))
-        return 0;
-      // read
+      fseeko(fsrc.fp, fsrc.off + loopOff, SEEK_SET);
       if(readCnt != fread(buf, 1, readCnt, fsrc.fp))
         return 0;
-      // seek if src == dest
-      if( fsrc.fp == dest && -1 == fseeko(dest, dest_pos + loopOff, SEEK_SET))
-        return 0;
+      fseeko(dest, dest_pos + loopOff, SEEK_SET);
       //write
       if(readCnt != fwrite(buf, 1, readCnt, dest) || fflush(dest))
         return 0;
@@ -36,6 +30,7 @@ namespace BDB {
   size_t
   write_viov::operator()(char const* str)
   {
+    fseeko(dest, dest_pos, SEEK_SET);
     if(size != fwrite(str, 1, size, dest) || fflush(dest))
       return 0;
     return size;
@@ -44,8 +39,7 @@ namespace BDB {
   size_t
   write_viov::operator()(no_data_src & ndsrc)
   {
-    if(-1 == fseeko(dest, size, SEEK_CUR))
-      return 0;
+    fseeko(dest, dest_pos, SEEK_SET);
     return size;
   }
 
