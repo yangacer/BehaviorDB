@@ -5,6 +5,7 @@
 #include <string>
 #include <cstdio>
 #include <vector>
+#include <cassert>
 
 namespace BDB {
 
@@ -77,10 +78,16 @@ namespace BDB {
     { return vec_[addr]; }
 
     void init(T const &val, AddrType off)
-    { vec_[off] = val; }
+    { 
+      assert(off < vec_.size());
+      vec_[off] = val; 
+    }
 
     void store(T const &val, AddrType off)
-    { vec_[off] = val; }
+    { 
+      assert(off < vec_.size());
+      vec_[off] = val; 
+    }
     
     void resize(size_type size)
     { vec_.resize(size); }

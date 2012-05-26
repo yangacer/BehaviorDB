@@ -27,12 +27,10 @@ IDPool<Array>::IDPool(
   if(dynamic == full_alloc_){
     while(size > 1024)
       size >>= 1;
-    bm_.resize(size, true);
-    lock_.resize(size, false);
-  }else if(full == full_alloc_){
-    bm_.resize(size, true);
-    lock_.resize(size, false);
-  }
+}
+  bm_.resize(size, true);
+  lock_.resize(size, false);
+  arr_.template resize(size);
 
   char fname[40] = {};
   sprintf(fname, "%s%04x.tran", work_dir, id);
@@ -256,7 +254,7 @@ void IDPool<Array>::extend(uint32_t new_size)
   try{
     bm_.resize(size, true); 
     lock_.resize(size, false);
-    arr_.resize(size);
+    arr_.template resize(size);
   }catch(std::bad_alloc const&){
     throw addr_overflow();
   }

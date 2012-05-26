@@ -124,7 +124,6 @@ int main(int argc, char** argv)
 
   // read into string
   rec.clear();
-  rec.reserve(off);
   bdb.get(&rec, 1024, addr);
   printf("\n==== read data into a std::string ====\n");
   printf("should:\t%s\n", should.c_str());
