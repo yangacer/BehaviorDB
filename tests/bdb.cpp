@@ -178,8 +178,8 @@ int main(int argc, char** argv)
   }
 
   // erase all again
-  bdb.del(addrs[1]);
-  bdb.del(addrs[2]);
+  //bdb.del(addrs[1]);
+  //bdb.del(addrs[2]);
 
   Stat stat;
   bdb.stat(&stat);
@@ -195,6 +195,7 @@ int main(int argc, char** argv)
   print_in_proper_unit(stat.disk_size);
   printf("\n");
 
+  /*
   // streaming write
   rec = "toma";
   stream_state const* os = bdb.ostream(4);
@@ -225,6 +226,6 @@ int main(int argc, char** argv)
   printf("should: %s\n", "toma");
   printf("result: %s\n", rec.c_str());
   bdb.del(addr);
-
+  */
   return 0; 
 }

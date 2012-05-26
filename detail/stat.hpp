@@ -6,29 +6,27 @@
 
 namespace BDB {
 
-	class IDPool;
-	class IDValPool;
-	struct BDBImpl;
-	struct pool;
+  template<class T>
+  class IDPool;
+  struct BDBImpl;
+  struct pool;
 
-	struct bdbStater 
-	{
-		bdbStater(Stat *s);
+  struct bdbStater 
+  {
+    bdbStater(Stat *s);
 
-		void
-		operator()(BDBImpl const* bdb) const;
-		
-		void
-		operator()(pool const *pool) const;
-		
-		void
-		operator()( IDPool const *idp) const;
+    void
+    operator()(BDBImpl const* bdb) const;
+    
+    void
+    operator()(pool const *pool) const;
+    
+    template<typename T>
+    void
+    operator()( IDPool<T> const *idp) const;
 
-		void
-		operator()( IDValPool const *idvp) const;
-
-		Stat *s;
-	};
+    Stat *s;
+  };
 
 } // end of namespace BDB
 

@@ -16,9 +16,13 @@
 
 namespace BDB
 {
-  
   struct viov;
+
+  template<typename T>
   class IDPool;
+  
+  template<typename T>
+  struct id_handle;
 
   /// pool manager
   //! \callgraph
@@ -71,12 +75,20 @@ namespace BDB
     read(std::string *buffer, uint32_t max, AddrType addr, uint32_t off=0);
     
     AddrType
-    merge_copy(char const* data, uint32_t size, AddrType src_addr, 
-      uint32_t off, pool* dest_pool, ChunkHeader const* header=0);
+    merge_copy(
+      char const* data, 
+      uint32_t size, 
+      AddrType src_addr, 
+      uint32_t off, 
+      pool* dest_pool);
 
     AddrType
-    merge_move(char const* data, uint32_t size, AddrType src_addr, 
-      uint32_t off, pool *dest_pool, ChunkHeader const *header=0);
+    merge_move(
+      char const* data, 
+      uint32_t size, 
+      AddrType src_addr, 
+      uint32_t off, 
+      pool *dest_pool);
 
     uint32_t
     free(AddrType addr);
@@ -110,9 +122,6 @@ namespace BDB
 
     // --------- misc -----------
 
-    int
-    head(ChunkHeader *header, AddrType addr) const;
-
     void
     on_error(int errcode, int line);
     
@@ -129,6 +138,7 @@ namespace BDB
     is_pinned(AddrType addr);
     
   private:
+
     off_t
     seek(AddrType addr, uint32_t off =0);
 
@@ -153,11 +163,11 @@ namespace BDB
     FILE *file_;
     char *mig_buf_;
     char *file_buf_;
-    // id file
-    IDPool *idPool_;
+    
+    typedef IDPool<fixed_pool<ChunkHeader,8> > idpool_t;
+    typedef id_handle<idpool_t> id_handle_t;
 
-    // header
-    fixed_pool<ChunkHeader, 8> headerPool_;
+    idpool_t *idpool_;
   public: 
     std::deque<std::pair<int,int> > err_;
   };

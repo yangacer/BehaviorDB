@@ -1,28 +1,21 @@
-#include <iostream>
-#include <iomanip>
-#include "bdb.h"
+#include "bdb.hpp"
+#include "addr_iter.hpp"
+#include <cstdio>
 
-int main()
+int main(int argc, char** argv)
 {
-	using namespace std;
+  using namespace std;
+  using namespace BDB;
 
-	char const data1[1024] = "1k";
-	char const data2[2048] = "2k";
+  Config conf;
+  conf.root_dir = argv[1];
+  
+  BehaviorDB bdb(conf);
 
-	BehaviorDB bdb;
-	bdb.put(data1, 1024);
-	bdb.put(data2, 2048);
-
-	AddrIterator iter = bdb.begin();
-	for(; iter != bdb.end(); ++iter)
-		cout<<hex<<*iter<<endl;
-
-	/*
-	bdb.del(2);
-	
-	iter = bdb.begin();
-	for(; iter != bdb.end(); ++iter)
-		cout<<hex<<*iter<<endl;
-	*/
-
+  AddrIterator iter = bdb.begin();
+  while(iter != bdb.end()){
+    printf("%08x\n", *iter);
+    ++iter;
+  }
+  return 0;
 }

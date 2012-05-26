@@ -22,6 +22,9 @@ if(BDB_DEVEL_MODE)
   add_executable (bdb_test ${PROJECT_SOURCE_DIR}/tests/bdb.cpp)
   target_link_libraries(bdb_test bdb)
 
+  add_executable (bdb_iter ${PROJECT_SOURCE_DIR}/tests/iterate.cpp)
+  target_link_libraries (bdb_iter bdb)
+
   add_executable (bdb_simulator ${PROJECT_SOURCE_DIR}/tools/simulator.cpp)
   target_link_libraries(bdb_simulator bdb)
 
@@ -45,7 +48,8 @@ if(BDB_DEVEL_MODE)
   add_executable (bdb_iov
                   ${PROJECT_SOURCE_DIR}/tests/v_iovec.cpp
                   detail/v_iovec.cpp)
-
+  
+                  
 endif()
 
 add_executable (logcvt ${PROJECT_SOURCE_DIR}/tools/logcvt.cpp)

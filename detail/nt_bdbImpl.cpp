@@ -1,6 +1,6 @@
 #include "bdbImpl.hpp"
 #include "poolImpl.hpp"
-#include "idPool.hpp"
+#include "id_pool.hpp"
 #include "error.hpp"
 
 namespace BDB {

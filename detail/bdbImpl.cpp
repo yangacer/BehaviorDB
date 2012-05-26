@@ -1,16 +1,16 @@
 #include "bdbImpl.hpp"
 #include "poolImpl.hpp"
 #include "error.hpp"
-#include "idPool.hpp"
+#include "id_pool.hpp"
+#include "id_handle_def.hpp"
+#include "fixedPool.hpp"
 #include "addr_iter.hpp"
 #include "stat.hpp"
-#include "stream_state.hpp"
+//#include "stream_state.hpp"
 #include <cassert>
 #include <stdexcept>
 #include <ios>
 #include <sstream>
-
-
 
 namespace BDB {
   
@@ -78,97 +78,86 @@ namespace BDB {
     }
 
     // init IDValPool
-    sprintf(fname, "%sglobal_id.trans", conf.root_dir);
-    global_id_ = new IDValPool(fname, conf.beg, conf.end);
+    sprintf(fname, "%sgid_", conf.root_dir);
+    global_id_ = new idpool_t(0, fname, conf.beg, npos, dynamic);
   }
   
   AddrType
   BDBImpl::put(char const *data, size_t size)
   {
-    // assert(0 != *this && "BDBImpl is not proper initiated");
     if(!global_id_->avail()) 
       throw addr_overflow();
     
-    AddrType rt = write_pool(data, size);
-    rt = global_id_->Acquire(rt);
-    
-    if( !global_id_->Commit(rt) )
-      throw std::runtime_error(SRC_POS);
+    id_handle_t hdl(detail::ACQUIRE_AUTO, *global_id_);
+    hdl.value() = write_pool(data, size);
+    hdl.commit();
     
     if(acc_log_) 
       fprintf(acc_log_, "%-12s\t%08x\n", "put", size);
 
-    return rt;
+    return hdl.addr();
   }
 
 
   AddrType
   BDBImpl::put(char const* data, size_t size, AddrType addr, size_t off)
   {
-    if( !global_id_->isAcquired(addr) ){
-      AddrType rt = write_pool(data, size);
-      rt = global_id_->Acquire(addr, rt);
-      if( !global_id_->Commit(rt) )
-        throw std::runtime_error(SRC_POS);
-      if(acc_log_)
-        fprintf(acc_log_, "%-12s\t%08x\t%08x\n", "put-spec", size, addr);
-    }
-
-    AddrType internal_addr;
-    internal_addr = global_id_->Find(addr);
-
-    unsigned int dir = addrEval.addr_to_dir(internal_addr);
-    AddrType loc_addr = addrEval.local_addr(internal_addr);
-    AddrType rt;
-    
     try{
-      // no migration
-      loc_addr = pools_[dir].write(data, size, loc_addr, off);
-      rt = addrEval.global_addr(dir, loc_addr);
-      if(internal_addr != rt){
-        // **Althought the chunk need not migrate to another pool, 
-        // it might be moved to another chunk of the same pool 
-        // due to size of data to be moved exceed size of 
-        // migration buffer that a pool contains
-        global_id_->Update(addr, rt);
-        if(!global_id_->Commit(addr))
-          throw std::runtime_error(SRC_POS);
-      }
+      id_handle_t hdl(detail::ACQUIRE_SPEC, *global_id_, addr);
+      hdl.value() = write_pool(data, size);
+      hdl.commit();
       if(acc_log_)
-        fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", 
-                "insert", size, addr, off);
-    }catch(internal_chunk_overflow const &co){
-      // migration
-      unsigned int next_dir = 
-        addrEval.directory(size + co.current_size);
-      AddrType next_loc_addr;
-      
-      if((unsigned int)-1 == next_dir)
-        throw chunk_overflow();
-      
-      if(npos == off)
-        off = co.current_size;
+        fprintf(acc_log_, "%-12s\t%08x\t%08x\n", 
+                "put-spec", size, addr);
+    }catch(BDB::invalid_addr const &ia){
 
-      while(next_dir < addrEval.dir_count()){
-        try{
-          next_loc_addr = 
-            pools_[dir].
-            merge_move(data, size, loc_addr, off,
-                       &pools_[next_dir]);
-        }catch(addr_overflow const &){
-          next_dir++;
-          continue;
+      id_handle_t hdl(detail::MODIFY, *global_id_, addr);
+
+      unsigned int dir = addrEval.addr_to_dir(hdl.const_value());
+      AddrType loc_addr = addrEval.local_addr(hdl.const_value());
+      AddrType nwe_addr;
+      try{
+        // no pool-to-pool migration 
+        loc_addr = pools_[dir].write(data, size, loc_addr, off);
+        hdl.value() = addrEval.global_addr(dir, loc_addr);
+        hdl.commit();
+        if(acc_log_)
+          fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", 
+                  "insert", size, addr, off);
+      }catch(internal_chunk_overflow const &co){
+        // migration
+        unsigned int next_dir = 
+          addrEval.directory(size + co.current_size);
+        AddrType next_loc_addr;
+
+        if((unsigned int)-1 == next_dir)
+          throw chunk_overflow();
+
+        if(npos == off)
+          off = co.current_size;
+
+        while(next_dir < addrEval.dir_count()){
+          try{
+            next_loc_addr = 
+              pools_[dir].merge_move(
+                data, size, loc_addr, off,
+                &pools_[next_dir]);
+          }catch(addr_overflow const &){
+            next_dir++;
+            continue;
+          }
+          break;
         }
-        break;
-      }
-      if( next_dir >= addrEval.dir_count())
-        throw addr_overflow();
+        if( next_dir >= addrEval.dir_count())
+          throw addr_overflow();
 
-      rt = addrEval.global_addr(next_dir, next_loc_addr);
-      global_id_->Update(addr, rt);
-      global_id_->Commit(addr);
-      if(acc_log_)fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", 
-        "insert", size, addr, off);
+        hdl.value() = addrEval.global_addr(next_dir, next_loc_addr);
+        hdl.commit();
+
+        if(acc_log_)
+          fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", 
+                  "insert", size, addr, off);
+      }
     }
     return addr;
   }
@@ -176,27 +165,23 @@ namespace BDB {
   AddrType
   BDBImpl::update(char const *data, size_t size, AddrType addr)
   {
+    id_handle_t hdl(detail::MODIFY, *global_id_, addr);
     AddrType internal_addr;
-    if( !global_id_->isAcquired(addr) )
-      throw invalid_addr();
 
     internal_addr = global_id_->Find(addr);
 
-    unsigned int dir = addrEval.addr_to_dir(internal_addr);
-    AddrType loc_addr = addrEval.local_addr(internal_addr);
+    unsigned int dir = addrEval.addr_to_dir(hdl.const_value());
+    AddrType loc_addr = addrEval.local_addr(hdl.const_value());
 
     // check size
     if( !addrEval.capacity_test(dir, size) ){
 
       unsigned int old_dir = dir;
       AddrType old_loc_addr = loc_addr;
-      AddrType new_internal_addr =
-        write_pool(data, size);
+      AddrType new_internal_addr = write_pool(data, size);
  
-      global_id_->Update(addr, new_internal_addr);
-
-      if(!global_id_->Commit(addr))
-        throw std::runtime_error(SRC_POS);
+      hdl.value() = new_internal_addr;
+      hdl.commit();
 
       pools_[old_dir].free(old_loc_addr);
 
@@ -216,14 +201,11 @@ namespace BDB {
   size_t
   BDBImpl::get(char *output, size_t size, AddrType addr, size_t off)
   {
-    if( !global_id_->isAcquired(addr) )
-      return 0;
-
-    AddrType internal_addr = global_id_->Find(addr);
+    id_handle_t hdl(detail::READONLY, *global_id_, addr);
 
     size_t rt(0);
-    unsigned int dir = addrEval.addr_to_dir(internal_addr);
-    AddrType loc_addr = addrEval.local_addr(internal_addr);
+    unsigned int dir = addrEval.addr_to_dir(hdl.const_value());
+    AddrType loc_addr = addrEval.local_addr(hdl.const_value());
     
     rt = pools_[dir].read(output, size, loc_addr, off);
     
@@ -236,14 +218,11 @@ namespace BDB {
   size_t
   BDBImpl::get(std::string *output, size_t max, AddrType addr, size_t off)
   {
-    if( !global_id_->isAcquired(addr) )
-      return 0;
-
-    AddrType internal_addr = global_id_->Find(addr);
+    id_handle_t hdl(detail::READONLY, *global_id_, addr);
 
     size_t rt(0);
-    unsigned int dir = addrEval.addr_to_dir(internal_addr);
-    AddrType loc_addr = addrEval.local_addr(internal_addr);
+    unsigned int dir = addrEval.addr_to_dir(hdl.const_value());
+    AddrType loc_addr = addrEval.local_addr(hdl.const_value());
     
     rt = pools_[dir].read(output, max, loc_addr, off);
 
@@ -256,22 +235,18 @@ namespace BDB {
   size_t
   BDBImpl::del(AddrType addr)
   {
-    AddrType internal_addr;
-    
-    if( !global_id_->isAcquired(addr) )
-      throw invalid_addr();
-
-    internal_addr = global_id_->Find(addr);
-
-    unsigned int dir = addrEval.addr_to_dir(internal_addr);
-    AddrType loc_addr = addrEval.local_addr(internal_addr);
+    id_handle_t hdl(detail::READONLY, *global_id_, addr);
+   
+    unsigned int dir = addrEval.addr_to_dir(hdl.const_value());
+    AddrType loc_addr = addrEval.local_addr(hdl.const_value());
     
     pools_[dir].free(loc_addr);
-    global_id_->Release(addr);
 
-    if( !global_id_->Commit(addr) )
-      throw std::runtime_error(SRC_POS);
-    
+    {
+      id_handle_t hdl(detail::RELEASE, *global_id_, addr);
+      hdl.commit();
+    }
+
     if(acc_log_)
       fprintf(acc_log_, "%-12s\t%08x\n", "del", addr);
 
@@ -281,23 +256,23 @@ namespace BDB {
   size_t
   BDBImpl::del(AddrType addr, size_t off, size_t size)
   {
-    if( !global_id_->isAcquired(addr) )
-      throw invalid_addr();
     
-    addr = global_id_->Find(addr);
+    id_handle_t hdl(detail::MODIFY, *global_id_, addr);
 
-    unsigned int dir = addrEval.addr_to_dir(addr);
-    AddrType loc_addr = addrEval.local_addr(addr);
+    unsigned int dir = addrEval.addr_to_dir(hdl.const_value());
+    AddrType loc_addr = addrEval.local_addr(hdl.const_value());
     size_t nsize;
 
     nsize = pools_[dir].erase(loc_addr, off, size);
-    
+    hdl.commit();
+
     if(acc_log_) 
       fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", "partial_del", addr, off, size);
     
     return nsize;
   }
   
+  /*
   bool
   BDBImpl::stream_error(stream_state const* state)
   { return state->error; }
@@ -660,6 +635,7 @@ namespace BDB {
 
     stream_state_pool_.free(ss);
   }
+  */
 
   AddrIterator
   BDBImpl::begin() const

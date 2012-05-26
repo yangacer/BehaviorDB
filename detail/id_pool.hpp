@@ -14,7 +14,7 @@ enum IDPoolAlloc {
   full = 1
 };
 
-
+// TODO add Update method
 template<typename Array>
 class IDPool 
 : boost::noncopyable
@@ -29,6 +29,7 @@ public:
     AddrType beg, 
     AddrType end, 
     IDPoolAlloc alloc_policy);
+
   ~IDPool();
   
   AddrType Acquire();
@@ -46,6 +47,7 @@ public:
   value_type Find(AddrType id);
 
   AddrType max_used() const;
+  AddrType next_used(AddrType curID) const;
 
   size_type size() const;
   size_type num_blocks() const;

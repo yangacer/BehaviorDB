@@ -104,8 +104,8 @@ struct BDB_EXPORT BehaviorDB
    *  @param stream_size Future size this handle will be written.
    *  @return stream_state or NULL if any error occured.
    */
-  stream_state const*
-  ostream(size_t stream_size);
+  //stream_state const*
+  //ostream(size_t stream_size);
 
   /** @brief Create output stream handle, stream_state, for 
    *  asynchronous write from an existed address. Offset of a
@@ -113,8 +113,8 @@ struct BDB_EXPORT BehaviorDB
    *  Default offset is the end of a chunk refered by the address.
    *  @return stream_state or NULL if any error occured.
    */
-  stream_state const*
-  ostream(size_t stream_size, AddrType addr, size_t off=npos);
+  //stream_state const*
+  //ostream(size_t stream_size, AddrType addr, size_t off=npos);
 
 
   /** @brief Create output stream handle for asynchronous read.
@@ -123,26 +123,26 @@ struct BDB_EXPORT BehaviorDB
    *  @param off
    *  @return stream_state or NULL if any error occured.
    */
-  stream_state const*
-  istream(size_t stream_size, AddrType addr, size_t off=0);
+  //stream_state const*
+  //istream(size_t stream_size, AddrType addr, size_t off=0);
 
   /** @brief Write data to a stream_state created by ostream method.
    *  @return stream_state or NULL if any error occured.
    */
-  stream_state const*
-  stream_write(stream_state const* state, char const* data, size_t size);
+  //stream_state const*
+  //stream_write(stream_state const* state, char const* data, size_t size);
 
   /** @brief Read data from a stream_state created by istream method.
    *  @return stream_state or NULL if any error occured.
    */
-  stream_state const*
-  stream_read(stream_state const* state, char* output, size_t size);
+  //stream_state const*
+  //stream_read(stream_state const* state, char* output, size_t size);
 
   /** @brief Finish asynchronous read/write. 
    *  @return Address of the operated chunk.
    */
-  AddrType
-  stream_finish(stream_state const* state);
+  //AddrType
+  //stream_finish(stream_state const* state);
 
   /** @brief Pause an asynchronous read/write.
    *  @return Encrypted stream state.
@@ -150,26 +150,26 @@ struct BDB_EXPORT BehaviorDB
    *  preventing directly delete/free to the 
    *  stream_state.
    */
-  size_t
-    stream_pause(stream_state const* state);
+  //size_t
+  //stream_pause(stream_state const* state);
 
   /** @brief Resume an asynchronous read/write.
    *  @return stream_state.
    */
-  stream_state const*
-    stream_resume(size_t encrypt_handle);
+  //stream_state const*
+  //stream_resume(size_t encrypt_handle);
 
   /** @brief Expire an asynchronous read/write. Any
    *  relative modification will be dicarded.
    */
-  void
-  stream_expire(size_t encrypt_handle);
+  //void
+  //stream_expire(size_t encrypt_handle);
 
   /** @brief Directly abort a stream_state, any change 
    *  to desitination will be dicarded.
    */
-  void
-  stream_abort(stream_state const* state);
+  //void
+  //stream_abort(stream_state const* state);
 
   /** @brief Get an iterator points to the first used 
    *  address.

@@ -16,7 +16,7 @@ IDPool<Array>::IDPool(
 : beg_(beg), end_(end), 
   file_(0), bm_(), lock_(), 
   full_alloc_(alloc_policy), max_used_(0),
-  arr_(end - beg)
+  arr_(0)
 {
   if(beg >= end)
     throw std::invalid_argument(SRC_POS);
@@ -34,7 +34,7 @@ IDPool<Array>::IDPool(
     lock_.resize(size, false);
   }
 
-  char fname[256];
+  char fname[40] = {};
   sprintf(fname, "%s%04x.tran", work_dir, id);
   replay_transaction(fname);
   init_transaction(fname);
@@ -146,6 +146,17 @@ IDPool<Array>::Find(AddrType id)
 template<typename Array>
 AddrType IDPool<Array>::max_used() const
 { return max_used_; }
+
+template<typename Array>
+AddrType IDPool<Array>::next_used(AddrType curID) const
+{
+  while(curID != bm_.size() + beg_){
+    if(false == bm_[curID - beg_])
+      return curID;
+    ++curID;  
+  }
+  return end_;
+}
 
 template<typename Array>
 typename IDPool<Array>::size_type IDPool<Array>::size() const
