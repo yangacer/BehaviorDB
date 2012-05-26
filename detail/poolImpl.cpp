@@ -72,8 +72,8 @@ namespace detail {
 
   pool::operator void const*() const
   { 
-    if(!this || !addrEval.is_init() || !idPool_)
-      return 0;
+    //if(!this || !addrEval.is_init() || !idPool_)
+    //  return 0;
     return this;
   }
 
@@ -238,12 +238,13 @@ namespace detail {
   }
 
   AddrType
-  pool::merge_copy(char const* data, 
-                   uint32_t size, 
-                   AddrType src_addr, 
-                   uint32_t off, 
-                   pool *dest_pool,
-                   ChunkHeader const* header)
+  pool::merge_copy(
+    char const* data, 
+    uint32_t size, 
+    AddrType src_addr, 
+    uint32_t off, 
+    pool *dest_pool,
+    ChunkHeader const* header)
   {
     ChunkHeader loc_header;
     if(header)

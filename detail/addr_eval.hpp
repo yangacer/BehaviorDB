@@ -3,6 +3,8 @@
 
 #include "common.hpp"
 
+#define BDB_MAXIMUM_CHUNK_SIZE_ (1<<31-1)
+
 namespace BDB {
   
 template<typename addr_t = AddrType>

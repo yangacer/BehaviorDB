@@ -8,13 +8,9 @@ namespace BDB {
   AddrType
   BDBImpl::nt_put(char const *data, size_t size)
   {
-    
     AddrType rt = write_pool(data, size);
-    if(-1 == rt) return -1;
-
     if(acc_log_) 
       fprintf(acc_log_, "%-12s\t%08x\n", "nt_put", size);
-
     return rt;
   }
   
@@ -69,7 +65,6 @@ namespace BDB {
   AddrType
   BDBImpl::nt_update(char const *data, size_t size, AddrType addr)
   {
-
     unsigned int dir = addrEval.addr_to_dir(addr);
     AddrType loc_addr = addrEval.local_addr(addr);
     

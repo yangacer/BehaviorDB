@@ -664,7 +664,6 @@ namespace BDB {
   AddrIterator
   BDBImpl::begin() const
   {
-    // assert(0 != *this && "BDBImpl is not proper initiated");
     AddrType first_used = global_id_->begin();
     first_used = global_id_->next_used(first_used);
     
@@ -674,7 +673,6 @@ namespace BDB {
   AddrIterator
   BDBImpl::end() const
   {
-    // assert(0 != *this && "BDBImpl is not proper initiated");
     return AddrIterator(*this, global_id_->end());  
   }
 
