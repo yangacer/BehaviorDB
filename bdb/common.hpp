@@ -134,7 +134,7 @@ namespace BDB {
   };
 
   /// Not a Position
-  extern const size_t npos;
+  extern const uint32_t npos;
 
   /// Version information
   extern char const* VERSION;

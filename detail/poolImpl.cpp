@@ -96,8 +96,7 @@ namespace detail {
     if(fflush(file_))
       throw std::runtime_error(SRC_POS);
 
-    if(-1 == headerPool_.write(header, ah.addr()))
-      throw std::runtime_error(SRC_POS);
+    headerPool_.write(header, ah.addr());
     
     ah.commit();
 
@@ -135,97 +134,24 @@ namespace detail {
 
     /* In-place merge maybe save some cost, though.
      * I may re-enable this if it's a critical bottleneck
-    uint32_t moved = loc_header.size - off;
-    loc_header.size += size;
-
-    // copy merged result to a new chunk
-    if(moved > MIGBUF_SIZ)
-      return merge_move(data, size, addr, off, this, &loc_header); 
-    
-    // ---------- Do inplace merge ------------
-    seek(addr, off);
-
-    // read data to be moved into mig_buf
-    if(moved && moved != s_read(mig_buf_, moved, file_))
-      throw std::runtime_error(SRC_POS);
-
-    if(moved)
-      seek(addr, off);
-
-    uint32_t partial(0);
-    // write new data
-    if(size != (partial = s_write(data, size, file_))){
-      if(!partial) // no data written
-        // abort directly	
-        throw std::runtime_error(SRC_POS);
-      // rollback to previous state
-      clearerr(file_);
-      seek(addr, off);
-      if( partial != s_write(mig_buf_, partial, file_))
-        // rollback failed, leave broken data alone
-        throw std::runtime_error(SRC_POS);
-    }
-
-    // write buffered data
-    if(moved && moved != (partial = s_write(mig_buf_, moved, file_))){
-      // rollback to previous state
-      clearerr(file_);
-      seek(addr, off);
-      // rollback failed, leave broken data alone
-      if( partial != s_write(mig_buf_, moved, file_))
-        throw std::runtime_error(SRC_POS);
-    }
-
-    if(0 != fflush(file_))
-      throw std::runtime_error(SRC_POS);
-
-    // update header 
-    if(-1 == headerPool_.write(loc_header, addr)){
-      seek(addr, off);
-      if( partial != s_write(mig_buf_, moved, file_))
-        // rollback failed, leave broken data alone
-        throw std::runtime_error(SRC_POS);
-      throw std::runtime_error(SRC_POS);
-    }
-
-    return addr;
-    */
+     *
+     * XXX See commit c8754a for old implementation
+     */
   }
 
   AddrType
   pool::write(viov* vv, uint32_t len)
   {
-    uint32_t total(0);
-    for(uint32_t i=0; i<len; ++i)
-      total += vv[i].size;
-
     ChunkHeader header;
-    header.size = total;
-
     addr_handle ah(*idPool_);
-
-    //seek(ah.addr());
-
-    write_viov wv;
-    wv.dest = file_;
-    wv.dest_pos = addr_off2tell(ah.addr(), 0);
-    wv.buf = mig_buf_;
-    wv.bsize = MIGBUF_SIZ;
-    off_t loopOff(0);
-    for(uint32_t i=0; i<len; ++i){
-      wv.size = vv[i].size;
-      if(0 == boost::apply_visitor(wv, vv[i].data))
-        throw std::runtime_error(SRC_POS);
-      wv.dest_pos += vv[i].size;
-    }
-
-    if(0 != fflush(file_))
-      throw std::runtime_error(SRC_POS);
     
+    header.size = 
+      writevv(vv, len, file_, 
+            addr_off2tell(ah.addr(),0) );
+     
     headerPool_.write(header, ah.addr());
-
     ah.commit();
-
+    
     return ah.addr();
   }
 
@@ -327,11 +253,11 @@ namespace detail {
 
     viov vv[3];
     file_src fs;
-    no_data_src nds;
+    blank_src blank;
     AddrType loc_addr;
     if(0 == off){ // prepend
       if(0 == data)
-        vv[0].data = nds;
+        vv[0].data = blank;
       else
         vv[0].data = data;
       vv[0].size = size;
@@ -346,7 +272,7 @@ namespace detail {
       vv[0].data = fs;
       vv[0].size = loc_header.size;
       if(0 == data)
-        vv[1].data = nds;
+        vv[1].data = blank;
       else
         vv[1].data = data;
       vv[1].size = size;
@@ -357,7 +283,7 @@ namespace detail {
       vv[0].data = fs;
       vv[0].size = off;
       if(0 == data)
-        vv[1].data = nds;
+        vv[1].data = blank;
       else
         vv[1].data = data;
       vv[1].size = size;

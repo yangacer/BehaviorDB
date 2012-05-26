@@ -39,23 +39,9 @@ int main(int argc, char** argv)
 
   vv[2].data = fs;
   vv[2].size = 7;
-
-  write_viov wv;
-  wv.dest = dest;
-  wv.dest_pos = 2;
-  wv.buf = buf;
-  wv.bsize = bsize;
   
-  for(int i=0;i<2;++i){
-    wv.size = vv[i].size;
-    // seek to begin to see if the visitor still
-    // work correctly
-    fseeko(dest, 0, SEEK_SET);
-    boost::apply_visitor(wv, vv[i].data);
-    wv.dest_pos += vv[i].size;
-  }
-
-  fflush(dest);
+  // TODO form seek corruption
+  writevv(vv, 3, dest, 0);
   
   return 0;
 }
