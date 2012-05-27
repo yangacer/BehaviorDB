@@ -26,7 +26,9 @@ include_directories( ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/bdb  )
 
 add_library( bdb ${LIB_TYPE}
   common.cpp chunk.cpp 
-  v_iovec.cpp id_pool.cpp poolImpl.cpp 
+  v_iovec.cpp 
+  id_pool.cpp id_handle.cpp
+  poolImpl.cpp 
   addr_iter.cpp bdbImpl.cpp 
   error.cpp bdb.cpp stat.cpp
   fixedPool.cpp array.cpp

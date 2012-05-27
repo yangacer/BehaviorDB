@@ -2,7 +2,7 @@
 #include "file_utils.hpp"
 #include "poolImpl.hpp"
 #include "id_pool.hpp"
-#include "id_handle_def.hpp"
+#include "id_handle.hpp"
 #include "v_iovec.hpp"
 #include <boost/variant/apply_visitor.hpp>
 #include <cassert>
@@ -10,20 +10,7 @@
 #include <stdexcept>
 
 namespace BDB {
-
-namespace detail {
-  AddrType 
-  max_addr(uint32_t chunk_size)
-  {
-    // consider 
-    // 1. max size of idpool (bitset) 0xffffffff
-    // 2. seek offset range: 2^63/chunk_size
-    
-    return 0;
-
-  }
-} // namespace detail
-
+  
   pool::pool(pool::config const &conf, addr_eval<AddrType>& addrEval)
     : addrEval(addrEval),
     dirID(conf.dirID), 
@@ -275,10 +262,11 @@ namespace detail {
   {
     using namespace detail;
     
+    id_handle_t hdl(RELEASE, *idpool_, src_addr);
+
     AddrType loc_addr = 
       merge_copy(data, size, src_addr, off, dest_pool);
     
-    id_handle_t hdl(RELEASE, *idpool_, src_addr);
     hdl.commit();
 
     return loc_addr;

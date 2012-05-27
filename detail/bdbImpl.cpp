@@ -2,7 +2,7 @@
 #include "poolImpl.hpp"
 #include "error.hpp"
 #include "id_pool.hpp"
-#include "id_handle_def.hpp"
+#include "id_handle.hpp"
 #include "fixedPool.hpp"
 #include "addr_iter.hpp"
 #include "stat.hpp"

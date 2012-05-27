@@ -34,7 +34,6 @@ id_handle<IDP>::id_handle(
   case RELEASE:
     if(false == idp_.template isAcquired(addr))
       throw invalid_addr();
-    idp_.template Release(addr);
     addr_ = addr;
     break;
   case MODIFY:
@@ -90,6 +89,8 @@ id_handle<IDP>::value()
 template<class IDP>
 void id_handle<IDP>::commit()
 {
+  if(op_ == detail::RELEASE)
+    idp_.template Release(addr_);
   commited_ = 
     detail::READONLY == op_ ?
     true 
