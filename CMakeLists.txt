@@ -16,7 +16,6 @@ endif()
 add_subdirectory( detail )
 
 include_directories( ${PROJECT_SOURCE_DIR}/bdb ${PROJECT_SOURCE_DIR}/detail )
-#link_directories ( /usr/local/lib)
 
 if(BDB_DEVEL_MODE)
   add_executable (bdb_test ${PROJECT_SOURCE_DIR}/tests/bdb.cpp)
