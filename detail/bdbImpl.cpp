@@ -83,7 +83,7 @@ namespace BDB {
   }
   
   AddrType
-  BDBImpl::put(char const *data, size_t size)
+  BDBImpl::put(char const *data, uint32_t size)
   {
     if(!global_id_->avail()) 
       throw addr_overflow();
@@ -100,7 +100,7 @@ namespace BDB {
 
 
   AddrType
-  BDBImpl::put(char const* data, size_t size, AddrType addr, size_t off)
+  BDBImpl::put(char const* data, uint32_t size, AddrType addr, uint32_t off)
   {
     try{
       id_handle_t hdl(detail::ACQUIRE_SPEC, *global_id_, addr);
@@ -163,7 +163,7 @@ namespace BDB {
   }
   
   AddrType
-  BDBImpl::update(char const *data, size_t size, AddrType addr)
+  BDBImpl::update(char const *data, uint32_t size, AddrType addr)
   {
     id_handle_t hdl(detail::MODIFY, *global_id_, addr);
     AddrType internal_addr;
@@ -198,12 +198,12 @@ namespace BDB {
     return addr;
   }
 
-  size_t
-  BDBImpl::get(char *output, size_t size, AddrType addr, size_t off)
+  uint32_t
+  BDBImpl::get(char *output, uint32_t size, AddrType addr, uint32_t off)
   {
     id_handle_t hdl(detail::READONLY, *global_id_, addr);
 
-    size_t rt(0);
+    uint32_t rt(0);
     unsigned int dir = addrEval.addr_to_dir(hdl.const_value());
     AddrType loc_addr = addrEval.local_addr(hdl.const_value());
     
@@ -215,12 +215,12 @@ namespace BDB {
     return rt;
   }
   
-  size_t
-  BDBImpl::get(std::string *output, size_t max, AddrType addr, size_t off)
+  uint32_t
+  BDBImpl::get(std::string *output, uint32_t max, AddrType addr, uint32_t off)
   {
     id_handle_t hdl(detail::READONLY, *global_id_, addr);
 
-    size_t rt(0);
+    uint32_t rt(0);
     unsigned int dir = addrEval.addr_to_dir(hdl.const_value());
     AddrType loc_addr = addrEval.local_addr(hdl.const_value());
     
@@ -232,7 +232,7 @@ namespace BDB {
     return rt;
   }
 
-  size_t
+  uint32_t
   BDBImpl::del(AddrType addr)
   {
     id_handle_t hdl(detail::READONLY, *global_id_, addr);
@@ -253,15 +253,15 @@ namespace BDB {
     return 0;
   }
 
-  size_t
-  BDBImpl::del(AddrType addr, size_t off, size_t size)
+  uint32_t
+  BDBImpl::del(AddrType addr, uint32_t off, uint32_t size)
   {
     
     id_handle_t hdl(detail::MODIFY, *global_id_, addr);
 
     unsigned int dir = addrEval.addr_to_dir(hdl.const_value());
     AddrType loc_addr = addrEval.local_addr(hdl.const_value());
-    size_t nsize;
+    uint32_t nsize;
 
     nsize = pools_[dir].erase(loc_addr, off, size);
     hdl.commit();
@@ -278,7 +278,7 @@ namespace BDB {
   { return state->error; }
 
   stream_state const*
-  BDBImpl::ostream(size_t stream_size)
+  BDBImpl::ostream(uint32_t stream_size)
   {
     // assert(0 != *this && "BDBImpl is not proper initiated");
     
@@ -312,7 +312,7 @@ namespace BDB {
   
   // TODO suuport replace mode
   stream_state const*
-  BDBImpl::ostream(size_t stream_size, AddrType addr, size_t off)
+  BDBImpl::ostream(uint32_t stream_size, AddrType addr, uint32_t off)
   {
     if( global_id_->isLocked(addr) )
       return 0;
@@ -385,7 +385,7 @@ namespace BDB {
   }
   
   stream_state const*
-  BDBImpl::istream(size_t stream_size, AddrType addr, size_t off)
+  BDBImpl::istream(uint32_t stream_size, AddrType addr, uint32_t off)
   {
     /// TODO Consider allow reader when a chunk is been written
     if(!global_id_->isAcquired(addr) || global_id_->isLocked(addr))
@@ -416,7 +416,7 @@ namespace BDB {
   }
 
   stream_state const*
-  BDBImpl::stream_write(stream_state const* state, char const* data, size_t size)
+  BDBImpl::stream_write(stream_state const* state, char const* data, uint32_t size)
   {
     stream_state *ss = const_cast<stream_state*>(state);
     if(ss->size - ss->used < size){
@@ -441,7 +441,7 @@ namespace BDB {
   }
   
   stream_state const*
-  BDBImpl::stream_read(stream_state const* state, char *output, size_t size)
+  BDBImpl::stream_read(stream_state const* state, char *output, uint32_t size)
   {
     // TODO consistency checking
     stream_state *ss = const_cast<stream_state*>(state);
@@ -449,7 +449,7 @@ namespace BDB {
     unsigned int dir = addrEval.addr_to_dir(ss->inter_src_addr);
     AddrType loc_addr = addrEval.local_addr(ss->inter_src_addr);
 
-    size_t toRead = (ss->size - ss->used < size) ?
+    uint32_t toRead = (ss->size - ss->used < size) ?
       ss->size - ss->used : size;
     
     if(toRead != pools_[dir].read(output, size, loc_addr,
@@ -557,10 +557,10 @@ namespace BDB {
     return rt;
   }
   
-  size_t
+  uint32_t
   BDBImpl::stream_pause(stream_state const* state)
   {
-    size_t rt = reinterpret_cast<size_t>(state);
+    uint32_t rt = reinterpret_cast<uint32_t>(state);
     rt ^= 0xDEA3;
 
     assert(enc_stream_state_.end() == enc_stream_state_.find(rt));
@@ -571,7 +571,7 @@ namespace BDB {
   }
   
   stream_state const*
-  BDBImpl::stream_resume(size_t encrypt_handle)
+  BDBImpl::stream_resume(uint32_t encrypt_handle)
   {
     if(enc_stream_state_.end() == enc_stream_state_.find(encrypt_handle) )
       return 0;
@@ -581,7 +581,7 @@ namespace BDB {
   }
 
   void
-  BDBImpl::stream_expire(size_t encrypt_handle)
+  BDBImpl::stream_expire(uint32_t encrypt_handle)
   {
     assert(enc_stream_state_.end() == 
       enc_stream_state_.find(encrypt_handle) );
@@ -666,7 +666,7 @@ namespace BDB {
 
   
   AddrType
-  BDBImpl::write_pool(char const*data, size_t size)
+  BDBImpl::write_pool(char const*data, uint32_t size)
   {
       unsigned int dir = addrEval.directory(size);
       if((unsigned int)-1 == dir)

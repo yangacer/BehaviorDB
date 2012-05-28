@@ -18,19 +18,19 @@
 //! Error numbers
 enum ERRORNUMBER
 {
-	/// Pool can not address more chunks
-	ADDRESS_OVERFLOW = 1,
+  /// Pool can not address more chunks
+  ADDRESS_OVERFLOW = 1,
 
-	/// I/O operation failure
-	SYSTEM_ERROR = 2,
+  /// I/O operation failure
+  SYSTEM_ERROR = 2,
 
-	/// Data is too big to be handled by BehaviorDB 
-	DATA_TOO_BIG = 3,
+  /// Data is too big to be handled by BehaviorDB 
+  DATA_TOO_BIG = 3,
 
-	/// Pool is locked
-	POOL_LOCKED = 4,
-	
-	NON_EXIST = 5
+  /// Pool is locked
+  POOL_LOCKED = 4,
+  
+  NON_EXIST = 5
 };
 
 //! Define address type.
@@ -44,37 +44,37 @@ typedef unsigned int SizeType;
  */
 struct Config
 {
-	/** Indicate whether to write pool logs
-	 */
-	bool pool_log;
+  /** Indicate whether to write pool logs
+   */
+  bool pool_log;
 
-	/** The unit of chunk.
-	 *  If this value is k, then the unit will be 2^k.
-	 */
-	SizeType chunk_unit;
-	
-	/** Threshold of early migration
-	 */
-	SizeType migrate_threshold;
-	
-	/** Working Directory for BehaviorDB
-	 */
-	char const * working_dir;
+  /** The unit of chunk.
+   *  If this value is k, then the unit will be 2^k.
+   */
+  SizeType chunk_unit;
+  
+  /** Threshold of early migration
+   */
+  SizeType migrate_threshold;
+  
+  /** Working Directory for BehaviorDB
+   */
+  char const * working_dir;
 
-	/** Setup default configuration
-	 */
-	Config()
-	:pool_log(true), chunk_unit(10), migrate_threshold(0x7f), working_dir(".")
-	{}
+  /** Setup default configuration
+   */
+  Config()
+  :pool_log(true), chunk_unit(10), migrate_threshold(0x7f), working_dir(".")
+  {}
 };
 
 /** @brief Output vector for BehaviorDB::append
  */
 struct WriteVector
 {
-	char const* buffer;
-	SizeType size;
-	AddrType *address;
+  char const* buffer;
+  SizeType size;
+  AddrType *address;
 };
 
 // Forward decls
@@ -86,174 +86,174 @@ struct BehaviorDB;
  */
 struct StreamState
 {
-	friend struct BehaviorDB;
-	friend struct Pool;
+  friend struct BehaviorDB;
+  friend struct Pool;
 
-	StreamState():left_(0), pool_(0){}
+  StreamState():left_(0), pool_(0){}
 private:
-	SizeType left_;
-	Pool* pool_;
+  SizeType left_;
+  Pool* pool_;
 };
 
 /// BehaviorDB Interface
 struct BehaviorDB
 {
-	friend struct AddrIterator;
-	BehaviorDB();
+  friend struct AddrIterator;
+  BehaviorDB();
 
-	/** Constructor that uses client's configuration
-	 *  @param conf See Config
-	 */
-	BehaviorDB(Config const& conf);
-	~BehaviorDB();
-	
-	/** Put data into a chunk
-	 *  @param data
-	 *  @param size
-	 *  @return Address of the chunk that stores the data or -1 when error happened.
-	 *  @remark Error Number: SYSTEM_ERROR, ADDRESS_OVERFLOW, DATA_TOO_BIG, POOL_LOCKED.
-	 */
-	AddrType 
-	put(char const* data, SizeType size);
-	
-	/** Overwrite a chunk
-	 *  @param address
-	 *  @param data
-	 *  @param size
-	 *  @return Address of the overwritten chunk
-	 *  @remark Error Number: SYSTEM_ERROR, NON_EXIST, DATA_TOO_BIG, POOL_LOCKED.
-	 */
-	AddrType
-	overwrite(AddrType address, char const* data, SizeType size);
+  /** Constructor that uses client's configuration
+   *  @param conf See Config
+   */
+  BehaviorDB(Config const& conf);
+  ~BehaviorDB();
+  
+  /** Put data into a chunk
+   *  @param data
+   *  @param size
+   *  @return Address of the chunk that stores the data or -1 when error happened.
+   *  @remark Error Number: SYSTEM_ERROR, ADDRESS_OVERFLOW, DATA_TOO_BIG, POOL_LOCKED.
+   */
+  AddrType 
+  put(char const* data, SizeType size);
+  
+  /** Overwrite a chunk
+   *  @param address
+   *  @param data
+   *  @param size
+   *  @return Address of the overwritten chunk
+   *  @remark Error Number: SYSTEM_ERROR, NON_EXIST, DATA_TOO_BIG, POOL_LOCKED.
+   */
+  AddrType
+  overwrite(AddrType address, char const* data, SizeType size);
 
-	/** Append data contained by WriteVector(s)
-	 *  @param wv
-	 *  @param wv_size
-	 *  @return The first failure WriteVector. i.e. wv_size for non failure.
-	 */
-	int
-	append(WriteVector *wv, int wv_size);
+  /** Append data contained by WriteVector(s)
+   *  @param wv
+   *  @param wv_size
+   *  @return The first failure WriteVector. i.e. wv_size for non failure.
+   */
+  int
+  append(WriteVector *wv, int wv_size);
 
-	/** Append data to a chunk
-	 *  @param address
-	 *  @param data
-	 *  @param size
-	 *  @return Address of a chunk that stores concatenated data or -1 when errror happened.
-	 *  @remark Error Number: SYSTEM_ERROR, ADDRESS_OVERFLOW, DATA_TOO_BIG, POOL_LOCKED.
-	 *  @see @link append.cpp @endlink
-	 */
-	AddrType 
-	append(AddrType address, char const* data, SizeType size);
-	
+  /** Append data to a chunk
+   *  @param address
+   *  @param data
+   *  @param size
+   *  @return Address of a chunk that stores concatenated data or -1 when errror happened.
+   *  @remark Error Number: SYSTEM_ERROR, ADDRESS_OVERFLOW, DATA_TOO_BIG, POOL_LOCKED.
+   *  @see @link append.cpp @endlink
+   */
+  AddrType 
+  append(AddrType address, char const* data, SizeType size);
+  
 
-	/** Get data from a chunk
-	 *  @param output Output buffer for placing data
-	 *  @param size Size of output buffer
-	 *  @param address Address of a chunk
-	 *  @return Size of data that stored in the chunk or -1 when error happened.
-	 *  @remark Error Number: SYSTEM_ERROR, DATA_TOO_BIG, POOL_LOCKED.
-	 *  @remark In order to enhance security of library. 
-	 *  Client has to be responsible for ensuring the size of output buffer
-	 *  being large enough.
-	 *  @see estimate_max_size
-	 */
-	SizeType 
-	get(char *output, SizeType const size, AddrType address);
+  /** Get data from a chunk
+   *  @param output Output buffer for placing data
+   *  @param size Size of output buffer
+   *  @param address Address of a chunk
+   *  @return Size of data that stored in the chunk or -1 when error happened.
+   *  @remark Error Number: SYSTEM_ERROR, DATA_TOO_BIG, POOL_LOCKED.
+   *  @remark In order to enhance security of library. 
+   *  Client has to be responsible for ensuring the size of output buffer
+   *  being large enough.
+   *  @see estimate_max_size
+   */
+  SizeType 
+  get(char *output, SizeType const size, AddrType address);
 
-	/** Get data from a chunk incrementaly
-	 *  @param output
-	 *  @param size
-	 *  @param address
-	 *  @param stream Stream state
-	 *  @return Size of data that stored in the chunk or -1 when error happened.
-	 *  @remark  Error Number: SYSTEM_ERROR, DATA_TOO_BIG, POOL_LOCKED.
-	 *  @see @link getstream.cpp @endlink
-	 */
-	SizeType
-	get(char *output, SizeType const size, AddrType address, StreamState* stream);
-	
-	/** Stop incremental get explicitly
-	 *  @param stream
-	 *  @see @link getstream.cpp @endlink
-	 */
-	void
-	stop_get(StreamState* stream);
+  /** Get data from a chunk incrementaly
+   *  @param output
+   *  @param size
+   *  @param address
+   *  @param stream Stream state
+   *  @return Size of data that stored in the chunk or -1 when error happened.
+   *  @remark  Error Number: SYSTEM_ERROR, DATA_TOO_BIG, POOL_LOCKED.
+   *  @see @link getstream.cpp @endlink
+   */
+  SizeType
+  get(char *output, SizeType const size, AddrType address, StreamState* stream);
+  
+  /** Stop incremental get explicitly
+   *  @param stream
+   *  @see @link getstream.cpp @endlink
+   */
+  void
+  stop_get(StreamState* stream);
 
-	/** Delete a chunk
-	 *  @param address
-	 *  @return Address of just deleted chunk
-	 *  @remark Error Number: None.
-	 */
-	AddrType
-	del(AddrType address);
+  /** Delete a chunk
+   *  @param address
+   *  @return Address of just deleted chunk
+   *  @remark Error Number: None.
+   */
+  AddrType
+  del(AddrType address);
 
-	/** Enable/disable pool logs
-	 *  @param do_log
-	 *  @return Reference to *this
-	 *  @remark The only configuration can be changed at runtime is pool logging.
-	 */
-	BehaviorDB& 
-	set_pool_log(bool do_log);
-	
-	/**
-	 *  @brief Estimate max size corresponds to the address
-	 *  @param address
-	 *  @return Maximun size corresponeds to the address or 0 
-	 *  when address overflowed.
-	 */
-	SizeType 
-	estimate_max_size(AddrType address);
+  /** Enable/disable pool logs
+   *  @param do_log
+   *  @return Reference to *this
+   *  @remark The only configuration can be changed at runtime is pool logging.
+   */
+  BehaviorDB& 
+  set_pool_log(bool do_log);
+  
+  /**
+   *  @brief Estimate max size corresponds to the address
+   *  @param address
+   *  @return Maximun size corresponeds to the address or 0 
+   *  when address overflowed.
+   */
+  SizeType 
+  estimate_max_size(AddrType address);
 
-	/** @brief Estimate pool index according to size
-	 *  @param size
-	 *  @return Pool index or -1 when size to large.
-	 */
-	AddrType 
-	estimate_pool_index(SizeType size);
-	
-	/** @brief Get the begining of allocated address
-	 *  @return Address iterator positioned at begining of allocated address.
-	 */
-	AddrIterator
-	begin();
+  /** @brief Estimate pool index according to size
+   *  @param size
+   *  @return Pool index or -1 when size to large.
+   */
+  AddrType 
+  estimate_pool_index(SizeType size);
+  
+  /** @brief Get the begining of allocated address
+   *  @return Address iterator positioned at begining of allocated address.
+   */
+  AddrIterator
+  begin();
 
-	/** @breif Get the end address 
-	 *  @return Address iterator means the address after the last allocated address.
-	 *  @remark The returned iterator maintains the end semantic but is not a 
-	 *  dereference-able lvalue.
-	 */
-	AddrIterator
-	end();
-	
-	typedef unsigned int (*MigPredictorCB)(refHistory const&, AddrType, unsigned int);
-	
-	void
-	register_mig_predictor(MigPredictorCB cbf);
+  /** @breif Get the end address 
+   *  @return Address iterator means the address after the last allocated address.
+   *  @remark The returned iterator maintains the end semantic but is not a 
+   *  dereference-able lvalue.
+   */
+  AddrIterator
+  end();
+  
+  typedef unsigned int (*MigPredictorCB)(refHistory const&, AddrType, unsigned int);
+  
+  void
+  register_mig_predictor(MigPredictorCB cbf);
 
-	/** Error Number
-	 *  @see ERRORNUMBER
-	 */
-	int error_num;
+  /** Error Number
+   *  @see ERRORNUMBER
+   */
+  int error_num;
 private:
-	void init_();
-	
-	Config conf_;
-	// copy, assignment
-	BehaviorDB(BehaviorDB const &cp);
-	BehaviorDB& operator = (BehaviorDB const &cp);
-	
-	void clear_error();
-	bool error_return();
-	void log_access(char const* operation, AddrType address, SizeType size, char const* desc = 0);
+  void init_();
+  
+  Config conf_;
+  // copy, assignment
+  BehaviorDB(BehaviorDB const &cp);
+  BehaviorDB& operator = (BehaviorDB const &cp);
+  
+  void clear_error();
+  bool error_return();
+  void log_access(char const* operation, AddrType address, SizeType size, char const* desc = 0);
 
-	Pool* pools_;
-	std::ofstream *accLog_, *errLog_;
-	char accBuf_[1000000];
+  Pool* pools_;
+  std::ofstream *accLog_, *errLog_;
+  char accBuf_[1000000];
 
 #ifndef _WINDOWS
-	int lock_;
+  int lock_;
 #else
-	FILE* lock_;
+  FILE* lock_;
 #endif
 };
 
@@ -261,37 +261,37 @@ private:
  */
 struct AddrIterator
 {
-	friend struct BehaviorDB;
+  friend struct BehaviorDB;
 
-	AddrIterator();
-	AddrIterator(AddrIterator const& cp);
+  AddrIterator();
+  AddrIterator(AddrIterator const& cp);
 
-	AddrIterator& 
-	operator=(AddrIterator const& cp);
+  AddrIterator& 
+  operator=(AddrIterator const& cp);
 
-	/** Advance iterator to next used address
-	 */
-	AddrIterator &
-	operator++();
-	
-	/** Get the address on iterating
-	 */
-	AddrType 
-	operator*();
-	
-	bool 
-	operator==(AddrIterator const& rhs) const;
-	
-	bool 
-	operator!=(AddrIterator const& rhs) const
-	{ return !(*this == rhs); }
+  /** Advance iterator to next used address
+   */
+  AddrIterator &
+  operator++();
+  
+  /** Get the address on iterating
+   */
+  AddrType 
+  operator*();
+  
+  bool 
+  operator==(AddrIterator const& rhs) const;
+  
+  bool 
+  operator!=(AddrIterator const& rhs) const
+  { return !(*this == rhs); }
 
 protected:
-	AddrIterator(BehaviorDB &bdb, AddrType cur);
+  AddrIterator(BehaviorDB &bdb, AddrType cur);
 
 private:
-	AddrType cur_;
-	BehaviorDB *bdb_;
+  AddrType cur_;
+  BehaviorDB *bdb_;
 };
 
 
@@ -347,7 +347,7 @@ private:
  *  Minimal Chunk Size = 2^4 or 16byte.<br/>
  *  Maximal Chunk Size = 2^19 or 512KB.<br/>
  *  Total Capacity = 4GB * (64K -1) ~ 255TB.<p/>
- *	
+ *  
  *  Notice the actual total capacity is restricted by underlying filesystem.
  *
  *  \section transaction_sec Transaction
@@ -376,15 +376,15 @@ private:
  *  char *data = "my data";
  *  AddrType rt = bdb.put(data, strlen(data));
  *  if( rt == -1 && bdb.error_num ){
- *	 if(bdb.error_num == SYSTEM_ERROR){
- *		fprintf(stderr, strerror(errno));
- *		exit(1);	// Exit since system error can not be recovered
- *				// without shutdown BehaviorDB
- *	}else{  // true == (bdb.error_num & (ADDRESS_OVERFLOW | DATA_TOO_BIG)))
- *		// split data into several parts and retry
- *	}	
+ *   if(bdb.error_num == SYSTEM_ERROR){
+ *    fprintf(stderr, strerror(errno));
+ *    exit(1);  // Exit since system error can not be recovered
+ *        // without shutdown BehaviorDB
+ *  }else{  // true == (bdb.error_num & (ADDRESS_OVERFLOW | DATA_TOO_BIG)))
+ *    // split data into several parts and retry
+ *  } 
  *  }else{
- *	// success put
+ *  // success put
  *  }
  *  \endcode
  *
@@ -396,11 +396,11 @@ private:
  *  r1 = bdb.put("fisrt part", strlen("first part");
  *  r2 = bdb.append(r1, "second part", strlen("second part"));
  *  if(r2 == -1 && bdb.error_num){
- *	if(bdb.error_num == SYSTEM_ERROR){
- *		// ...
- *	}else{ 
- *		// ADDRESS_OVERFLOW or DATA_TOO_BIG
- *	}
+ *  if(bdb.error_num == SYSTEM_ERROR){
+ *    // ...
+ *  }else{ 
+ *    // ADDRESS_OVERFLOW or DATA_TOO_BIG
+ *  }
  *  }
  *  \endcode
  *
@@ -414,11 +414,11 @@ private:
  * char *buf = (char*)malloc(est_size * sizeof(char));
  * SizeType rt = bdb.get(buf, est_size, addr);
  * if(rt == -1 && bdb.error_num){
- *	if(bdb.error_num == SYSTEM_ERROR){
+ *  if(bdb.error_num == SYSTEM_ERROR){
  *
- *	}else{
- *		// DATA_TOO_BIG
- *	}
+ *  }else{
+ *    // DATA_TOO_BIG
+ *  }
  * }
  * \endcode
  * 4. BehaviorDB::del<br/>

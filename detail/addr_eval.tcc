@@ -5,7 +5,7 @@ namespace BDB {
   
 template<typename T>
 void
-addr_eval<T>::init(unsigned int dir_prefix_len, size_t min_size, 
+addr_eval<T>::init(unsigned int dir_prefix_len, uint32_t min_size, 
   Chunk_size_est cse, Capacity_test ct )
 { 
   dir_prefix_len_ = dir_prefix_len;
@@ -37,7 +37,7 @@ addr_eval<T>::set(unsigned char dir_prefix_len)
 
 template<typename T>
 void
-addr_eval<T>::set(size_t min_size)
+addr_eval<T>::set(uint32_t min_size)
 { min_size_ = min_size;}
 
 template<typename T>
@@ -62,13 +62,13 @@ addr_eval<T>::local_addr_len() const
 { return (sizeof(T)<<3) - dir_prefix_len_; }
 
 template<typename T>
-size_t 
+uint32_t 
 addr_eval<T>::chunk_size_estimation(unsigned int dir) const
 { return (*chunk_size_est_)(dir, min_size_); }
 
 template<typename T>
 bool
-addr_eval<T>::capacity_test(unsigned int dir, size_t size) const
+addr_eval<T>::capacity_test(unsigned int dir, uint32_t size) const
 { return (*capacity_test_)((*chunk_size_est_)(dir, min_size_), size); }
 
 template<typename T>
@@ -78,7 +78,7 @@ addr_eval<T>::dir_count() const
 
 template<typename T>
 unsigned int 
-addr_eval<T>::directory(size_t size) const
+addr_eval<T>::directory(uint32_t size) const
 {
   unsigned int i;
   for(i=0; i < dir_count(); ++i)

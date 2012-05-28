@@ -6,7 +6,7 @@
 namespace BDB {
   
   AddrType
-  BDBImpl::nt_put(char const *data, size_t size)
+  BDBImpl::nt_put(char const *data, uint32_t size)
   {
     AddrType rt = write_pool(data, size);
     if(acc_log_) 
@@ -15,7 +15,7 @@ namespace BDB {
   }
   
   AddrType
-  BDBImpl::nt_put(char const* data, size_t size, AddrType addr, size_t off)
+  BDBImpl::nt_put(char const* data, uint32_t size, AddrType addr, uint32_t off)
   {
     unsigned int dir = addrEval.addr_to_dir(addr);
     AddrType loc_addr = addrEval.local_addr(addr);
@@ -63,7 +63,7 @@ namespace BDB {
   
   /// TODO this method should called "replace"
   AddrType
-  BDBImpl::nt_update(char const *data, size_t size, AddrType addr)
+  BDBImpl::nt_update(char const *data, uint32_t size, AddrType addr)
   {
     unsigned int dir = addrEval.addr_to_dir(addr);
     AddrType loc_addr = addrEval.local_addr(addr);
@@ -85,10 +85,10 @@ namespace BDB {
     return addr;
   }
   
-  size_t
-  BDBImpl::nt_get(char *output, size_t size, AddrType addr, size_t off)
+  uint32_t
+  BDBImpl::nt_get(char *output, uint32_t size, AddrType addr, uint32_t off)
   {
-    size_t rt(0);
+    uint32_t rt(0);
     unsigned int dir = addrEval.addr_to_dir(addr);
     AddrType loc_addr = addrEval.local_addr(addr);
     
@@ -100,13 +100,13 @@ namespace BDB {
     return rt;
   }
   
-  size_t
-  BDBImpl::nt_get(std::string *output, size_t max, AddrType addr, size_t off)
+  uint32_t
+  BDBImpl::nt_get(std::string *output, uint32_t max, AddrType addr, uint32_t off)
   {
     if(!output) 
       throw std::invalid_argument(SRC_POS);
 
-    size_t rt(0);
+    uint32_t rt(0);
     unsigned int dir = addrEval.addr_to_dir(addr);
     AddrType loc_addr = addrEval.local_addr(addr);
     
@@ -117,7 +117,7 @@ namespace BDB {
     return rt;
   }
   
-  size_t
+  uint32_t
   BDBImpl::nt_del(AddrType addr)
   {
     unsigned int dir = addrEval.addr_to_dir(addr);
@@ -130,12 +130,12 @@ namespace BDB {
     return 0;
   }
 
-  size_t
-  BDBImpl::nt_del(AddrType addr, size_t off, size_t size)
+  uint32_t
+  BDBImpl::nt_del(AddrType addr, uint32_t off, uint32_t size)
   {
     unsigned int dir = addrEval.addr_to_dir(addr);
     AddrType loc_addr = addrEval.local_addr(addr);
-    size_t nsize = pools_[dir].erase(loc_addr, off, size);
+    uint32_t nsize = pools_[dir].erase(loc_addr, off, size);
     
     if(acc_log_) 
       fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", 

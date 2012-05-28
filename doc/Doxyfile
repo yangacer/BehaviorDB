@@ -31,7 +31,7 @@ PROJECT_NAME           = BehaviorDB
 # This could be handy for archiving the generated documentation or
 # if some version control system is used.
 
-PROJECT_NUMBER         = 0.3.1
+PROJECT_NUMBER         = 0.4.x
 
 # The OUTPUT_DIRECTORY tag is used to specify the (relative or absolute)
 # base path where the generated documentation will be put.
@@ -571,7 +571,6 @@ WARN_LOGFILE           =
 INPUT                  = ../bdb ../examples
 #../detail/idPool.hpp ../detail/fixedPool.hpp ../bdb/common.hpp ../detail/poolImpl.hpp ../detail/poolImpl.cpp
 
-			
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding, which is
 # also the default input encoding. Doxygen uses libiconv (or the iconv built

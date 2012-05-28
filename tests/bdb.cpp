@@ -196,7 +196,10 @@ int main(int argc, char** argv)
   print_in_proper_unit(stat.disk_size);
   printf("\n");
 
-  /*
+  /**
+   * XXX !!!Following code does not work currently.
+   * (Hope I can get them back soon)
+   *
   // streaming write
   rec = "toma";
   stream_state const* os = bdb.ostream(4);

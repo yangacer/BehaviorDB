@@ -7,31 +7,31 @@ namespace BDB {
   
   using namespace detail;
 
-  struct write_viov : public boost::static_visitor<size_t>
+  struct write_viov : public boost::static_visitor<uint32_t>
   {
-    size_t 
+    uint32_t 
     operator()(char const* str);
     
-    size_t
+    uint32_t
     operator()(file_src & psrc);
     
-    size_t
+    uint32_t
     operator()(blank_src &);
     
     FILE* dest;
     off_t dest_pos;
-    size_t size;
+    uint32_t size;
   };
   
-  size_t
+  uint32_t
   write_viov::operator()(file_src &fsrc)
   {
     // TODO Use pool allocator
     char buf[1023+1];
-    size_t const bsize = 1023;
+    uint32_t const bsize = 1023;
     
-    size_t toRead = size;
-    size_t readCnt, loopOff(0);
+    uint32_t toRead = size;
+    uint32_t readCnt, loopOff(0);
     while(toRead){
       readCnt = (bsize > toRead) ? toRead : bsize;
       fseeko(fsrc.fp, fsrc.off + loopOff, SEEK_SET);
@@ -50,7 +50,7 @@ namespace BDB {
     return size;
   }
   
-  size_t
+  uint32_t
   write_viov::operator()(char const* str)
   {
     fseeko(dest, dest_pos, SEEK_SET);
@@ -60,7 +60,7 @@ namespace BDB {
     return size;
   }
   
-  size_t
+  uint32_t
   write_viov::operator()(blank_src &)
   {
     fseeko(dest, dest_pos, SEEK_SET);
@@ -68,17 +68,17 @@ namespace BDB {
     return size;
   }
 
-  size_t writevv(viov *vv, size_t len, FILE* dest, size_t off)
+  uint32_t writevv(viov *vv, uint32_t len, FILE* dest, uint32_t off)
   {
     using boost::apply_visitor;
 
-    size_t rt(0);
+    uint32_t rt(0);
 
     write_viov wv;
     wv.dest = dest;
     wv.dest_pos = off;
 
-    for(size_t i =0;i<len;++i){
+    for(uint32_t i =0;i<len;++i){
       wv.size = vv[i].size;
       apply_visitor(wv, vv[i].data);
       rt += vv[i].size;

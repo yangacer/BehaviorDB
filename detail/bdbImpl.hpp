@@ -43,73 +43,73 @@ namespace BDB {
      *  @return Global address
      */
     AddrType
-    put(char const *data, size_t size);
+    put(char const *data, uint32_t size);
 
     AddrType
-    put(char const *data, size_t size, AddrType addr, size_t off=npos);
+    put(char const *data, uint32_t size, AddrType addr, uint32_t off=npos);
       
     AddrType
     put(std::string const& data)
     { return put(data.data(), data.size()); }
     
     AddrType
-    put(std::string const& data, AddrType addr, size_t off=npos)
+    put(std::string const& data, AddrType addr, uint32_t off=npos)
     { return put(data.data(), data.size(), addr, off); }
     
     AddrType
-    update(char const *data, size_t size, AddrType addr);
+    update(char const *data, uint32_t size, AddrType addr);
     
     AddrType
     update(std::string const& data, AddrType addr)
     { return update(data.data(), data.size(), addr); }
 
-    size_t
-    get(char *output, size_t size, AddrType addr, size_t off=0);
+    uint32_t
+    get(char *output, uint32_t size, AddrType addr, uint32_t off=0);
     
-    size_t
-    get(std::string *output, size_t max, AddrType addr, size_t off=0);
+    uint32_t
+    get(std::string *output, uint32_t max, AddrType addr, uint32_t off=0);
 
-    size_t
+    uint32_t
     del(AddrType addr);
 
-    size_t
-    del(AddrType addr, size_t off, size_t size);
+    uint32_t
+    del(AddrType addr, uint32_t off, uint32_t size);
     
     // ------------ Transparent Interfaces --------------
     // nt stands for no internal/external address translation is performed
 
     AddrType
-    nt_put(char const *data, size_t size);
+    nt_put(char const *data, uint32_t size);
 
     AddrType
-    nt_put(char const *data, size_t size, AddrType addr, size_t off=npos);
+    nt_put(char const *data, uint32_t size, AddrType addr, uint32_t off=npos);
       
     AddrType
     nt_put(std::string const& data)
     { return put(data.data(), data.size()); }
     
     AddrType
-    nt_put(std::string const& data, AddrType addr, size_t off=npos)
+    nt_put(std::string const& data, AddrType addr, uint32_t off=npos)
     { return put(data.data(), data.size(), addr, off); }
     
     AddrType
-    nt_update(char const *data, size_t size, AddrType addr);
+    nt_update(char const *data, uint32_t size, AddrType addr);
     
     AddrType
     nt_update(std::string const& data, AddrType addr)
     { return update(data.data(), data.size(), addr); }
 
-    size_t
-    nt_get(char *output, size_t size, AddrType addr, size_t off=0);
+    uint32_t
+    nt_get(char *output, uint32_t size, AddrType addr, uint32_t off=0);
     
-    size_t
-    nt_get(std::string *output, size_t max, AddrType addr, size_t off=0);
+    uint32_t
+    nt_get(std::string *output, uint32_t max, AddrType addr, uint32_t off=0);
 
-    size_t
+    uint32_t
     nt_del(AddrType addr);
 
-    size_t
-    nt_del(AddrType addr, size_t off, size_t size);
+    uint32_t
+    nt_del(AddrType addr, uint32_t off, uint32_t size);
     
     // TODO nt_ for BDB::i/ostream function
 
@@ -118,31 +118,31 @@ namespace BDB {
     // streaming interface
     /*
     stream_state const*
-    ostream(size_t stream_size);
+    ostream(uint32_t stream_size);
 
     stream_state const*
-    ostream(size_t stream_size, AddrType addr, size_t off=npos);
+    ostream(uint32_t stream_size, AddrType addr, uint32_t off=npos);
 
     stream_state const*
-    istream(size_t stream_size, AddrType addr, size_t off=0);
+    istream(uint32_t stream_size, AddrType addr, uint32_t off=0);
     
     stream_state const*
-    stream_write(stream_state const* state, char const* data, size_t size);
+    stream_write(stream_state const* state, char const* data, uint32_t size);
     
     stream_state const*
-    stream_read(stream_state const* state, char* output, size_t size);
+    stream_read(stream_state const* state, char* output, uint32_t size);
     
     AddrType
     stream_finish(stream_state const* state);
     
-    size_t
+    uint32_t
     stream_pause(stream_state const* state);
 
     stream_state const*
-    stream_resume(size_t encrypt_handle);
+    stream_resume(uint32_t encrypt_handle);
     
     void
-    stream_expire(size_t encrypt_handle);
+    stream_expire(uint32_t encrypt_handle);
 
     void
     stream_abort(stream_state const* state);
@@ -166,7 +166,7 @@ namespace BDB {
     // write data to pool
     // Return -1 if fail, otherwise returns internal address
     AddrType
-    write_pool(char const*data, size_t size);
+    write_pool(char const*data, uint32_t size);
     
     // handle error triggered in pool(s)
     void
@@ -178,7 +178,7 @@ namespace BDB {
 
   private:
     typedef boost::unordered_map<AddrType, unsigned int> AddrCntCont;
-    typedef boost::unordered_set<size_t> EncStreamCont;
+    typedef boost::unordered_set<uint32_t> EncStreamCont;
     
     addr_eval<AddrType> addrEval;
     pool* pools_;

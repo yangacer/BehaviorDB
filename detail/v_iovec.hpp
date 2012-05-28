@@ -18,10 +18,10 @@ namespace BDB {
   struct viov
   {
     boost::variant<file_src, char const*, blank_src> data;
-    size_t size;
+    uint32_t size;
   };
 
-  size_t writevv(viov *vv, size_t len, FILE* dest, size_t off);
+  uint32_t writevv(viov *vv, uint32_t len, FILE* dest, uint32_t off);
 
 } // end of namespace BDB
 

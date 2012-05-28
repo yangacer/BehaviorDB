@@ -12,7 +12,7 @@ struct addr_eval
 {
   void
   init(   
-    unsigned int dir_prefix_len, size_t min_size, 
+    unsigned int dir_prefix_len, uint32_t min_size, 
     Chunk_size_est cse = &BDB::default_chunk_size_est, 
     Capacity_test ct = &BDB::default_capacity_test );
 
@@ -23,7 +23,7 @@ struct addr_eval
   set(unsigned char dir_prefix_len);
   
   void
-  set(size_t min_size);
+  set(uint32_t min_size);
 
   void
   set(Chunk_size_est chunk_size_estimation_func);
@@ -37,18 +37,18 @@ struct addr_eval
   unsigned char
   local_addr_len() const;
 
-  size_t 
+  uint32_t 
   chunk_size_estimation(unsigned int dir) const;
   
   bool
-  capacity_test(unsigned int dir, size_t size) const;
+  capacity_test(unsigned int dir, uint32_t size) const;
 
   unsigned int 
   dir_count() const;
   
   // estimate directory ID according to chunk size
   unsigned int 
-  directory(size_t size) const;
+  directory(uint32_t size) const;
   
   unsigned int 
   addr_to_dir(addr_t addr) const;
@@ -61,7 +61,7 @@ struct addr_eval
   
 private:
   unsigned char dir_prefix_len_;
-  size_t min_size_;
+  uint32_t min_size_;
   
   Chunk_size_est chunk_size_est_;
   Capacity_test capacity_test_;
