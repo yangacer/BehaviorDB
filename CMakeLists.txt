@@ -28,17 +28,6 @@ if(BDB_DEVEL_MODE)
   add_executable (bdb_simulator ${PROJECT_SOURCE_DIR}/tools/simulator.cpp)
   target_link_libraries(bdb_simulator bdb)
 
-  add_executable (bdb_hashmap ${PROJECT_SOURCE_DIR}/tests/hash_map.cpp)
-  target_link_libraries(bdb_hashmap bdb ${Boost_LIBRARIES})
-
-  add_executable (bdb_array ${PROJECT_SOURCE_DIR}/tests/array.cpp)
-  target_link_libraries(bdb_array bdb)
-
-  add_executable (bdb_typed_array ${PROJECT_SOURCE_DIR}/tests/typed_array.cpp)
-  target_link_libraries(bdb_typed_array bdb ${Boost_LIBRARIES})
-
-#add_executable (bdb_sql ${PROJECT_SOURCE_DIR}/tests/sql.cpp)
-  
   add_executable (bdb_idp 
                   ${PROJECT_SOURCE_DIR}/tests/idpool.cpp
                   detail/fixedPool.cpp
