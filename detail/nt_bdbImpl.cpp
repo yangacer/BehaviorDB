@@ -36,8 +36,6 @@ namespace BDB {
       
       if(npos == next_dir)
         throw chunk_overflow();
-      if(npos == off)
-        off = co.current_size;
 
       while(next_dir < addrEval.dir_count()){
         try{

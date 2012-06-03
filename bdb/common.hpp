@@ -7,7 +7,7 @@
 
 #include <stdint.h>
 
-#elif defined(_WIN32) // MSVC
+#elif defined(_WIN32) || defined(_WIN64) // MSVC
 
 #pragma warning( disable: 4290 ) // exception specification non-implmented
 #pragma warning( disable: 4251 ) // template export warning

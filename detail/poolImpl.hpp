@@ -12,7 +12,7 @@
 
 // TODO Add total size control of this buffer size
 // , or not to use buffer ...
-#define MIGBUF_SIZ 2*1024*1024
+#define MIGBUF_SIZ (1<<20)
 
 namespace BDB
 {
@@ -46,8 +46,6 @@ namespace BDB
 
     pool(config const &conf, addr_eval<AddrType> &addrEval);
     ~pool();
-    
-    operator void const*() const;
     
     /** @brief Write new data
      *  @param data
@@ -121,13 +119,6 @@ namespace BDB
     overwrite(char const* data, uint32_t size, AddrType addr, uint32_t off);
 
     // --------- misc -----------
-
-    void
-    on_error(int errcode, int line);
-    
-    std::pair<int, int>
-    get_error();
-
     void
     pine(AddrType addr);
 
@@ -161,15 +152,12 @@ namespace BDB
     
     // pool file
     FILE *file_;
-    char *mig_buf_;
     char *file_buf_;
     
     typedef IDPool<fixed_pool<ChunkHeader,8> > idpool_t;
     typedef id_handle<idpool_t> id_handle_t;
 
     idpool_t *idpool_;
-  public: 
-    std::deque<std::pair<int,int> > err_;
   };
 } // end of namespace BDB
 

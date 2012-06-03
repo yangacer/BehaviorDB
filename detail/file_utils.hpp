@@ -4,6 +4,7 @@
 #include "common.hpp"
 #include <cstdio>
 #include <cerrno>
+#include <boost/pool/pool.hpp>
 
 #ifdef __MINGW__
 #define ftello(X) ftello64(X)
@@ -16,6 +17,18 @@
 namespace BDB {
 namespace detail {
   
+  template<uint32_t ReqSize>
+  struct s_buffer
+  {
+    s_buffer();
+    ~s_buffer();
+    static uint32_t size();
+    static uint32_t alloc_size();
+    char *buffer;
+  private:
+    static boost::pool<> pool_;
+  };
+
   inline uint32_t 
   s_write(char const* data, uint32_t size, FILE* fp)
   {
@@ -36,7 +49,6 @@ namespace detail {
     }
     return total_written;
   }
-  
   
   inline uint32_t
   s_read(char *dest, uint32_t size, FILE* fp)

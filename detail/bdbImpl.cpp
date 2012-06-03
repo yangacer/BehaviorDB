@@ -133,9 +133,6 @@ namespace BDB {
         if((unsigned int)-1 == next_dir)
           throw chunk_overflow();
 
-        if(npos == off)
-          off = co.current_size;
-
         while(next_dir < addrEval.dir_count()){
           try{
             next_loc_addr = 
@@ -688,48 +685,6 @@ namespace BDB {
 
       rt = addrEval.global_addr(dir, loc_addr);
       return rt;
-  }
-
-  void
-  BDBImpl::error(int errcode, int line)
-  {
-    if(0 == err_log_) return;
-    
-    //lock
-    
-    if(0 == ftello(err_log_)){ // write column names
-      fprintf(err_log_, "Pool ID\tLine\tMessage\n");
-    }
-    
-    if(acc_log_) fprintf(acc_log_, "None    \t%d\t%s\n", line, error_num_to_str()(errcode));
-    
-    //unlock
-  }
-
-  void
-  BDBImpl::error(unsigned int dir)
-  { 
-    // assert(0 != *this && "BDBImpl is not proper initiated");
-
-    if(0 == err_log_) return;
-
-    std::pair<int, int> err = pools_[dir].get_error();
-    
-    if(err.first == 0) return;
-
-    // TODO lock log
-    
-    if(0 == ftello(err_log_)){ // write column names
-      fprintf(err_log_, "Pool_ID  Line Message\n");
-    }
-
-    while(1){
-      fprintf(err_log_, "%08x %4d %s\n", dir, err.second, error_num_to_str()(err.first));
-      err = pools_[dir].get_error();
-      if(err.first == 0) break;
-    }
-
-    // TODO unlock
   }
 
 } // end of namespace BDB

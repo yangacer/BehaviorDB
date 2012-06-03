@@ -2,6 +2,8 @@
 #include "bdbImpl.hpp"
 #include "poolImpl.hpp"
 #include "id_pool.hpp"
+#include "file_utils_def.hpp"
+
 namespace BDB {
   
   bdbStater::bdbStater(Stat *s)
@@ -17,6 +19,8 @@ namespace BDB {
     for(size_t i=0;i< bdb->addrEval.dir_count();++i){
       (*this)(bdb->pools_ + i);
     }
+    s->pool_mem_size +=
+      detail::s_buffer<MIGBUF_SIZ>::alloc_size();
   }
 
   void
@@ -28,7 +32,7 @@ namespace BDB {
       pool->idpool_->max_used()* 
       pool->addrEval.chunk_size_estimation(pool->dirID);
 
-    s->pool_mem_size += MIGBUF_SIZ * 2;
+    s->pool_mem_size += MIGBUF_SIZ;
   }
   
   template<typename T>

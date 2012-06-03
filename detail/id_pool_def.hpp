@@ -100,12 +100,25 @@ bool IDPool<Array>::Commit(
 {
   AddrType off = id - begin();
   std::stringstream ss;
-  if(bm_[off]){
+  if(bm_[off])
     ss<<'-'<<off<<"\n";
-  }else{
+  else{
     ss<<'+'<<off<<"\t"<<val<<"\n";
     arr_.template store(val, off);
   }
+  return ss.str().size() == 
+    detail::s_write(ss.str().c_str(), ss.str().size(), file_);
+}
+
+template<typename Array>
+bool IDPool<Array>::ReleaseAndCommit(AddrType id)
+{
+  AddrType off = id - begin();
+  std::stringstream ss;
+  if(true == bm_[off])
+    throw invalid_addr();
+  bm_[off] = true;
+  ss<<'-'<<off<<"\n";
   return ss.str().size() == 
     detail::s_write(ss.str().c_str(), ss.str().size(), file_);
 }

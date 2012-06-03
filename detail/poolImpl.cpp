@@ -1,5 +1,6 @@
 #include "error.hpp"
 #include "file_utils.hpp"
+#include "file_utils_def.hpp"
 #include "poolImpl.hpp"
 #include "id_pool.hpp"
 #include "id_handle.hpp"
@@ -10,12 +11,12 @@
 #include <stdexcept>
 
 namespace BDB {
+  typedef detail::s_buffer<MIGBUF_SIZ> my_buffer_;
   
   pool::pool(pool::config const &conf, addr_eval<AddrType>& addrEval)
     : addrEval(addrEval),
     dirID(conf.dirID), 
     work_dir(conf.work_dir), trans_dir(conf.trans_dir), 
-    //addrEval(conf.addrEval), 
     file_(0), idpool_(0)
   {
     using namespace std;
@@ -36,7 +37,6 @@ namespace BDB {
       }
     }
 
-    mig_buf_ = new char[MIGBUF_SIZ];
     file_buf_ = new char[MIGBUF_SIZ];
 
     if(0 != setvbuf(file_, file_buf_, _IOFBF, MIGBUF_SIZ))
@@ -54,15 +54,7 @@ namespace BDB {
   {
     delete idpool_;
     delete [] file_buf_;
-    delete [] mig_buf_;
     fclose(file_);
-  }
-
-  pool::operator void const*() const
-  { 
-    //if(!this || !addrEval.is_init() || !idPool_)
-    //  return 0;
-    return this;
   }
 
   AddrType
@@ -183,12 +175,14 @@ namespace BDB {
   {
     if(!buffer) return 0;
     if(buffer->size()) buffer->clear();
+    
+    my_buffer_ mig_buf;
 
     uint32_t readCnt(0), total(0);
-    while(0 < (readCnt = read(mig_buf_, MIGBUF_SIZ, addr, off))){
+    while(0 < (readCnt = read(mig_buf.buffer, my_buffer_::size(), addr, off))){
       total += readCnt;
       if(total >= max) break;
-      buffer->append(mig_buf_, readCnt);
+      buffer->append(mig_buf.buffer, readCnt);
       off += readCnt;
     }
     return total;
@@ -206,6 +200,8 @@ namespace BDB {
     id_handle_t hdl(READONLY, *idpool_, src_addr);
     uint32_t orig_size = hdl.const_value().size;
     
+    off = npos == off ? orig_size : off;
+
     // TODO make it shorter
     viov vv[3];
     file_src fs;
@@ -299,17 +295,19 @@ namespace BDB {
     uint32_t toRead = orig_size - size - off;
     uint32_t readCnt, loopOff(0);
 
+    my_buffer_ mig_buf;
+
     while(toRead > 0){
-      readCnt = (toRead > MIGBUF_SIZ) ? MIGBUF_SIZ : toRead;
+      readCnt = (toRead > my_buffer_::size()) ? my_buffer_::size() : toRead;
       seek(addr, off + size + loopOff);
-      if(readCnt != s_read(mig_buf_, readCnt, file_)){
+      if(readCnt != s_read(mig_buf.buffer, readCnt, file_)){
         if(loopOff == 0)
           return orig_size;
         else
           throw data_currupted((data_currupted){addr});
       }
       seek(addr, off + loopOff);
-      if(readCnt != s_write(mig_buf_, readCnt, file_) ||
+      if(readCnt != s_write(mig_buf.buffer, readCnt, file_) ||
          0 != fflush(file_))
       {
         throw data_currupted((data_currupted){addr});
@@ -359,25 +357,6 @@ namespace BDB {
     pos *= addrEval.chunk_size_estimation(dirID);
     pos += off;
     return pos;
-  }
-
-  void
-  pool::on_error(int errcode, int line)
-  {
-    // TODO: lock for mutli proc/thread
-    err_.push_back(std::make_pair<int, int>(errcode, line));	
-    // unlock
-  }
-
-  std::pair<int, int>
-  pool::get_error()
-  {
-    std::pair<int, int> rt(0,0);
-    if(!err_.empty()){
-      rt = err_.front();
-      err_.pop_front();
-    }
-    return rt;
   }
 
   void

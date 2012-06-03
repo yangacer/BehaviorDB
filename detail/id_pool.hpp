@@ -14,7 +14,6 @@ enum IDPoolAlloc {
   full = 1
 };
 
-// TODO add Update method
 template<typename Array>
 class IDPool 
 : boost::noncopyable
@@ -36,8 +35,10 @@ public:
   AddrType Acquire(AddrType id);
 
   void Release(AddrType id);
-  bool Commit(AddrType id, value_type const &val);
 
+  bool ReleaseAndCommit(AddrType id);
+  bool Commit(AddrType id, value_type const &val);
+  
   void Lock(AddrType id);
   void Unlock(AddrType id);
   

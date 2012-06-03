@@ -167,14 +167,6 @@ namespace BDB {
     // Return -1 if fail, otherwise returns internal address
     AddrType
     write_pool(char const*data, uint32_t size);
-    
-    // handle error triggered in pool(s)
-    void
-    error(unsigned int dir);
-
-    // handle error triggered in BDBImpl
-    void
-    error(int errcode, int line);
 
   private:
     typedef boost::unordered_map<AddrType, unsigned int> AddrCntCont;

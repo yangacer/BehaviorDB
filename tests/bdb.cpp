@@ -12,13 +12,15 @@
 void print_in_proper_unit(unsigned long long size)
 { 
   char const * units = " KMGT";
+  unsigned long long n_size = size;
   unsigned int i=0;
-  while(size > 1024){
-    size>>=10;  
+  while(n_size > 1024){
+    n_size>>=10;  
     ++i;
   }
-  printf("%llu", size);
+  printf("%llu", n_size);
   printf(" %cB", units[i]);
+  printf("(%llu)", size);
 }
 
 void usage()
@@ -38,7 +40,8 @@ int main(int argc, char** argv)
 
   Config conf;
   conf.root_dir = argv[1];
-  
+  conf.min_size = 32;
+
   BehaviorDB bdb(conf);
   std::string should;
   std::string rec;

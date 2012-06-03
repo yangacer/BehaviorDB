@@ -28,7 +28,6 @@ namespace BDB {
     id_handle(
       detail::IDOperation op,
       IDPool_ &idp, AddrType addr);
-    
 
     ~id_handle();
     
