@@ -10,12 +10,10 @@
 #include <deque>
 #include <utility>
 
-// TODO Add total size control of this buffer size
-// , or not to use buffer ...
 #define MIGBUF_SIZ (1<<20)
 
-namespace BDB
-{
+namespace BDB {
+
   struct viov;
 
   template<typename T>
