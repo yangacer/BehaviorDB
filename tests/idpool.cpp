@@ -29,7 +29,7 @@ int main(int argc, char **argv)
     header_pool_t header_pool(0, prefix.c_str(), 1, end_addr, BDB::dynamic);
     prefix = work_dir;
     prefix.append("gid_");
-    addr_pool_t addr_pool(0, prefix.c_str(), 1, 101, BDB::full);
+    addr_pool_t addr_pool(0, prefix.c_str(), 1, 2, BDB::full); // of size 2 (test extend())
 
     addr = header_pool.Acquire(4u);
     ChunkHeader ch;

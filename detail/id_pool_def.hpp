@@ -242,7 +242,7 @@ void IDPool<Array>::extend(uint32_t new_size)
 {
   Bitmap::size_type max = end_ - beg_;
 
-  if(full_alloc_ == full || max == bm_.size() )
+  if(full_alloc_ == full && max == bm_.size() )
     throw addr_overflow();
 
   if(new_size){
