@@ -29,9 +29,9 @@ int main(int argc, char **argv)
     header_pool_t header_pool(0, prefix.c_str(), 1, end_addr, BDB::dynamic);
     prefix = work_dir;
     prefix.append("gid_");
-    addr_pool_t addr_pool(0, prefix.c_str(), 1, 2, BDB::full); // of size 2 (test extend())
+    addr_pool_t addr_pool(0, prefix.c_str(), 1, 4, BDB::full); 
 
-    addr = header_pool.Acquire(4u);
+    addr = header_pool.Acquire(1100u); // acquire id greater than 1023 will make idpool invoke extend()
     ChunkHeader ch;
     ch.size = 1024;
     header_pool.Commit(addr, ch);
