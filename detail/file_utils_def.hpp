@@ -26,11 +26,13 @@ namespace detail{
   { 
     return pool_.get_requested_size(); 
   }
-
+  
+  /*
   template<uint32_t RS>
   uint32_t s_buffer<RS>::alloc_size()
   {
     return pool_.get_max_size();
   }
+  */
 
 }} // namespace BDB::detail

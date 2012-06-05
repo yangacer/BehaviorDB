@@ -23,7 +23,7 @@ namespace detail {
     s_buffer();
     ~s_buffer();
     static uint32_t size();
-    static uint32_t alloc_size();
+    //static uint32_t alloc_size();
     char *buffer;
   private:
     static boost::pool<> pool_;

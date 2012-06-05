@@ -19,8 +19,8 @@ namespace BDB {
     for(size_t i=0;i< bdb->addrEval.dir_count();++i){
       (*this)(bdb->pools_ + i);
     }
-    s->pool_mem_size +=
-      detail::s_buffer<MIGBUF_SIZ>::alloc_size();
+    //s->pool_mem_size +=
+    //  detail::s_buffer<MIGBUF_SIZ>::alloc_size();
   }
 
   void
