@@ -1,6 +1,5 @@
 Build and Test:
 
-mkdir build
 cd build
 cmake ..
 make
