@@ -7,7 +7,7 @@
 
 namespace BDB {
   
-  const size_t npos(std::numeric_limits<size_t>::max());
+  const uint32_t npos(std::numeric_limits<uint32_t>::max());
   char const* VERSION("bdb-"BDB_VERSION_);
   
   Config::Config(

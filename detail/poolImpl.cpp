@@ -249,6 +249,56 @@ namespace BDB {
   }
 
   AddrType
+  pool::merge_erase(
+      uint32_t size,
+      AddrType src_addr,
+      uint32_t off,
+      pool* dest_pool)
+  {
+    using namespace detail;
+    id_handle_t hdl(READONLY, *idpool_, src_addr);
+    uint32_t orig_size = hdl.const_value().size;
+    
+    off = npos == off ? orig_size : off;
+    
+    if(off > orig_size)
+      return src_addr;
+    
+    if(off + size > orig_size)
+      size = orig_size - off;
+
+    viov vv[2];
+    file_src fs;
+    AddrType loc_addr;
+    if(0 == off){ // pre
+      fs.fp = file_;
+      fs.off = addr_off2tell(src_addr, size);
+      vv[0].data = fs;
+      vv[0].size = orig_size - size;
+      loc_addr = dest_pool->write(vv, 1);
+    }else if(orig_size - size == off){ // post
+      fs.fp = file_;
+      fs.off = addr_off2tell(src_addr, orig_size - size);
+      vv[0].data = fs;
+      vv[0].size = orig_size - size;
+      loc_addr = dest_pool->write(vv, 1);
+    }else if(off < orig_size){ // in
+      fs.fp = file_;
+      fs.off = addr_off2tell(src_addr, 0);
+      vv[0].data = fs;
+      vv[0].size = off;
+      fs.off = addr_off2tell(src_addr, off+size);
+      vv[1].data = fs;
+      vv[1].size = orig_size - ( off + size );
+      loc_addr = dest_pool->write(vv, 2);
+    }else{
+      assert(false && "never reach");
+    }
+    return loc_addr;
+  }
+
+
+  AddrType
   pool::merge_move(
     char const*data, 
     uint32_t size, 

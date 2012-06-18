@@ -117,7 +117,7 @@ namespace BDB {
   };
 
   /// Memory/Disk Statistic
-  struct Stat
+  struct BDB_EXPORT Stat
   {
     /// global ID table byte size
     unsigned long long gid_mem_size;

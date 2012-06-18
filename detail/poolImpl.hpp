@@ -85,10 +85,18 @@ namespace BDB {
       AddrType src_addr, 
       uint32_t off, 
       pool *dest_pool);
+  
+    AddrType
+    merge_erase(
+      uint32_t size,
+      AddrType src_addr,
+      uint32_t off,
+      pool* dest_pool);
 
     uint32_t
     free(AddrType addr);
 
+    // TODO deprecate this and use merge_erase
     uint32_t
     erase(AddrType addr, uint32_t off, uint32_t size);
   

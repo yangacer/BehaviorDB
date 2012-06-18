@@ -34,6 +34,8 @@ int main(int argc, char** argv)
   using namespace BDB;
 
   if(argc < 2) usage();
+  
+  assert(BDB::npos != 0);
 
   printf("==== BehaviorDB Testing ====\n");
   printf("version: %s\n", BDB::VERSION);

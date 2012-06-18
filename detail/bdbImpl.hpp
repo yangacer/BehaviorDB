@@ -86,18 +86,18 @@ namespace BDB {
       
     AddrType
     nt_put(std::string const& data)
-    { return put(data.data(), data.size()); }
+    { return nt_put(data.data(), data.size()); }
     
     AddrType
     nt_put(std::string const& data, AddrType addr, uint32_t off=npos)
-    { return put(data.data(), data.size(), addr, off); }
+    { return nt_put(data.data(), data.size(), addr, off); }
     
     AddrType
     nt_update(char const *data, uint32_t size, AddrType addr);
     
     AddrType
     nt_update(std::string const& data, AddrType addr)
-    { return update(data.data(), data.size(), addr); }
+    { return nt_update(data.data(), data.size(), addr); }
 
     uint32_t
     nt_get(char *output, uint32_t size, AddrType addr, uint32_t off=0);
@@ -164,13 +164,12 @@ namespace BDB {
   protected:
     
     // write data to pool
-    // Return -1 if fail, otherwise returns internal address
     AddrType
     write_pool(char const*data, uint32_t size);
 
   private:
-    typedef boost::unordered_map<AddrType, unsigned int> AddrCntCont;
-    typedef boost::unordered_set<uint32_t> EncStreamCont;
+    // typedef boost::unordered_map<AddrType, unsigned int> AddrCntCont;
+    // typedef boost::unordered_set<uint32_t> EncStreamCont;
     
     addr_eval<AddrType> addrEval;
     pool* pools_;
@@ -184,7 +183,7 @@ namespace BDB {
     typedef id_handle<idpool_t> id_handle_t;
     idpool_t *global_id_;
     
-    AddrCntCont in_reading_;
+    // AddrCntCont in_reading_;
     // TODO two containers as follows are not recoverable
     // EncStreamCont enc_stream_state_;
     // boost::object_pool<stream_state> stream_state_pool_;
