@@ -17,23 +17,21 @@ typedef unsigned __int32 uint32_t;
 
 #endif
 
-typedef uint32_t size_t;
-
 namespace BDB {
   
   typedef uint32_t AddrType;
   struct stream_state;
 
   /// Prototype of chunk size estimation callback.
-  typedef size_t (*Chunk_size_est)(unsigned int dir, size_t min_size);
+  typedef uint32_t (*Chunk_size_est)(unsigned int dir, uint32_t min_size);
 
   /// Prototype of chunk cacpcity testing callback.
-  typedef bool (*Capacity_test)(size_t chunk_size, size_t data_size);
+  typedef bool (*Capacity_test)(uint32_t chunk_size, uint32_t data_size);
 
   /**@brief Default chunk size estimation callback.
   */
-  inline size_t 
-  default_chunk_size_est(unsigned int dir, size_t min_size)
+  inline uint32_t 
+  default_chunk_size_est(unsigned int dir, uint32_t min_size)
   {
     return min_size<<dir;
   }
@@ -46,7 +44,7 @@ namespace BDB {
    * It should return true if data/chunk_size is acceptiable, otherwise it return false.
    */
   inline bool 
-  default_capacity_test(size_t chunk_size, size_t data_size)
+  default_capacity_test(uint32_t chunk_size, uint32_t data_size)
   {
     return (chunk_size - (chunk_size>>2)) >= data_size;
   }
@@ -66,7 +64,7 @@ namespace BDB {
     unsigned int addr_prefix_len;
 
     /// Minimum chunk size of BehaviorDB 
-    size_t min_size;
+    uint32_t min_size;
 
     //! Directory for placing files that are used by BehaviorDB. 
     /** Default is an empty string so that a BehaviorDB uses current
@@ -99,7 +97,7 @@ namespace BDB {
       AddrType beg = 1,
       AddrType end = 100000001,
       unsigned int addr_prefix_len = 4,
-      size_t min_size = 32,
+      uint32_t min_size = 32,
       char const *root_dir = "",
       char const *pool_dir = "",
       char const *trans_dir = "",
@@ -117,7 +115,7 @@ namespace BDB {
   };
 
   /// Memory/Disk Statistic
-  struct Stat
+  struct BDB_EXPORT Stat
   {
     /// global ID table byte size
     unsigned long long gid_mem_size;
