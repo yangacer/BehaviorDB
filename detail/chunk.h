@@ -4,6 +4,7 @@
 #include <iosfwd>
 #include <istream>
 #include <cstdio>
+#include "common.hpp"
 
 struct ChunkHeader
 {
