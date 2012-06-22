@@ -14,7 +14,7 @@ namespace BDB {
     AddrType beg,
     AddrType end,
     unsigned int addr_prefix_len,
-    size_t min_size,
+    uint32_t min_size,
     char const *root_dir,
     char const *pool_dir,
     char const *trans_dir,
@@ -63,7 +63,7 @@ namespace BDB {
       throw invalid_argument("Config: chunk_size_est should maintain strict weak ordering of chunk size");
     
     bool match = false;
-    for(size_t i =1; i< min_size; ++i){
+    for(uint32_t i =1; i< min_size; ++i){
       if( (*ct_func)( (*cse_func)(0, min_size), i ) ) match = true;
     }
     if(!match) throw invalid_argument("Config: capacity_test should hold be true for some data size");

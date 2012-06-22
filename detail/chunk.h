@@ -7,7 +7,7 @@
 
 struct ChunkHeader
 {
-  size_t size;
+  uint32_t size;
   
   ChunkHeader()
   :size(0)

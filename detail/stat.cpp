@@ -16,7 +16,7 @@ namespace BDB {
 
     (*this)(bdb->global_id_);
     
-    for(size_t i=0;i< bdb->addrEval.dir_count();++i){
+    for(uint32_t i=0;i< bdb->addrEval.dir_count();++i){
       (*this)(bdb->pools_ + i);
     }
     //s->pool_mem_size +=
