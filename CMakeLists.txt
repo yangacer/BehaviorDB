@@ -7,7 +7,8 @@ option( BDB_DEVEL_MODE OFF )
 
 set (Boost_ADDITIONAL_VERSIONS "1.47" "1.47.0" )
 find_package ( Boost 1.45.0 COMPONENTS 
-               serialization)
+               serialization
+               system)
 
 if(Boost_FOUND)
   include_directories(${Boost_INCLUDE_DIRS})
