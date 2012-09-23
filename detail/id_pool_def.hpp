@@ -58,7 +58,7 @@ AddrType IDPool<Array>::Acquire()
       extend();  
       rt = bm_.find_next(max_used_ - 1);
     }catch(addr_overflow const&){
-      if(Bitmap::npos == (rt = bm_.find_first()))
+      if((AddrType)Bitmap::npos == (rt = bm_.find_first()))
         throw addr_overflow();
     }
   }
