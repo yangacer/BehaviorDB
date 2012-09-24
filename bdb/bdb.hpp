@@ -67,7 +67,6 @@ struct BDB_EXPORT BehaviorDB
    *  @param addr Address.
    *  @return Address.
    *  @throw BDB::invalid_addr when the addr had NOT been used.
-   *  @throw BDB::chunk_overflow whend no room for specified size.
    */
   AddrType
   update(char const* data, uint32_t size, AddrType addr);
