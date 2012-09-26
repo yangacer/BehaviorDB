@@ -12,7 +12,7 @@ if(BDB_SHARED_LIB)
   add_definitions (-DBDB_MAKE_DLL)
 else()
   set(LIB_TYPE STATIC)
-  add_definitions (-DBDB_STATIC)
+  add_definitions (-DBDB_MAKE_STATIC)
 endif()
 
 include_directories( ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/bdb  )

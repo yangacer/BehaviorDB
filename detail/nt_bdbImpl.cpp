@@ -111,7 +111,7 @@ namespace BDB {
     rt = pools_[dir].read(output, max, loc_addr, off);
 
     if(acc_log_) 
-      fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", "nt_strget", output->size(), addr, off);
+      fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", "nt_strget", (uint32_t)output->size(), addr, off);
     return rt;
   }
   

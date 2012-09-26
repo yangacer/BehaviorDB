@@ -22,21 +22,18 @@
 #define BDB_EXPORT EXPORT_SPEC
 #endif
 
-#ifdef BDB_STATIC
+#ifdef BDB_MAKE_STATIC
 #pragma message ("Create static bdb lib with version "BDB_VERSION_)
 #define BDB_EXPORT 
 #endif
 
 
 #ifdef BDB_DLL
-#pragma message ("Link with shared bdb lib " BDB_VERSION_ "(dll required)")
+//#pragma message ("Link with shared bdb lib " BDB_VERSION_ "(dll required)")
 #define BDB_EXPORT IMPORT_SPEC 
-#elif !defined(BDB_STATIC) && !defined(BDB_MAKE_DLL) 
-#pragma message ("You must define BDB_DLL when compile your code with dll version bdb lib.")
-#pragma message ("If you are using a static version, just ignore this warning.")
-#pragma message ("Link with static bdb lib " BDB_VERSION_)
+#elif defined(BDB_STATIC)
 #define BDB_EXPORT
-#endif // end of BDB_DLL
+#endif
 
 
 #ifndef BDB_EXPORT
