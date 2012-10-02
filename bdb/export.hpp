@@ -5,7 +5,7 @@
 
 #ifdef __GNUC__
 #define EXPORT_SPEC  __attribute__ ((visibility("default")))
-#define IMPORT_SPEC  __attribute__ ((visibility("hidden")))
+#define IMPORT_SPEC  __attribute__ ((visibility("default")))
 #endif 
 
 #ifdef _WIN32
