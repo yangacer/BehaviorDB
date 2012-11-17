@@ -6,10 +6,10 @@
 
 namespace BDB {
 
-struct BDB_EXPORT addr_overflow{};
-struct BDB_EXPORT chunk_overflow{};
-struct BDB_EXPORT invalid_addr{};
-struct BDB_EXPORT data_currupted{AddrType addr;};
+struct BDB_API addr_overflow{};
+struct BDB_API chunk_overflow{};
+struct BDB_API invalid_addr{};
+struct BDB_API data_currupted{AddrType addr;};
 
 }// namespace BDB
 #endif

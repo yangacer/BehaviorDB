@@ -21,13 +21,10 @@ namespace BDB {
   
   typedef uint32_t AddrType;
   struct stream_state;
-
   /// Prototype of chunk size estimation callback.
   typedef uint32_t (*Chunk_size_est)(unsigned int dir, uint32_t min_size);
-
   /// Prototype of chunk cacpcity testing callback.
   typedef bool (*Capacity_test)(uint32_t chunk_size, uint32_t data_size);
-
   /**@brief Default chunk size estimation callback.
   */
   inline uint32_t 
@@ -50,46 +47,35 @@ namespace BDB {
   }
 
   /** @brief Configuration of BehaviorDB */
-  struct BDB_EXPORT Config
+  struct BDB_API Config
   {
     /// Begin number of global IDs of BehaviorDB
     AddrType beg;
-
     /// End number of global IDs of BehaviorDB (the one after the last ID)
     AddrType end;
-
     /// Bit length of address prefixes. 
     /** This parameter limits how many pools a BehaviorDB can have.
     */
     unsigned int addr_prefix_len;
-
     /// Minimum chunk size of BehaviorDB 
     uint32_t min_size;
-
     //! Directory for placing files that are used by BehaviorDB. 
     /** Default is an empty string so that a BehaviorDB uses current
      *  directory as a root dir.
      */
     char const *root_dir;
-
     /// Directory for placing pool files. Default is the root_dir
     char const *pool_dir;
-
     /// Directory for placing transaction files. Default is the root_dir.
     char const *trans_dir;
-
     /// Directory for placing header files. Default is the root_dir.
     char const *header_dir;
-
     /// Directory for placing log file. Default is the root_dir.
     char const *log_dir;
-
     /// Chunk size estimation callback
     Chunk_size_est cse_func;
-
     /// Capacity testing callback
     Capacity_test ct_func;
-
     /** @brief Config default constructor 
      *  @details Construct BDB::Config with default configurations  
      */
@@ -110,22 +96,18 @@ namespace BDB {
     /** @brief Validate configuration
      *  @throw invalid_argument
      */
-    void
-      validate() const;
+    void validate() const;
   };
 
   /// Memory/Disk Statistic
-  struct BDB_EXPORT Stat
+  struct BDB_API Stat
   {
     /// global ID table byte size
     unsigned long long gid_mem_size;
-
     /// pool byte size
     unsigned long long pool_mem_size;
-
     /// disk usage
     unsigned long long disk_size;
-
     Stat()
     :gid_mem_size(0), pool_mem_size(0), disk_size(0)
     {}
@@ -133,10 +115,8 @@ namespace BDB {
 
   /// Not a Position
   extern const uint32_t npos;
-
   /// Version information
   extern char const* VERSION;
-
 } // end of nemaespace BDB
 
 #endif // end of header

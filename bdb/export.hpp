@@ -1,43 +1,43 @@
-#ifndef BDB_BDB_EXPORT_H_
-#define BDB_BDB_EXPORT_H_
+// Usage: Use cmake to generate export header 
+// e.g. 
+// File: CMakeLists.txt
+// configure_file( export.hpp.in /data2/BehaviorDB/export.hpp )
+//
 
-#include "version.hpp"
+#ifndef BDB_EXPORT_HPP_
+#define BDB_EXPORT_HPP_
 
-#ifdef __GNUC__
-#define EXPORT_SPEC  __attribute__ ((visibility("default")))
-#define IMPORT_SPEC  __attribute__ ((visibility("default")))
-#endif 
-
-#ifdef _WIN32
-#define EXPORT_SPEC __declspec(dllexport)
-#define IMPORT_SPEC __declspec(dllimport)
+// Generic helper definitions for shared library support
+#if defined _WIN32 || defined __CYGWIN__
+  #define BDB_HELPER_DLL_IMPORT __declspec(dllimport)
+  #define BDB_HELPER_DLL_EXPORT __declspec(dllexport)
+  #define BDB_HELPER_DLL_LOCAL
+#else
+  #if __GNUC__ >= 4
+    #define BDB_HELPER_DLL_IMPORT __attribute__ ((visibility ("default")))
+    #define BDB_HELPER_DLL_EXPORT __attribute__ ((visibility ("default")))
+    #define BDB_HELPER_DLL_LOCAL  __attribute__ ((visibility ("hidden")))
+  #else
+    #define BDB_HELPER_DLL_IMPORT
+    #define BDB_HELPER_DLL_EXPORT
+    #define BDB_HELPER_DLL_LOCAL
+  #endif
 #endif
 
-#if !defined(EXPORT_SPEC) || !defined(IMPORT_SPEC)
-#error Unkown compiler
+// Now we use the generic helper definitions above to define BDB_API and BDB_LOCAL.
+// BDB_API is used for the public API symbols. It either DLL imports or DLL exports (or does nothing for static build)
+// BDB_LOCAL is used for non-api symbols.
+
+#ifdef BDB_DLL // defined if BDB is compiled as a DLL
+  #ifdef BDB_DLL_EXPORTS // defined if we are building the BDB DLL (instead of using it)
+    #define BDB_API BDB_HELPER_DLL_EXPORT
+  #else
+    #define BDB_API BDB_HELPER_DLL_IMPORT
+  #endif // BDB_DLL_EXPORTS
+  #define BDB_LOCAL BDB_HELPER_DLL_LOCAL
+#else // BDB_DLL is not defined: this means BDB is a static lib.
+  #define BDB_API
+  #define BDB_LOCAL
+#endif // BDB_DLL
+
 #endif
-
-#ifdef BDB_MAKE_DLL
-#pragma message ("Create shared bdb lib with version "BDB_VERSION_ )
-#define BDB_EXPORT EXPORT_SPEC
-#endif
-
-#ifdef BDB_MAKE_STATIC
-#pragma message ("Create static bdb lib with version "BDB_VERSION_)
-#define BDB_EXPORT 
-#endif
-
-
-#ifdef BDB_DLL
-//#pragma message ("Link with shared bdb lib " BDB_VERSION_ "(dll required)")
-#define BDB_EXPORT IMPORT_SPEC 
-#elif defined(BDB_STATIC)
-#define BDB_EXPORT
-#endif
-
-
-#ifndef BDB_EXPORT
-#error export macro error: BDB_EXPORT was not defined
-#endif
-
-#endif // end of header

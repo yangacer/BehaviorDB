@@ -1,9 +1,12 @@
-project (BehaviorDB)
+#Note the export.hpp.in depends on ${PROJECT_NAME}
+project (BDB)
 cmake_minimum_required(VERSION 2.8)
 
 include (rpath.cmake)
 
 option( BDB_DEVEL_MODE OFF )
+
+configure_file ( export.hpp.in ${CMAKE_SOURCE_DIR}/bdb/export.hpp)
 
 set (Boost_ADDITIONAL_VERSIONS "1.47" "1.47.0" )
 find_package ( Boost 1.45.0 COMPONENTS 
@@ -19,6 +22,7 @@ add_subdirectory( detail )
 include_directories( ${PROJECT_SOURCE_DIR}/bdb ${PROJECT_SOURCE_DIR}/detail )
 
 if(BDB_DEVEL_MODE)
+
   add_executable (bdb_test ${PROJECT_SOURCE_DIR}/tests/bdb.cpp)
   target_link_libraries(bdb_test bdb)
 
@@ -33,10 +37,12 @@ if(BDB_DEVEL_MODE)
                   detail/fixedPool.cpp
                   detail/id_pool.cpp
                   detail/chunk.cpp)
+  target_link_libraries (bdb_idp bdb)
 
   add_executable (bdb_iov
                   ${PROJECT_SOURCE_DIR}/tests/v_iovec.cpp
                   detail/v_iovec.cpp)
+  target_link_libraries (bdb_iov bdb)
   
                   
 endif()

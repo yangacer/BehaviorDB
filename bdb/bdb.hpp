@@ -12,7 +12,7 @@ struct AddrIterator;
 
 /** @brief Core class
 */
-struct BDB_EXPORT BehaviorDB
+struct BDB_API BehaviorDB
 {
   /** @brief Constructor
    *  @param conf

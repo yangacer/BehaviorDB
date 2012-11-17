@@ -20,12 +20,9 @@ namespace BDB {
     typedef T& reference;
     
     fixed_pool(uint32_t /*dummy*/); 
-    
     // TODO deprecate this
     fixed_pool(unsigned int id, char const* work_dir);
-
     ~fixed_pool();
-
     operator void const *() const;
 
     /** Open pool file
@@ -37,19 +34,11 @@ namespace BDB {
      * associated with a file "0001.fpo".
      */
     void open(unsigned int id, char const* work_dir);
-    
     T operator[](AddrType addr) const;
-    
-    void init(T const &val, AddrType off){}
-    
     void store(T const &val, AddrType off);
-    
     void resize(uint32_t size){};
-
     int read(T* val, AddrType addr) const;
-    
     int write(T const & val, AddrType addr);
-
     std::string dir() const;
 
   private:
@@ -76,12 +65,6 @@ namespace BDB {
 
     T operator[](AddrType addr) const
     { return vec_[addr]; }
-
-    void init(T const &val, AddrType off)
-    { 
-      assert(off < vec_.size());
-      vec_[off] = val; 
-    }
 
     void store(T const &val, AddrType off)
     { 

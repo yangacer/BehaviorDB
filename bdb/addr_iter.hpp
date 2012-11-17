@@ -10,43 +10,31 @@ namespace BDB {
 
   /** @brief Iterating addresses
   */
-  struct BDB_EXPORT AddrIterator 
+  struct BDB_API AddrIterator 
   {
     friend struct BDBImpl;
-
     /// ctor
     AddrIterator();
-
     /// copy ctor
     AddrIterator(AddrIterator const &cp);
-
     /// Assignment operator
     AddrIterator& 
     operator=(AddrIterator const& cp);
-
     /// prefix increment operator
     AddrIterator &
     operator++();
-
     /** Get the address on iterating
     */
     AddrType
     operator*() const;
-
     /// equality binary operator
-    bool 
-    operator==(AddrIterator const& rhs) const;
-
+    bool operator==(AddrIterator const& rhs) const;
     /// in-equality binary operator
-    bool 
-    operator!=(AddrIterator const& rhs) const
-      { return !(*this == rhs); }
-
-    protected:
-
+    bool operator!=(AddrIterator const& rhs) const
+    { return !(*this == rhs); }
+  protected:
     /// internal ctor
     AddrIterator(BDBImpl const &bdb, AddrType cur);
-
   private:
     AddrType cur_;
     BDBImpl const *bdb_;

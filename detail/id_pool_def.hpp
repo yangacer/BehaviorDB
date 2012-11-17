@@ -27,7 +27,7 @@ IDPool<Array>::IDPool(
   if(dynamic == full_alloc_){
     while(size > 1024)
       size >>= 1;
-}
+  }
   bm_.resize(size, true);
   lock_.resize(size, false);
   arr_.template resize(size);
@@ -217,7 +217,7 @@ void IDPool<Array>::replay_transaction(char const* file)
       if(bm_.size() <= off)
         extend(off+1);
       bm_[off] = false;
-      arr_.template init(val, off);
+      arr_.template store(val, off);
       if(max_used_ <= off) max_used_ = off+1;
     }else if('-' == line[0]){
       bm_[off] = true;
