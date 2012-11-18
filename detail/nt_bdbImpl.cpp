@@ -70,6 +70,7 @@ namespace BDB {
     if( !addrEval.capacity_test(dir, size) ){
       unsigned int old_dir = dir;
       AddrType old_addr = loc_addr;
+      // XXX why I declare this ?
       AddrType addr = write_pool(data, size);
       pools_[old_dir].free(old_addr);
     }else{

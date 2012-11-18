@@ -3,6 +3,7 @@ project (BDB)
 cmake_minimum_required(VERSION 2.8)
 
 include (rpath.cmake)
+include (use_c++11.cmake)
 
 option( BDB_DEVEL_MODE OFF )
 
@@ -44,7 +45,8 @@ if(BDB_DEVEL_MODE)
                   detail/v_iovec.cpp)
   target_link_libraries (bdb_iov bdb)
   
-                  
+  add_executable (log tests/log.cpp)
+
 endif()
 
 add_executable (logcvt ${PROJECT_SOURCE_DIR}/tools/logcvt.cpp)

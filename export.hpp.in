@@ -1,0 +1,43 @@
+// Usage: Use cmake to generate export header 
+// e.g. 
+// File: CMakeLists.txt
+// configure_file( export.hpp.in ${PROJECT_SOURCE_DIR}/export.hpp )
+//
+
+#ifndef @PROJECT_NAME@_EXPORT_HPP_
+#define @PROJECT_NAME@_EXPORT_HPP_
+
+// Generic helper definitions for shared library support
+#if defined _WIN32 || defined __CYGWIN__
+  #define @PROJECT_NAME@_HELPER_DLL_IMPORT __declspec(dllimport)
+  #define @PROJECT_NAME@_HELPER_DLL_EXPORT __declspec(dllexport)
+  #define @PROJECT_NAME@_HELPER_DLL_LOCAL
+#else
+  #if __GNUC__ >= 4
+    #define @PROJECT_NAME@_HELPER_DLL_IMPORT __attribute__ ((visibility ("default")))
+    #define @PROJECT_NAME@_HELPER_DLL_EXPORT __attribute__ ((visibility ("default")))
+    #define @PROJECT_NAME@_HELPER_DLL_LOCAL  __attribute__ ((visibility ("hidden")))
+  #else
+    #define @PROJECT_NAME@_HELPER_DLL_IMPORT
+    #define @PROJECT_NAME@_HELPER_DLL_EXPORT
+    #define @PROJECT_NAME@_HELPER_DLL_LOCAL
+  #endif
+#endif
+
+// Now we use the generic helper definitions above to define @PROJECT_NAME@_API and @PROJECT_NAME@_LOCAL.
+// @PROJECT_NAME@_API is used for the public API symbols. It either DLL imports or DLL exports (or does nothing for static build)
+// @PROJECT_NAME@_LOCAL is used for non-api symbols.
+
+#ifdef @PROJECT_NAME@_DLL // defined if @PROJECT_NAME@ is compiled as a DLL
+  #ifdef @PROJECT_NAME@_DLL_EXPORTS // defined if we are building the @PROJECT_NAME@ DLL (instead of using it)
+    #define @PROJECT_NAME@_API @PROJECT_NAME@_HELPER_DLL_EXPORT
+  #else
+    #define @PROJECT_NAME@_API @PROJECT_NAME@_HELPER_DLL_IMPORT
+  #endif // @PROJECT_NAME@_DLL_EXPORTS
+  #define @PROJECT_NAME@_LOCAL @PROJECT_NAME@_HELPER_DLL_LOCAL
+#else // @PROJECT_NAME@_DLL is not defined: this means @PROJECT_NAME@ is a static lib.
+  #define @PROJECT_NAME@_API
+  #define @PROJECT_NAME@_LOCAL
+#endif // @PROJECT_NAME@_DLL
+
+#endif

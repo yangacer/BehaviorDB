@@ -14,9 +14,9 @@ IDPool<Array>::IDPool(
   AddrType beg, AddrType end, 
   IDPoolAlloc alloc_policy)
 : beg_(beg), end_(end), 
-  file_(0), bm_(), lock_(), 
+  bm_(), lock_(), 
   full_alloc_(alloc_policy), max_used_(0),
-  arr_(0)
+  file_(0),  arr_(0)
 {
   if(beg >= end)
     throw std::invalid_argument(SRC_POS);

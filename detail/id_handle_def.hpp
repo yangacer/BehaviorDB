@@ -54,7 +54,7 @@ id_handle<IDP>::~id_handle()
   using namespace detail;
   if(commited_) return;
 
-  unsigned int opcode = (unsigned int)op_;
+  // unsigned int opcode = (unsigned int)op_;
   switch(op_){
   case ACQUIRE_AUTO:
   case ACQUIRE_SPEC:

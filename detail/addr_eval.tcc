@@ -101,7 +101,7 @@ T
 addr_eval<T>::global_addr(unsigned int dir, T local_addr) const
 {
   // preservation of failure
-  return (local_addr == -1) ? -1 :
+  return (local_addr == static_cast<T>(-1)) ? -1 :
     dir << local_addr_len() | (loc_addr_mask & local_addr);
 }
 

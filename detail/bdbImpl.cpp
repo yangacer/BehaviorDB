@@ -115,7 +115,7 @@ namespace BDB {
 
       unsigned int dir = addrEval.addr_to_dir(hdl.const_value());
       AddrType loc_addr = addrEval.local_addr(hdl.const_value());
-      AddrType nwe_addr;
+      // AddrType nwe_addr;
       try{
         // no pool-to-pool migration 
         loc_addr = pools_[dir].write(data, size, loc_addr, off);
@@ -163,9 +163,6 @@ namespace BDB {
   BDBImpl::update(char const *data, uint32_t size, AddrType addr)
   {
     id_handle_t hdl(detail::MODIFY, *global_id_, addr);
-    AddrType internal_addr;
-
-    internal_addr = global_id_->Find(addr);
 
     unsigned int dir = addrEval.addr_to_dir(hdl.const_value());
     AddrType loc_addr = addrEval.local_addr(hdl.const_value());
