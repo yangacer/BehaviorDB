@@ -30,8 +30,8 @@ if(BDB_DEVEL_MODE)
   add_executable (bdb_iter ${PROJECT_SOURCE_DIR}/tests/iterate.cpp)
   target_link_libraries (bdb_iter bdb)
 
-  add_executable (bdb_simulator ${PROJECT_SOURCE_DIR}/tools/simulator.cpp)
-  target_link_libraries(bdb_simulator bdb)
+  add_executable (sim ${PROJECT_SOURCE_DIR}/tools/simulator.cpp)
+  target_link_libraries(sim bdb)
 
   add_executable (bdb_idp 
                   ${PROJECT_SOURCE_DIR}/tests/idpool.cpp

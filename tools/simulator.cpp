@@ -1,99 +1,86 @@
-#include "bdb.hpp"
-#include <vector>
 #include <fstream>
-#include <string>
 #include <iostream>
-#include <cstring>
-#include <cstdio>
-#include <cstdlib>
+#include <memory>
 
-#define KB *1024
-#define MB *1048576
+#include "bdb.hpp"
 
-void usage()
-{ 
-  using namespace std;
-  cout<<"./simulator -w work_dir -h header_dir workload"<<endl;
-  exit(1);
-}
-
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
   using namespace std;
-  using namespace BDB;
 
-  if(argc < 2)
-    usage();
-
-  char const *work_dir = 0;
-  char const *header_dir = 0; 
-  char const *workload = 0;
-
-  for(int i=1;i<argc;++i){
-    if(0 == strcmp("-w", argv[i])){
-      if(i+1 >= argc) usage();
-      work_dir = argv[i+1];
-      ++i;
-    }else if(0 == strcmp("-h", argv[i])){
-      if(i+1 >= argc) usage();
-      header_dir = argv[i+1];
-      ++i;
-    }else {
-      workload = argv[i];     
-    }
-
+  if(argc < 3){
+    cerr << "Usage: sim2 <log> <work_dir>\n";
+    return 1;
   }
 
-  ifstream fin;
-  size_t const bufsize = 1 MB;
-  char buf[bufsize];
-  Config conf;
-  conf.min_size = 1 KB;
-  if(work_dir) conf.root_dir = work_dir;
-  if(header_dir) conf.header_dir = header_dir;
-  conf.beg = 1; conf.end = 1 + 5000000;
-  BehaviorDB bdb(conf);
+  ifstream fin(argv[1], ios::binary | ios::in);
 
-  fin.rdbuf()->pubsetbuf(buf, bufsize);
-  fin.open(workload, ios::in | ios::binary);
-
-  if(!fin.is_open())
-    return 0;
-
-  string cmd;
-  string arg;
-  size_t size, offset;
-  AddrType addr;
-  string data_src;
-  string data_dest;
-  data_src.resize(4 KB);
-  data_dest.resize(4 KB);
-
-  size_t lineNum = 1;
-  while(fin>>cmd){
-    if("put" == cmd){
-      fin>>arg;
-      size = strtoul(arg.c_str(), 0, 16);
-      if(size > data_src.size())
-        data_src.resize(size);
-      if(-1 == bdb.put(data_src.c_str(), size)){
-        cerr<<"put error at line: "<<lineNum<<endl;
-      }
-    }else if("get" == cmd){
-      fin>>arg;
-      size = strtoul(arg.c_str(), 0, 16);
-      fin>>arg;
-      addr = strtoul(arg.c_str(), 0, 16);
-      fin>>arg;
-      offset = strtoul(arg.c_str(), 0, 16);
-      if(size > data_dest.size()) 
-        data_dest.resize(size);
-      if(-1 == bdb.get(&data_dest, size, addr, offset))
-        cerr<<"get error at line: "<<lineNum<<endl;
-    }
-    lineNum++;
+  if(!fin.is_open()){
+    cerr << "open file " << argv[1] << "failed\n";
+    return 1;
   }
 
-  fin.close();
+  std::string cmd;
+  shared_ptr<BDB::BehaviorDB> bdb;
+
+  fin >> cmd;
+  if(cmd != "conf"){
+    cerr << "no configuration log\n";
+    return 1;
+  }else{
+    BDB::AddrType beg, end;
+    unsigned int addr_prefix_len;
+    uint32_t min_size;
+    fin >> beg >> end >> addr_prefix_len >> min_size;
+    BDB::Config conf(beg, end, addr_prefix_len, min_size, argv[2]);
+    bdb.reset(new BDB::BehaviorDB(conf));
+    getline(fin, cmd); // ignore others
+  }
+  
+  uint32_t size, off;
+  BDB::AddrType addr;
+  std::string data;
+
+  while(fin >> cmd){
+    if(cmd == "put"){
+      fin >> size;
+      data.resize(size);
+      bdb->put(data.c_str(), size);
+    }else if(cmd == "put-spec"){
+      fin >> size >> addr >> off;
+      data.resize(size);
+      bdb->put(data.c_str(), size, addr, off);
+    }else if(cmd == "insert"){
+      fin >> size >> addr >> off;
+      data.resize(size);
+      bdb->put(data.c_str(), size, addr, off);
+    }else if(cmd == "get"){
+      fin >> size >> addr >> off;
+      data.resize(size);
+      bdb->get(&data[0], size, addr, off);
+    }else if(cmd == "string_get"){
+      fin >> size >> addr >> off;
+      data.resize(size);
+      bdb->get(&data, size, addr, off);
+    }else if(cmd == "del"){
+      fin >> addr;
+      bdb->del(addr);
+    }else if(cmd == "partial_del"){
+      fin >> addr >> off >> size;
+      bdb->del(addr, off, size);
+    }else if(cmd == "update"){
+      fin >> size >> addr;
+      data.resize(size);
+      bdb->update(data.c_str(), size, addr);
+    }else if(cmd == "update_put"){
+      fin >> size >> addr;
+      data.resize(size);
+      bdb->update(data.c_str(), size, addr);
+    }else{
+      cerr << "unknown method " << cmd <<"\n";
+      return 1;
+    }
+  }
+
   return 0;
 }

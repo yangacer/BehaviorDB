@@ -25,7 +25,6 @@ namespace BDB {
     delete global_id_;
 
     access_log_.close();
-    //if(acc_log_) fclose(acc_log_);
     if(err_log_) fclose(err_log_);
     
     if(!pools_) return;
@@ -71,18 +70,22 @@ namespace BDB {
       if(0 != setvbuf(err_log_, err_log_buf_, _IOLBF, 256))
         throw std::runtime_error("setvbuf to log file failed\n");
       
-      sprintf(fname, "%saccess2.log", log_dir);
+      sprintf(fname, "%saccess.log", log_dir);
       if(!access_log_.rdbuf()->pubsetbuf(acc_log_buf_, 4096))
         throw std::runtime_error("setvbuf to log file failed\n");
       access_log_.open(fname, ios::out | ios::binary | ios::app);
       if(!access_log_.is_open())
-        throw std::runtime_error("create access2.log file failed\n");
+        throw std::runtime_error("create access.log file failed\n");
       logger_.reset(new logger(access_log_));
     }
 
     // init IDValPool
     sprintf(fname, "%sgid_", conf.root_dir);
     global_id_ = new idpool_t(0, fname, conf.beg, npos, dynamic);
+
+    logger_->log("conf", conf.beg, conf.end, conf.addr_prefix_len,
+                 conf.min_size, conf.root_dir, conf.pool_dir,
+                 conf.trans_dir, conf.header_dir, conf.log_dir);
   }
   
   AddrType
