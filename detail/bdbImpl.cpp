@@ -15,9 +15,8 @@
 namespace BDB {
   
   BDBImpl::BDBImpl(Config const & conf)
-  : pools_(0), err_log_(0), acc_log_(0), global_id_(0)
+  : pools_(0), err_log_(0), global_id_(0)
   {
-    conf.validate();
     init_(conf); 
   }
   
@@ -25,9 +24,10 @@ namespace BDB {
   {
     delete global_id_;
 
-    if(acc_log_) fclose(acc_log_);
+    access_log_.close();
+    //if(acc_log_) fclose(acc_log_);
     if(err_log_) fclose(err_log_);
-
+    
     if(!pools_) return;
     for(unsigned int i =0; i<addrEval.dir_count(); ++i)
       pools_[i].~pool();
@@ -37,6 +37,8 @@ namespace BDB {
   void
   BDBImpl::init_(Config const & conf)
   {
+    using namespace std;
+
     addrEval.init(
       conf.addr_prefix_len, 
       conf.min_size, 
@@ -69,12 +71,13 @@ namespace BDB {
       if(0 != setvbuf(err_log_, err_log_buf_, _IOLBF, 256))
         throw std::runtime_error("setvbuf to log file failed\n");
       
-      sprintf(fname, "%saccess.log", log_dir);
-      if(0 == (acc_log_ = fopen(fname, "ab")))
-        throw std::runtime_error("create access log file failed\n");
-    
-      if(0 != setvbuf(acc_log_, acc_log_buf_, _IOFBF, 4096))
+      sprintf(fname, "%saccess2.log", log_dir);
+      if(!access_log_.rdbuf()->pubsetbuf(acc_log_buf_, 4096))
         throw std::runtime_error("setvbuf to log file failed\n");
+      access_log_.open(fname, ios::out | ios::binary | ios::app);
+      if(!access_log_.is_open())
+        throw std::runtime_error("create access2.log file failed\n");
+      logger_.reset(new logger(access_log_));
     }
 
     // init IDValPool
@@ -91,10 +94,7 @@ namespace BDB {
     id_handle_t hdl(detail::ACQUIRE_AUTO, *global_id_);
     hdl.value() = write_pool(data, size);
     hdl.commit();
-    
-    if(acc_log_) 
-      fprintf(acc_log_, "%-12s\t%08x\n", "put", size);
-
+    logger_->log("put", size);
     return hdl.addr();
   }
 
@@ -106,24 +106,20 @@ namespace BDB {
       id_handle_t hdl(detail::ACQUIRE_SPEC, *global_id_, addr);
       hdl.value() = write_pool(data, size);
       hdl.commit();
-      if(acc_log_)
-        fprintf(acc_log_, "%-12s\t%08x\t%08x\n", 
-                "put-spec", size, addr);
+      logger_->log("put-spec", size, addr, off);
     }catch(BDB::invalid_addr const &ia){
 
       id_handle_t hdl(detail::MODIFY, *global_id_, addr);
 
       unsigned int dir = addrEval.addr_to_dir(hdl.const_value());
       AddrType loc_addr = addrEval.local_addr(hdl.const_value());
-      // AddrType nwe_addr;
+
       try{
         // no pool-to-pool migration 
         loc_addr = pools_[dir].write(data, size, loc_addr, off);
         hdl.value() = addrEval.global_addr(dir, loc_addr);
         hdl.commit();
-        if(acc_log_)
-          fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", 
-                  "insert", size, addr, off);
+        logger_->log("insert", size, addr, off);
       }catch(internal_chunk_overflow const &co){
         // migration
         unsigned int next_dir = 
@@ -150,10 +146,7 @@ namespace BDB {
 
         hdl.value() = addrEval.global_addr(next_dir, next_loc_addr);
         hdl.commit();
-
-        if(acc_log_)
-          fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", 
-                  "insert", size, addr, off);
+        logger_->log("insert", size, addr, off);
       }
     }
     return addr;
@@ -176,19 +169,12 @@ namespace BDB {
  
       hdl.value() = new_internal_addr;
       hdl.commit();
-
       pools_[old_dir].free(old_loc_addr);
-
-      if(acc_log_) 
-        fprintf(acc_log_, "%-12s\t%08x\t%08x\n", "update_put", size, addr);
-
+      logger_->log("update_put", size, addr);
     }else{
       loc_addr = pools_[dir].replace(data, size, loc_addr);
-
-      if(acc_log_) 
-        fprintf(acc_log_, "%-12s\t%08x\t%08x\n", "update", size, addr);
+      logger_->log("update", size, addr);
     }
-
     return addr;
   }
 
@@ -202,10 +188,7 @@ namespace BDB {
     AddrType loc_addr = addrEval.local_addr(hdl.const_value());
     
     rt = pools_[dir].read(output, size, loc_addr, off);
-    
-    if(acc_log_) 
-      fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", "get", size, addr, off);
-
+    logger_->log("get", size, addr, off);
     return rt;
   }
   
@@ -219,10 +202,7 @@ namespace BDB {
     AddrType loc_addr = addrEval.local_addr(hdl.const_value());
     
     rt = pools_[dir].read(output, max, loc_addr, off);
-
-    if(acc_log_) 
-      fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", "string_get", max, addr, off);
-
+    logger_->log("string_get", max, addr, off);
     return rt;
   }
 
@@ -240,10 +220,7 @@ namespace BDB {
       id_handle_t hdl(detail::RELEASE, *global_id_, addr);
       hdl.commit();
     }
-
-    if(acc_log_)
-      fprintf(acc_log_, "%-12s\t%08x\n", "del", addr);
-
+    logger_->log("del", addr);
     return 0;
   }
 
@@ -259,10 +236,7 @@ namespace BDB {
 
     nsize = pools_[dir].erase(loc_addr, off, size);
     hdl.commit();
-
-    if(acc_log_) 
-      fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", "partial_del", addr, off, size);
-    
+    logger_->log("partial_del", addr, off, size);
     return nsize;
   }
   

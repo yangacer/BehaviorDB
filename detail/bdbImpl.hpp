@@ -3,17 +3,23 @@
 
 #include <cstdio>
 #include <string>
-#include "common.hpp"
-#include "addr_eval.hpp"
+#include <memory>
+#include <fstream>
+
 #include "boost/unordered_map.hpp"
 #include "boost/unordered_set.hpp"
-#include "boost/pool/object_pool.hpp"
+//#include "boost/pool/object_pool.hpp"
 #include "boost/noncopyable.hpp"
+
+#include "common.hpp"
+#include "addr_eval.hpp"
+#include "log.hpp"
 
 namespace BDB {
   
   struct pool;
   struct AddrIterator;  
+  class logger;
 
   template<class T>
   class IDPool;
@@ -176,13 +182,15 @@ namespace BDB {
     FILE* err_log_;
     char err_log_buf_[256];
     
-    FILE* acc_log_;
+    //FILE* acc_log_;
     char acc_log_buf_[4096];
 
     typedef IDPool<vec_wrapper<AddrType> > idpool_t;
     typedef id_handle<idpool_t> id_handle_t;
     idpool_t *global_id_;
     
+    std::ofstream access_log_;
+    std::shared_ptr<logger> logger_;
     // AddrCntCont in_reading_;
     // TODO two containers as follows are not recoverable
     // EncStreamCont enc_stream_state_;

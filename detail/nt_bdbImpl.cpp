@@ -9,11 +9,11 @@ namespace BDB {
   BDBImpl::nt_put(char const *data, uint32_t size)
   {
     AddrType rt = write_pool(data, size);
-    if(acc_log_) 
-      fprintf(acc_log_, "%-12s\t%08x\n", "nt_put", size);
+    logger_->log("nt_put", size);
     return rt;
   }
-  
+ 
+  // XXX This looks not sync with BDBImpl::put
   AddrType
   BDBImpl::nt_put(char const* data, uint32_t size, AddrType addr, uint32_t off)
   {
@@ -25,9 +25,7 @@ namespace BDB {
       // no migration
       loc_addr = pools_[dir].write(data, size, loc_addr, off);
       rt = addrEval.global_addr(dir, loc_addr);
-      if(acc_log_)
-        fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", 
-                "insert", size, rt, off);
+      logger_->log("nt_insert", size, rt, off);
     }catch(internal_chunk_overflow const &co){
       // migration
       unsigned int next_dir = 
@@ -53,8 +51,7 @@ namespace BDB {
         throw addr_overflow();
 
       rt = addrEval.global_addr(next_dir, next_loc_addr);
-      if(acc_log_)fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", 
-        "insert", size, rt, off);
+      logger_->log("nt_insert", size, rt, off);
     }
     return addr;
   }
@@ -77,10 +74,7 @@ namespace BDB {
       addr = pools_[dir].replace(data, size, loc_addr);
     }
 
-    if(acc_log_) 
-      fprintf(acc_log_, "%-12s\t%08x\t%08x\n", 
-              "update_put", size, addr);
-
+    logger_->log("nt_update", size, addr);
     return addr;
   }
   
@@ -93,9 +87,7 @@ namespace BDB {
     
     rt = pools_[dir].read(output, size, loc_addr, off);
 
-    if(acc_log_) 
-      fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", "nt_get", size, addr, off);
-
+    logger_->log("nt_get", size, addr, off);
     return rt;
   }
   
@@ -111,8 +103,7 @@ namespace BDB {
     
     rt = pools_[dir].read(output, max, loc_addr, off);
 
-    if(acc_log_) 
-      fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", "nt_strget", (uint32_t)output->size(), addr, off);
+    logger_->log("nt_get", max, addr, off);
     return rt;
   }
   
@@ -124,8 +115,7 @@ namespace BDB {
     
     pools_[dir].free(loc_addr);
 
-    if(acc_log_) 
-      fprintf(acc_log_, "%-12s\t%08x\n", "nt_del", addr);
+    logger_->log("nt_del", addr);
     return 0;
   }
 
@@ -136,10 +126,7 @@ namespace BDB {
     AddrType loc_addr = addrEval.local_addr(addr);
     uint32_t nsize = pools_[dir].erase(loc_addr, off, size);
     
-    if(acc_log_) 
-      fprintf(acc_log_, "%-12s\t%08x\t%08x\t%08x\n", 
-        "nt_part_del", addr, off, size);
-
+    logger_->log("nt_partial_del", addr, off, size);
     return nsize;
   }
 
