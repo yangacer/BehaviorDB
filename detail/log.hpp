@@ -16,7 +16,7 @@ void serialize(Ar &ar, Config &conf, unsigned int const version)
 */
 namespace BDB {
 
-void log_(std::ostream &os)
+inline void log_(std::ostream &os)
 { os << "\n"; }
 
 template <typename First, typename ...Rest>
