@@ -1,15 +1,15 @@
 #include "log.hpp"
 #include <sstream>
-#include <iostream>
+#include <cassert>
 
 int main()
 {
   std::stringstream sin;
   BDB::logger l(sin);
 
-  l.log("put", 1024, 1238, "char const*");
+  l.log("put", 1024, 1238, "char-const*");
 
-  std::cout << sin.str() << std::endl;
+  assert(sin.str() == "put 1024 1238 char-const*\n");
 
   return 0;
 }
