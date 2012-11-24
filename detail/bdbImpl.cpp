@@ -46,9 +46,9 @@ namespace BDB {
 
     // initial pools
     pool::config pcfg;
-    pcfg.work_dir = (*conf.pool_dir) ? conf.pool_dir : conf.root_dir;
-    pcfg.trans_dir =(*conf.trans_dir) ?  conf.trans_dir : conf.root_dir;
-    pcfg.header_dir = (*conf.header_dir) ? conf.header_dir : conf.root_dir;
+    pcfg.work_dir = conf.pool_dir.empty() ? conf.root_dir : conf.pool_dir;
+    pcfg.trans_dir =conf.trans_dir.empty() ? conf.root_dir : conf.trans_dir;
+    pcfg.header_dir = conf.header_dir.empty() ? conf.root_dir : conf.header_dir;
 
     pools_ = (pool*)malloc(sizeof(pool) * addrEval.dir_count());
     for(unsigned int i =0; i<addrEval.dir_count(); ++i){
@@ -58,29 +58,28 @@ namespace BDB {
 
     // init logs
     char fname[256] = {};
-    if(conf.log_dir){
-      char const* log_dir = (*conf.log_dir) ? conf.log_dir : conf.root_dir;
-      if(strlen(log_dir) > 256)
-        throw std::length_error("length of pool_dir string is too long\n");
+    char const * log_dir = 
+      conf.log_dir.empty() ? conf.root_dir.c_str() : conf.log_dir.c_str();
+    if(strlen(log_dir) > 256)
+      throw std::length_error("length of pool_dir string is too long\n");
 
-      sprintf(fname, "%serror.log", log_dir);
-      if(0 == (err_log_ = fopen(fname, "ab")))
-        throw std::runtime_error("create error log file failed\n");
-    
-      if(0 != setvbuf(err_log_, err_log_buf_, _IOLBF, 256))
-        throw std::runtime_error("setvbuf to log file failed\n");
-      
-      sprintf(fname, "%saccess.log", log_dir);
-      if(!access_log_.rdbuf()->pubsetbuf(acc_log_buf_, 4096))
-        throw std::runtime_error("setvbuf to log file failed\n");
-      access_log_.open(fname, ios::out | ios::binary | ios::app);
-      if(!access_log_.is_open())
-        throw std::runtime_error("create access.log file failed\n");
-      logger_.reset(new logger(access_log_));
-    }
+    sprintf(fname, "%serror.log", log_dir);
+    if(0 == (err_log_ = fopen(fname, "ab")))
+      throw std::runtime_error("create error log file failed\n");
+
+    if(0 != setvbuf(err_log_, err_log_buf_, _IOLBF, 256))
+      throw std::runtime_error("setvbuf to log file failed\n");
+
+    sprintf(fname, "%saccess.log", log_dir);
+    if(!access_log_.rdbuf()->pubsetbuf(acc_log_buf_, 4096))
+      throw std::runtime_error("setvbuf to log file failed\n");
+    access_log_.open(fname, ios::out | ios::binary | ios::app);
+    if(!access_log_.is_open())
+      throw std::runtime_error("create access.log file failed\n");
+    logger_.reset(new logger(access_log_));
 
     // init IDValPool
-    sprintf(fname, "%sgid_", conf.root_dir);
+    sprintf(fname, "%sgid_", conf.root_dir.c_str());
     global_id_ = new idpool_t(0, fname, conf.beg, npos, dynamic);
 
     logger_->log("conf", conf.beg, conf.end, conf.addr_prefix_len,
@@ -88,6 +87,12 @@ namespace BDB {
                  conf.trans_dir, conf.header_dir, conf.log_dir);
   }
   
+  void
+  BDBImpl::purgeclean() // TODO
+  {
+    
+  }
+
   AddrType
   BDBImpl::put(char const *data, uint32_t size)
   {

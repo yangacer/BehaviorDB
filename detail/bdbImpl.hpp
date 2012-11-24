@@ -41,7 +41,9 @@ namespace BDB {
     
     void
     init_(Config const & conf);
-
+  
+    void
+    purgeclean();
 
     /** @brief Put data
      *  @param data

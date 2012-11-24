@@ -2,6 +2,7 @@
 #define _COMMON_HPP
 
 #include "export.hpp"
+#include <string>
 
 #ifdef __GNUC__ // GNU
 
@@ -63,15 +64,15 @@ namespace BDB {
     /** Default is an empty string so that a BehaviorDB uses current
      *  directory as a root dir.
      */
-    char const *root_dir;
+    std::string root_dir;
     /// Directory for placing pool files. Default is the root_dir
-    char const *pool_dir;
+    std::string pool_dir;
     /// Directory for placing transaction files. Default is the root_dir.
-    char const *trans_dir;
+    std::string trans_dir;
     /// Directory for placing header files. Default is the root_dir.
-    char const *header_dir;
+    std::string header_dir;
     /// Directory for placing log file. Default is the root_dir.
-    char const *log_dir;
+    std::string log_dir;
     /// Chunk size estimation callback
     Chunk_size_est cse_func;
     /// Capacity testing callback
@@ -99,7 +100,7 @@ namespace BDB {
     void validate() const;
   };
 
-  /// Memory/Disk Statistic
+  /// Memory/Disk Statistic TODO fragmentation
   struct BDB_API Stat
   {
     /// global ID table byte size

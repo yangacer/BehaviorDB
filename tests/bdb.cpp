@@ -2,6 +2,7 @@
 #include "addr_iter.hpp"
 #include <cstdio>
 #include <cstring>
+#include <cassert>
 #include <string>
 #include <exception>
 #include <stdexcept>
@@ -49,25 +50,18 @@ int main(int argc, char** argv)
   std::string rec;
   char const* data = "acer";
   AddrType addrs[3] = {};
-  size_t off;
 
   {
     // write
     addrs[0] = bdb.put(data, 4);
     addrs[1] = bdb.put(data, 4);
-    printf("\n==== write 4 bytes to two chunks ====\n");
-    printf("write \"%s\"\n", data);
-    printf("should: 00000001\n");
-    printf("result: %08x\n", addrs[0]); 
-    printf("write \"%s\"\n", data);
-    printf("should: 00000002\n");
-    printf("result: %08x\n", addrs[1]);  
-
+    printf(" - write 4 bytes to two chunks\n");
+    assert(addrs[0] == 1);
+    assert(addrs[1] == 2);
     // write to specific chunk
     addrs[2] = bdb.put("good", 4, 3u);
-    printf("\n=== write to address 3 which does not exist currently ====\n");
-    printf("should: 00000003\n");
-    printf("result: %08x\n", addrs[2]);
+    printf(" - write to address 3 which does not exist currently\n");
+    assert(addrs[2] == 3);
   }
 
   {
@@ -77,11 +71,9 @@ int main(int argc, char** argv)
 
     bdb.get(read, 4, addrs[0]); 
     bdb.get(read2,4, addrs[1]);
-    printf("\n==== read 4 bytes from two chunks ====\n");
-    printf("should: %s\n", data);
-    printf("result: %s\n", read);
-    printf("should: %s\n", data);
-    printf("result: %s\n", read2);
+    printf(" - read 4 bytes from two chunks\n");
+    assert(0 == strncmp(data, read, 4));
+    assert(0 == strncmp(data, read2, 4));
   }
 
   {
@@ -89,10 +81,8 @@ int main(int argc, char** argv)
     char const *data2 = "1234567890asdfghjkl;12345678901234567890";
     addrs[0] = bdb.put(data2, strlen(data2), addrs[0]);
     bdb.get(&rec, 50, addrs[0]);
-    printf("\n==== append 40 bytes ====\n");
-    printf("append \"%s\" after \"%s\"\n", data2, data);
-    printf("should: acer1234567890asdfghjkl;12345678901234567890\n");
-    printf("result: %s\n", rec.c_str()); 
+    printf(" - append 40 bytes\n");
+    assert(rec == "acer1234567890asdfghjkl;12345678901234567890");
   }
   
   {
@@ -103,10 +93,8 @@ int main(int argc, char** argv)
     should += rec;
     addrs[0] = bdb.put(data3, 4, addrs[0], 0);
     bdb.get(&rec, 100, addrs[0]);
-    printf("\n==== insertion then read====\n");
-    printf("prepend \"yang\" and read result into a c-string\n");
-    printf("should:\t%s\n", should.c_str());
-    printf("result:\t%s\n", rec.c_str());
+    printf(" - prepend then read\n");
+    assert(should == rec);
   }
   
   {
@@ -117,18 +105,15 @@ int main(int argc, char** argv)
     should.insert(8, data4);
     bdb.get(&rec, 100, addrs[0]);
 
-    printf("\n==== insertion then read====\n");
-    printf("insert \" made\" at 8, and read result into a c-string\n");
-    printf("should:\t%s\n", should.c_str());
-    printf("result:\t%s\n", rec.c_str());
+    printf(" - insert then read\n");
+    assert(should == rec);
   }
 
   {
     // read into string
     bdb.get(&rec, 1024, addrs[0]);
-    printf("\n==== read data into a std::string ====\n");
-    printf("should:\t%s\n", should.c_str());
-    printf("result:\t%s\n", rec.c_str());
+    printf(" - read data into a std::string\n");
+    assert(should == rec);
   }
 
   {
@@ -136,9 +121,9 @@ int main(int argc, char** argv)
     size_t nsize = bdb.del(addrs[0], 13, 10);
     bdb.get(&rec, 1024, addrs[0]);
     should.erase(13, 10);
-    printf("\n==== del data betwen (13, 23] ====\n");
-    printf("should:\t%s\t%d\n", should.c_str(), should.size());
-    printf("result:\t%s\t%d\n", rec.c_str(), nsize);
+    printf(" - del data betwen (13, 23]\n");
+    assert(nsize == rec.size());
+    assert(should == rec);
   }
 
   {
@@ -146,9 +131,8 @@ int main(int argc, char** argv)
     bdb.update("replaced", addrs[0]);
     bdb.get(&rec, 1024, addrs[0]);
     should = "replaced";
-    printf("\n==== replace data with \"replaced\" ====\n");
-    printf("should:\t%s\n", should.c_str());
-    printf("result:\t%s\n", rec.c_str());
+    printf(" - replace data with \"replaced\"\n");
+    assert(should == rec);
   }
   
   {
@@ -156,18 +140,16 @@ int main(int argc, char** argv)
     should = "123456789012345678901234567890tail";
     bdb.update(should.c_str(), should.size(), addrs[1]);
     bdb.get(&rec, 1024, addrs[1]);
-    printf("\n==== replace data with long value to cause migration ====\n");
-    printf("should:\t%s\n", should.c_str());
-    printf("result:\t%s\n", rec.c_str());
+    printf(" - replace data with long value to cause migration\n");
+    assert(should == rec);
   }
   
   {
     AddrIterator iter = bdb.begin();
-    printf("\n==== iterating all data ==== \n");
+    printf(" - iterating all data\n");
     int i(0);
     while(iter != bdb.end()){
-      printf("should: %08x\n", addrs[i]);
-      printf("result: %08x\n", *iter);
+      assert(addrs[i] == *iter);
       ++iter; 
       ++i;
     }
@@ -178,9 +160,8 @@ int main(int argc, char** argv)
     bdb.del(addrs[0]);
     try{
       *iter;
-    }catch(std::exception const &e){
-      printf("exception: %s\n", e.what());  
-    }
+      assert(false);
+    }catch(std::exception const &e){}
   }
 
   // erase all again
@@ -214,7 +195,7 @@ int main(int argc, char** argv)
   addr = bdb.stream_finish(os);
   rec.clear();
   bdb.get(&rec, 10, addr);
-  printf("======== stream write (prototype) ========\n");
+  printf("======== stream write (prototype)\n");
   printf("should: %08x\n", 4u);
   printf("result: %08x\n", addr);
   printf("should: %s\n", "toma");
@@ -229,7 +210,7 @@ int main(int argc, char** argv)
   addr = bdb.stream_finish(os);
   rec.clear();
   bdb.get(&rec, 10, addr);
-  printf("======== stream write to non-allocated addr ========\n");
+  printf("======== stream write to non-allocated addr\n");
   printf("should: %08x\n", 5u);
   printf("result: %08x\n", addr);
   printf("should: %s\n", "toma");

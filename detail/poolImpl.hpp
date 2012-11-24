@@ -32,14 +32,11 @@ namespace BDB {
     struct config
     {
       unsigned int dirID;
-      char const* work_dir;
-      char const* trans_dir;
-      char const* header_dir;
+      std::string work_dir;
+      std::string trans_dir;
+      std::string header_dir;
       
-      config()
-      : dirID(0), 
-        work_dir(""), trans_dir(""), header_dir("")
-      {}
+      config() : dirID(0)  {}
     };
 
     pool(config const &conf, addr_eval<AddrType> &addrEval);
