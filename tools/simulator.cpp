@@ -60,7 +60,6 @@ int main(int argc, char** argv)
       bdb->get(&data[0], size, addr, off);
     }else if(cmd == "string_get"){
       fin >> size >> addr >> off;
-      data.resize(size);
       bdb->get(&data, size, addr, off);
     }else if(cmd == "del"){
       fin >> addr;

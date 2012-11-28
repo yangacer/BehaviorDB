@@ -3,6 +3,5 @@ Build and Test:
 cd build
 cmake ..
 make
-# bdb_test uses tmp as its root_dir
 mkdir tmp
-./bdb_test
+./bdb_test tmp/
