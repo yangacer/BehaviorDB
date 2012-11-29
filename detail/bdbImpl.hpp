@@ -12,7 +12,9 @@
 #include "boost/noncopyable.hpp"
 
 #include "common.hpp"
+#include "fixedPool.hpp"
 #include "addr_eval.hpp"
+#include "addr_wrapper.hpp"
 #include "log.hpp"
 
 namespace BDB {
@@ -186,8 +188,9 @@ namespace BDB {
     
     //FILE* acc_log_;
     char acc_log_buf_[4096];
-
-    typedef IDPool<vec_wrapper<AddrType> > idpool_t;
+    
+    typedef IDPool<fixed_pool<addr_wrapper, sizeof(AddrType)> > idpool_t;
+    //typedef IDPool<vec_wrapper<AddrType> > idpool_t;
     typedef id_handle<idpool_t> id_handle_t;
     idpool_t *global_id_;
     

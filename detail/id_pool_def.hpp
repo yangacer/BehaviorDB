@@ -211,7 +211,7 @@ void IDPool<Array>::replay_transaction(char const* file)
     line[strlen(line)-1] = 0;
     cvt.clear();
     cvt.str(line + 1);
-    cvt>>off;
+    cvt >> off;
     if('+' == line[0]){
       cvt>>val;
       if(bm_.size() <= off)

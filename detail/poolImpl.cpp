@@ -269,7 +269,7 @@ namespace BDB {
 
     viov vv[2];
     file_src fs;
-    AddrType loc_addr;
+    AddrType loc_addr = 0;
     if(0 == off){ // pre
       fs.fp = file_;
       fs.off = addr_off2tell(src_addr, size);

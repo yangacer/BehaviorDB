@@ -1,5 +1,6 @@
 #include "fixedPool.hpp"
 #include "chunk.h"
+#include "addr_wrapper.hpp"
 #include "file_utils.hpp"
 #include <stdexcept>
 #include <cassert>
@@ -110,5 +111,6 @@ void fixed_pool<T,TextSize>::store(T const &val, AddrType off)
 
 
 template struct fixed_pool<ChunkHeader, 8>;
+template struct fixed_pool<addr_wrapper, sizeof(AddrType)>;
 
 } // namespace BDB
