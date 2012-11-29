@@ -67,50 +67,33 @@ fixed_pool<T,TextSize>::open(uint32_t id, char const* work_dir)
 }
 
 template<typename T, uint32_t TextSize>
-int fixed_pool<T,TextSize>::read(T* val, AddrType addr) const
-{
-  if(!*this) return -1;
-
-  off_t loc_addr = addr;
-  loc_addr *= TextSize;
-  fseeko(file_, loc_addr, SEEK_SET);
-  if( 0 == file_>>*val || ferror(file_))
-    throw std::runtime_error(SRC_POS);
-  return 0;
-}
-
-template<typename T, uint32_t TextSize>
-int fixed_pool<T,TextSize>::write(T const & val, AddrType addr)
-{
-  if(!*this) return -1;
-
-  off_t loc_addr = addr;
-  loc_addr *= TextSize;
-  fseeko(file_, loc_addr, SEEK_SET);
-  if( 0 == file_<<val || ferror(file_) || fflush(file_) ) 
-    throw std::runtime_error(SRC_POS);
-  return 0;
-}
-
-template<typename T, uint32_t TextSize>
 std::string
 fixed_pool<T,TextSize>::dir() const 
 {
   return work_dir_;
 }
 
-
 template<typename T, uint32_t TextSize>
 T fixed_pool<T,TextSize>::operator[](AddrType addr) const
 {
   T rt;
-  read(&rt, addr);
+  off_t loc_addr = addr;
+  loc_addr *= TextSize;
+  fseeko(file_, loc_addr, SEEK_SET);
+  if( 0 == (file_ >> rt) || ferror(file_))
+    throw std::runtime_error(SRC_POS);
   return rt;
 }
 
 template<typename T, uint32_t TextSize>
 void fixed_pool<T,TextSize>::store(T const &val, AddrType off)
-{ write(val, off); }
+{ 
+  off_t loc_addr = off;
+  loc_addr *= TextSize;
+  fseeko(file_, loc_addr, SEEK_SET);
+  if( 0 == (file_ << val) || ferror(file_) || fflush(file_) ) 
+    throw std::runtime_error(SRC_POS);
+}
 
 
 template struct fixed_pool<ChunkHeader, 8>;

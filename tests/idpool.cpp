@@ -14,6 +14,11 @@ int main(int argc, char **argv)
   using namespace BDB;
   using std::cout;
   
+  if(argc < 2){
+    cout << "Usage: <directory>\n";
+    return 1;
+  }
+
   char const *work_dir = argv[1];
   std::string prefix;
 
@@ -36,6 +41,7 @@ int main(int argc, char **argv)
     ch.size = 1024;
     header_pool.Commit(addr, ch);
 
+    
     addr_pool.Acquire(3u);
     addr_pool.Commit(3u, 123);
     

@@ -37,8 +37,8 @@ namespace BDB {
     T operator[](AddrType addr) const;
     void store(T const &val, AddrType off);
     void resize(uint32_t size){};
-    int read(T* val, AddrType addr) const;
-    int write(T const & val, AddrType addr);
+    //int read(T* val, AddrType addr) const;
+    //int write(T const & val, AddrType addr);
     std::string dir() const;
 
   private:

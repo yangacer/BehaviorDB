@@ -44,19 +44,20 @@ int main(int argc, char** argv)
   Config conf;
   conf.root_dir = argv[1];
   conf.min_size = 32;
+  conf.beg = 0;
 
   { // ctor dtor testing
     printf(" - testing construction/deconstruction\n");
     {
       BehaviorDB bdb(conf);
-      bdb.put("good", 4, 100u);
+      bdb.put("good", 4, 0u);
     }
     {
       BehaviorDB bdb(conf);
       char buf[4];
-      bdb.get(buf, 4, 100u);
+      bdb.get(buf, 4, 0u);
       assert(0 == strncmp(buf, "good", 4));
-      bdb.del(100u);
+      bdb.del(0u);
     }
   }
 

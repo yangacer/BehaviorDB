@@ -40,36 +40,6 @@ IDPool<Array>::IDPool(
   init_transaction(fname);
 }
 
-template<>
-IDPool<fixed_pool<addr_wrapper, sizeof(AddrType)> >::IDPool(
-  unsigned int id, char const* work_dir,
-  AddrType beg, AddrType end, 
-  IDPoolAlloc alloc_policy)
-: beg_(beg), end_(end), 
-  bm_(), lock_(), 
-  full_alloc_(alloc_policy), max_used_(0),
-  file_(0),  arr_(0)
-{
-  if(beg >= end)
-    throw std::invalid_argument(SRC_POS);
-
-  arr_.open(id, work_dir);
-  Bitmap::size_type size = end - beg;
-
-  if(dynamic == full_alloc_){
-    while(size > 1024)
-      size >>= 1;
-  }
-  bm_.resize(size, true);
-  lock_.resize(size, false);
-  arr_.resize(size);
-  
-  char fname[40] = {};
-  sprintf(fname, "%s%04x.tran", work_dir, id);
-  //replay_transaction(fname);
-  init_transaction(fname);
-}
-
 template<typename Array>
 IDPool<Array>::~IDPool()
 {
@@ -133,13 +103,15 @@ bool IDPool<Array>::Commit(
   AddrType off = id - begin();
   std::stringstream ss;
   if(bm_[off])
-    ss<<'-'<<off<<"\n";
+    ss << '-' << off <<"\n";
   else{
-    ss<<'+'<<off<<"\t"<<val<<"\n";
+    ss << '+' << off << "\t" << val << "\n";
     arr_.template store(val, off);
   }
-  return ss.str().size() == 
-    detail::s_write(ss.str().c_str(), ss.str().size(), file_);
+  return 
+    ss.str().size() == 
+    detail::s_write(ss.str().c_str(), ss.str().size(), file_) &&
+    0 == fflush(file_);
 }
 
 template<typename Array>
@@ -151,8 +123,10 @@ bool IDPool<Array>::ReleaseAndCommit(AddrType id)
     throw invalid_addr();
   bm_[off] = true;
   ss<<'-'<<off<<"\n";
-  return ss.str().size() == 
-    detail::s_write(ss.str().c_str(), ss.str().size(), file_);
+  return 
+    ss.str().size() == 
+    detail::s_write(ss.str().c_str(), ss.str().size(), file_) &&
+    0 == fflush(file_);
 }
 
 template<typename Array>
@@ -244,8 +218,9 @@ void IDPool<Array>::replay_transaction(char const* file)
     cvt.clear();
     cvt.str(line + 1);
     cvt >> off;
-    if('+' == line[0]){
-      cvt>>val;
+    if('+' == line[0]) {
+      if('\t' == cvt.peek()) cvt.ignore(1);
+      cvt >> val;
       if(bm_.size() <= off)
         extend(off+1);
       bm_[off] = false;
