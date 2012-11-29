@@ -45,6 +45,21 @@ int main(int argc, char** argv)
   conf.root_dir = argv[1];
   conf.min_size = 32;
 
+  { // ctor dtor testing
+    printf(" - testing construction/deconstruction\n");
+    {
+      BehaviorDB bdb(conf);
+      bdb.put("good", 4, 100u);
+    }
+    {
+      BehaviorDB bdb(conf);
+      char buf[4];
+      bdb.get(buf, 4, 100u);
+      assert(0 == strncmp(buf, "good", 4));
+      bdb.del(100u);
+    }
+  }
+
   BehaviorDB bdb(conf);
   std::string should;
   std::string rec;

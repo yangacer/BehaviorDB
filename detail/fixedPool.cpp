@@ -24,7 +24,10 @@ fixed_pool<T,TextSize>::fixed_pool(uint32_t id, char const* work_dir)
 template<typename T, uint32_t TextSize>
 fixed_pool<T,TextSize>::~fixed_pool()
 {
-  if(file_) fclose(file_);
+  if(file_){
+    fflush(file_);
+    fclose(file_);
+  }
   delete []fbuf_;
 }
 

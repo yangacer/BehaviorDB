@@ -33,7 +33,6 @@ namespace detail {
   s_write(char const* data, uint32_t size, FILE* fp)
   {
     uint32_t total_written = 0;
-
     while(size>0){
       errno = 0;
       uint32_t written = fwrite(data, 1, size, fp);

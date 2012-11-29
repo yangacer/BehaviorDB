@@ -34,7 +34,7 @@ operator<<(std::ostream &os, ChunkHeader const &ch)
   os.unsetf(oldflag);
   os<<setfill('0')<<setw(8)<<hex<<ch.size;
   os.flags(oldflag);
-
+  os.flush();
   return os;  
 }
 
@@ -58,7 +58,7 @@ operator<<(FILE* fp, ChunkHeader const &ch)
 
   if( 8 != fwrite(cvt.str().c_str(), 1, 8, fp))
     return 0;
-  
+  fflush(fp);
   return fp;
 
 }

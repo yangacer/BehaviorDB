@@ -5,6 +5,8 @@
 #include <sstream>
 #include "error.hpp"
 #include "file_utils.hpp"
+#include "fixedPool.hpp"
+#include "addr_wrapper.hpp"
 
 namespace BDB{ 
 
@@ -35,6 +37,36 @@ IDPool<Array>::IDPool(
   char fname[40] = {};
   sprintf(fname, "%s%04x.tran", work_dir, id);
   replay_transaction(fname);
+  init_transaction(fname);
+}
+
+template<>
+IDPool<fixed_pool<addr_wrapper, sizeof(AddrType)> >::IDPool(
+  unsigned int id, char const* work_dir,
+  AddrType beg, AddrType end, 
+  IDPoolAlloc alloc_policy)
+: beg_(beg), end_(end), 
+  bm_(), lock_(), 
+  full_alloc_(alloc_policy), max_used_(0),
+  file_(0),  arr_(0)
+{
+  if(beg >= end)
+    throw std::invalid_argument(SRC_POS);
+
+  arr_.open(id, work_dir);
+  Bitmap::size_type size = end - beg;
+
+  if(dynamic == full_alloc_){
+    while(size > 1024)
+      size >>= 1;
+  }
+  bm_.resize(size, true);
+  lock_.resize(size, false);
+  arr_.resize(size);
+  
+  char fname[40] = {};
+  sprintf(fname, "%s%04x.tran", work_dir, id);
+  //replay_transaction(fname);
   init_transaction(fname);
 }
 
