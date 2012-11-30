@@ -3,6 +3,7 @@
 
 #include "id_pool.hpp"
 #include <sstream>
+#include <fstream>
 #include "error.hpp"
 #include "file_utils.hpp"
 #include "fixedPool.hpp"
@@ -201,36 +202,33 @@ AddrType IDPool<Array>::end() const
 template<typename Array>
 void IDPool<Array>::replay_transaction(char const* file)
 {
+  using namespace std;
+
   assert(0 != file);
   assert(0 == file_ && "disallow replay when file_ has been initiated");
 
-  FILE *tfile = fopen(file, "rb");
+  ifstream tfile(file, ios::in | ios::binary);
 
-  if(0 == tfile) // no transaction files for replaying
+  if(!tfile.is_open()) // no transaction files for replaying
     return;
 
-  char line[21] = {0};    
+  char op;
   AddrType off;
   value_type val;
-  std::stringstream cvt;
-  while(fgets(line, 20, tfile)){
-    line[strlen(line)-1] = 0;
-    cvt.clear();
-    cvt.str(line + 1);
-    cvt >> off;
-    if('+' == line[0]) {
-      if('\t' == cvt.peek()) cvt.ignore(1);
-      cvt >> val;
+  while(tfile >> op >> off){
+    if('+' == op) {
+      if('\t' == tfile.peek()) tfile.ignore(1);
+      tfile >> val;
       if(bm_.size() <= off)
         extend(off+1);
       bm_[off] = false;
       arr_.template store(val, off);
       if(max_used_ <= off) max_used_ = off+1;
-    }else if('-' == line[0]){
+    }else if('-' == op){
       bm_[off] = true;
     }
   }
-  fclose(tfile);
+  tfile.close();
 }
 
 template<typename Array>
