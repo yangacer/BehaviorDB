@@ -2,7 +2,12 @@
 project (BDB)
 cmake_minimum_required(VERSION 2.8)
 
+option (BDB_ABSOLUTE_RPATH OFF)
+
+if(BDB_ABSOLUTE_RPATH)
 include (rpath.cmake)
+endif()
+
 include (use_c++11.cmake)
 
 option( BDB_DEVEL_MODE OFF )
