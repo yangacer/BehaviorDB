@@ -43,7 +43,7 @@ namespace BDB {
     if(addr_prefix_len >= (sizeof(AddrType)<<3))
       throw invalid_argument("Config: addr_prefix_len should be less than 8*sizeof(AddrType)");
 #define BDB_CHK_DIR_(DIR) \
-    if(DIR.size() && PATH_DELIM != DIR.back()) \
+    if(DIR.size() && PATH_DELIM != *(DIR.end()-1)) \
       throw invalid_argument( \
         "Config: non-empty " #DIR " should be ended with a path delimiter");
 

@@ -46,7 +46,7 @@ int main(int argc, char** argv)
   conf.min_size = 32;
   conf.beg = 0;
 
-  { // ctor dtor testing
+  { // ctor dtor testing. TODO larger amount
     printf(" - testing construction/deconstruction\n");
     {
       BehaviorDB bdb(conf);
