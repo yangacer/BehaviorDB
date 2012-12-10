@@ -9,6 +9,10 @@
 #include <cassert>
 #include <cstdlib>
 #include <cmath>
+#include <algorithm>
+
+#define STRINGLIZE_(X) #X
+#define stringlize_(X) STRINGLIZE_(X)
 
 void print_in_proper_unit(unsigned long long size)
 { 
@@ -47,17 +51,20 @@ int main(int argc, char** argv)
   conf.beg = 0;
 
   { // ctor dtor testing. TODO larger amount
-    printf(" - testing construction/deconstruction\n");
+    printf(" - construction/deconstruction\n");
     {
       BehaviorDB bdb(conf);
-      bdb.put("good", 4, 0u);
+      for(AddrType i=0; i < 1000; ++i)
+        bdb.put("good", 4, i);
     }
     {
       BehaviorDB bdb(conf);
       char buf[4];
-      bdb.get(buf, 4, 0u);
-      assert(0 == strncmp(buf, "good", 4));
-      bdb.del(0u);
+      for(AddrType i=0;i<1000; ++i) {
+        bdb.get(buf, 4, i);
+        assert(0 == strncmp(buf, "good", 4));
+        bdb.del(i);
+      }
     }
   }
 
@@ -72,16 +79,15 @@ int main(int argc, char** argv)
     addrs[0] = bdb.put(data, 4);
     addrs[1] = bdb.put(data, 4);
     printf(" - write 4 bytes to two chunks\n");
-    assert(addrs[0] == 1);
-    assert(addrs[1] == 2);
+    assert(addrs[0] == 1000);
+    assert(addrs[1] == 1001);
     // write to specific chunk
     addrs[2] = bdb.put("good", 4, 3u);
     printf(" - write to address 3 which does not exist currently\n");
     assert(addrs[2] == 3);
   }
 
-  {
-    // read
+  { // read
     char read[5] = {};
     char read2[5] = {};
 
@@ -92,8 +98,7 @@ int main(int argc, char** argv)
     assert(0 == strncmp(data, read2, 4));
   }
 
-  {
-    // append include migration
+  { // append include migration
     char const *data2 = "1234567890asdfghjkl;12345678901234567890";
     addrs[0] = bdb.put(data2, strlen(data2), addrs[0]);
     bdb.get(&rec, 50, addrs[0]);
@@ -101,8 +106,7 @@ int main(int argc, char** argv)
     assert(rec == "acer1234567890asdfghjkl;12345678901234567890");
   }
   
-  {
-    // prepend
+  { // prepend
     char const *data3 = "yang";
 
     should = data3;
@@ -113,8 +117,7 @@ int main(int argc, char** argv)
     assert(should == rec);
   }
   
-  {
-    // insert
+  { // insert
     char const *data4 = " made";
     
     addrs[0] = bdb.put(data4, 5, addrs[0], 8);
@@ -125,15 +128,13 @@ int main(int argc, char** argv)
     assert(should == rec);
   }
 
-  {
-    // read into string
+  { // read into string
     bdb.get(&rec, 1024, addrs[0]);
     printf(" - read data into a std::string\n");
     assert(should == rec);
   }
 
-  {
-    // erase partial
+  { // erase partial
     size_t nsize = bdb.del(addrs[0], 13, 10);
     bdb.get(&rec, 1024, addrs[0]);
     should.erase(13, 10);
@@ -142,8 +143,7 @@ int main(int argc, char** argv)
     assert(should == rec);
   }
 
-  {
-    // update
+  { // update
     bdb.update("replaced", addrs[0]);
     bdb.get(&rec, 1024, addrs[0]);
     should = "replaced";
@@ -151,8 +151,7 @@ int main(int argc, char** argv)
     assert(should == rec);
   }
   
-  {
-    // update to cause migration
+  { // update to cause migration
     should = "123456789012345678901234567890tail";
     bdb.update(should.c_str(), should.size(), addrs[1]);
     bdb.get(&rec, 1024, addrs[1]);
@@ -160,23 +159,23 @@ int main(int argc, char** argv)
     assert(should == rec);
   }
   
-  {
+  { // iterator
     AddrIterator iter = bdb.begin();
     printf(" - iterating all data\n");
     int i(0);
-    while(iter != bdb.end()){
-      assert(addrs[i] == *iter);
+    while(iter != bdb.end()) {
+      assert( &addrs[3] != std::find(&addrs[0], &addrs[3], *iter));
       ++iter; 
       ++i;
     }
-
     // interleave accesing will invalid an iterator
     // an out_of_range exception will be through
     iter = bdb.begin();
     bdb.del(addrs[0]);
     try{
+      ++iter; ++iter;
       *iter;
-      assert(false);
+      assert(false && "access to invalid iterator");
     }catch(std::exception const &e){}
   }
 
